@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Trợ Lý Toán AI - Public Deployment Ready</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* CSS tuỳ chỉnh cho Dark Mode */
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            background-color: #18191a; 
+            color: #e4e6eb; 
+        }
+        .chat-container { 
+            height: 75vh; 
+            max-height: 800px; 
+            background-color: #242526; 
+        }
+        .bubble { 
+            padding: 10px 14px; 
+            border-radius: 18px; 
+            margin: 8px 0; 
+            max-width: 90%; 
+            word-wrap: break-word; 
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.4);
+        }
+        .user { 
+            background: #1e90ff; 
+            color: white;
+            align-self: flex-end; 
+            border-bottom-right-radius: 4px; 
+        }
+        .ai { 
+            background: #3a3b3c; 
+            color: #e4e6eb; 
+            align-self: flex-start; 
+            border-bottom-left-radius: 4px;
+        }
+        .highlight {
+            background-color: #ffc400; 
+            color: #18191a; 
+            padding: 2px 4px;
+            border-radius: 4px;
+            font-weight: 600;
+        }
+        .typing-indicator {
+            animation: pulse 1.5s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 0.5; }
+            50% { opacity: 1; }
+        }
+        .full-viewport-height {
+            min-height: 100vh;
+        }
+    </style>
+</head>
+<body class="p-0 sm:p-4 flex items-center justify-center full-viewport-height">
+    <div class="w-full max-w-full sm:max-w-lg bg-[#242526] shadow-2xl rounded-none sm:rounded-2xl flex flex-col overflow-hidden full-viewport-height sm:min-h-0 border border-gray-700">
+        <div class="bg-gradient-to-r from-gray-800 to-black text-white p-4 text-center shadow-lg rounded-none sm:rounded-t-xl">
+            <h1 class="text-xl font-extrabold flex items-center justify-center">
+                🌐 Trợ Lý Toán AI (Sẵn Sàng Triển Khai)
+            </h1>
+            <p class="text-sm opacity-80">Có thể dùng trên mọi thiết bị, mọi nơi.</p>
+        </div>
+
+        <div id="chat" class="chat-container overflow-y-auto p-4 flex flex-col space-y-3 flex-grow">
+            <div class="bubble ai">
+                Chào mừng! Giao diện đã sẵn sàng để hoạt động công khai. `Ứng dụng sẽ chạy nhanh và ổn định`.
+            </div>
+        </div>
+
+        <div class="p-3 border-t border-gray-700 bg-[#242526] sticky bottom-0">
+            
+            <div id="imagePreview" class="hidden mb-2 p-2 bg-[#3a3b3c] rounded-lg border border-gray-600 shadow-sm">
+                <div class="flex items-center justify-between">
+                    <span class="text-sm font-medium text-gray-400">Ảnh đã chọn:</span>
+                    <button onclick="clearImage()" class="text-red-400 hover:text-red-300 text-xs font-bold">
+                        ❌ Xóa ảnh
+                    </button>
+                </div>
+                <img id="previewImg" class="mt-2 max-w-full h-16 object-contain rounded border border-gray-600" alt="Preview Image">
+            </div>
+
+            <div class="flex items-end space-x-2">
+                <button onclick="document.getElementById('imageInput').click()" 
+                        class="p-3 rounded-full bg-gray-700 hover:bg-gray-600 transition-colors text-xl text-white shadow-md flex-shrink-0">
+                    📎
+                </button>
+                <input type="file" accept="image/*" id="imageInput" class="hidden" onchange="handleFileSelect(event)">
+                
+                <input type="text" id="textInput" placeholder="Nhập câu hỏi..."
+                       class="flex-grow border border-gray-600 rounded-full px-4 py-3 focus:ring-blue-500 focus:border-blue-500 text-sm bg-gray-700 text-white shadow-inner appearance-none"
+                       onkeypress="handleKeyPress(event)">
+                
+                <button onclick="sendMessage()" id="sendButton"
+                        class="bg-blue-600 hover:bg-blue-500 text-white px-5 py-3 rounded-full transition-colors font-semibold text-sm shadow-lg flex-shrink-0">
+                    Gửi
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const chatBox = document.getElementById("chat");
+        const textInput = document.getElementById("textInput");
+        const imageInput = document.getElementById("imageInput");
+        const imagePreview = document.getElementById("imagePreview");
+        const previewImg = document.getElementById("previewImg");
+        const sendButton = document.getElementById("sendButton");
+        
+        let imageBase64 = null;
+        
+        // --- CẤU HÌNH API URL ---
+        // Bỏ IP cục bộ, sử dụng đường dẫn tương đối (sẽ hoạt động trên mọi máy chủ hosting)
+        const API_URL = ""; 
+        // -------------------------
+
+        // Tối ưu tốc độ: Resize và nén ảnh trước khi mã hóa Base64
+        function handleFileSelect(event) {
+            const file = event.target.files[0];
+            if (file && file.type.startsWith('image/')) {
+                
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const img = new Image();
+                    img.onload = function() {
+                        const MAX_WIDTH = 800; // Giới hạn chiều rộng tối đa
+                        const MAX_HEIGHT = 800; // Giới hạn chiều cao tối đa
+                        let width = img.width;
+                        let height = img.height;
+
+                        if (width > height) {
+                            if (width > MAX_WIDTH) {
+                                height *= MAX_WIDTH / width;
+                                width = MAX_WIDTH;
+                            }
+                        } else {
+                            if (height > MAX_HEIGHT) {
+                                width *= MAX_HEIGHT / height;
+                                height = MAX_HEIGHT;
+                            }
+                        }
+
+                        const canvas = document.createElement('canvas');
+                        canvas.width = width;
+                        canvas.height = height;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, width, height);
+
+                        // Lấy Base64 từ canvas (độ nén 70%)
+                        const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
+                        
+                        // Cập nhật Base64 và Preview
+                        imageBase64 = dataUrl.split(",")[1];
+                        previewImg.src = dataUrl;
+                        imagePreview.classList.remove('hidden');
+
+                        console.log(`Ảnh đã được resize và nén. Kích thước Base64 mới: ${imageBase64.length} bytes`);
+                    };
+                    img.src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function clearImage() {
+            imageBase64 = null;
+            imageInput.value = '';
+            imagePreview.classList.add('hidden');
+        }
+
+        function handleKeyPress(event) {
+            if (event.key === 'Enter' && !event.shiftKey) {
+                event.preventDefault();
+                sendMessage();
+            }
+        }
+
+        function formatAiResponse(text) {
+            return text.replace(/\n/g, '<br>').replace(/`(.*?)`/g, '<span class="highlight">$1</span>');
+        }
+
+        function addMessage(content, role = "ai", isImage = false) {
+            const div = document.createElement("div");
+            div.className = `bubble ${role} flex flex-col`;
+            
+            if (isImage) {
+                div.innerHTML += `<img src="${content}" class="max-w-full rounded mb-1 border border-gray-600" alt="${role} image">`;
+            } else {
+                if (role === 'ai') {
+                    div.innerHTML += `<span>${formatAiResponse(content)}</span>`;
+                } else {
+                    div.innerHTML += `<span>${content.replace(/\n/g, '<br>')}</span>`;
+                }
+            }
+
+            chatBox.appendChild(div);
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
+        function addTypingIndicator() {
+            const typingDiv = document.createElement("div");
+            typingDiv.id = 'typingIndicator';
+            typingDiv.className = 'bubble ai flex items-center';
+            typingDiv.innerHTML = `<span class="typing-indicator text-gray-400">... đang trả lời ...</span>`;
+            chatBox.appendChild(typingDiv);
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
+        function removeTypingIndicator() {
+            const indicator = document.getElementById('typingIndicator');
+            if (indicator) {
+                indicator.remove();
+            }
+        }
+
+        async function sendMessage() {
+            const text = textInput.value.trim();
+            if (!text && !imageBase64) return;
+            
+            if (imageBase64) {
+                addMessage(previewImg.src, "user", true);
+            }
+            if (text) {
+                addMessage(text, "user");
+            }
+
+            const userQuestion = text;
+            const imageToSend = imageBase64;
+            textInput.value = "";
+            clearImage();
+            sendButton.disabled = true;
+            addTypingIndicator();
+
+            try {
+                let response;
+                const messages = [];
+
+                if (imageToSend) {
+                    // Gọi API bằng đường dẫn tương đối (API_URL = "")
+                    response = await fetch(`${API_URL}/api/chat-with-image`, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ question: userQuestion, imageBase64: imageToSend })
+                    });
+                } else {
+                    messages.push({ role: "user", parts: [{ text: userQuestion }] });
+                    // Gọi API bằng đường dẫn tương đối (API_URL = "")
+                    response = await fetch(`${API_URL}/api/chat`, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ messages })
+                    });
+                }
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.response || `Lỗi HTTP: ${response.status}`);
+                }
+
+                const data = await response.json();
+                addMessage(data.response, "ai");
+
+            } catch (error) {
+                console.error("Lỗi khi gửi tin nhắn:", error);
+                addMessage(`❌ Đã xảy ra lỗi: ${error.message}`, "ai");
+            } finally {
+                removeTypingIndicator();
+                sendButton.disabled = false;
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,124 +1,102 @@
 // server.js
 
-// 1. Cấu hình ứng dụng Express và Gemini
 const express = require('express');
-const { GoogleGenAI } = require('@google/genai');
+const { GoogleGenerativeAI } = require('@google/generative-ai');
 const path = require('path');
 const fs = require('fs');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Lấy API Key từ Biến Môi trường (Environment Variable) trên Render
-const apiKey = process.env.GEMINI_API_KEY; 
+const apiKey = process.env.GEMINI_API_KEY;
 if (!apiKey) {
     throw new Error("GEMINI_API_KEY is not set in environment variables.");
 }
 
-// Khởi tạo GoogleGenAI
-const ai = new GoogleGenAI(apiKey);
+const genAI = new GoogleGenerativeAI(apiKey);
+const multimodalModel = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
-// Khởi tạo đối tượng chat và cấu hình mô hình
-const model = "gemini-2.5-flash"; 
-let chat; // Đối tượng chat sẽ được khởi tạo cho mỗi phiên
-
-// Khởi tạo nội dung vai trò
-const roleFilePath = path.join(__dirname, 'c.role');
-const msgFilePath = path.join(__dirname, 'msg.role');
-let systemRole = ""; 
-let initialMessage = ""; 
-
+// --- VAI TRÒ HỆ THỐNG ĐƯỢC CẬP NHẬT ---
+let systemInstruction = "";
 try {
-    // Đọc nội dung file vai trò (Role Files)
-    systemRole = fs.readFileSync(roleFilePath, 'utf8');
-    initialMessage = fs.readFileSync(msgFilePath, 'utf8');
+    // Ưu tiên đọc file role nếu có
+    const roleFilePath = path.join(__dirname, 'c.role');
+    systemInstruction = fs.readFileSync(roleFilePath, 'utf8');
 } catch (error) {
-    // Nếu không tìm thấy file (vì bạn không upload lên GitHub)
-    // SỬ DỤNG VAI TRÒ MẶC ĐỊNH
-    systemRole = "You are a friendly and precise math tutoring bot. Your goal is to help users solve complex math problems step-by-step. Never answer questions that are not related to mathematics, science, or logic problems.";
-    initialMessage = "Chào mừng bạn đến với MathChat AI! Bạn có câu hỏi toán học nào cần giúp đỡ không? Hãy chia sẻ đề bài nhé.";
-    console.warn("Role files not found, using default roles.");
+    // VAI TRÒ MẶC ĐỊNH (ĐÃ CẢI TIẾN)
+    systemInstruction = "You are a friendly and precise math tutoring bot. Your goal is to help users solve math problems. Provide detailed, step-by-step explanations, but keep the language clear and concise to answer quickly. Use backticks `` ` `` to highlight key formulas, numbers, or the final answer. Never answer questions that are not related to mathematics, science, or logic problems. Always respond in Vietnamese.";
+    console.warn("c.role file not found, using improved default role.");
 }
+// -----------------------------------------
 
-// Hàm khởi tạo/đặt lại chat
-function initializeChat() {
-    chat = ai.chats.create({
-        model: model,
-        config: {
-            systemInstruction: systemRole
-        }
-    });
-}
+app.use(express.json({ limit: '10mb' }));
 
-// Khởi tạo chat ban đầu
-initializeChat();
+// --- CÁC TUYẾN ĐƯỜNG (ROUTES) ---
 
-// 2. Middleware và Tuyến đường
-
-// Middleware để phân tích JSON và URL-encoded bodies
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-
-// Tuyến đường gốc để phục vụ index.html
+// 1. Phục vụ trang web
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-// Tuyến đường để lấy tin nhắn ban đầu (dùng cho client-side)
-app.get('/initial-message', (req, res) => {
-    res.json({ message: initialMessage });
-});
-
-
-// Tuyến đường POST để xử lý tin nhắn và giao tiếp với Gemini
-app.post('/ask', async (req, res) => {
-    const userMessage = req.body.message;
-    
-    if (!userMessage) {
-        return res.status(400).json({ error: "Missing message." });
+// 2. API Giải toán (Không đổi)
+app.post('/api/ask', async (req, res) => {
+    const { question, imageBase64 } = req.body;
+    if (!question && !imageBase64) {
+        return res.status(400).json({ message: "Yêu cầu phải có câu hỏi hoặc hình ảnh." });
     }
 
     try {
-        // --- LOGIC GIỚI HẠN TIN NHẮN TỪ PHÍA MÁY CHỦ ---
-        const MAX_USER_QUESTIONS = 4; // Giới hạn 4 câu hỏi
-        // Tổng độ dài lịch sử = 4 user + 4 model = 8
-        const MAX_HISTORY_LENGTH = MAX_USER_QUESTIONS * 2; 
-        
-        const history = await chat.getHistory();
-        
-        if (history.length >= MAX_HISTORY_LENGTH) {
-            // Đã đạt giới hạn 4 câu hỏi (8 tin nhắn)
-            
-            // THÔNG BÁO LỖI VÀ CHẶN API CALL
-            res.status(429).json({
-                error: "Quota Exceeded",
-                message: `Bạn đã đạt đến giới hạn ${MAX_USER_QUESTIONS} câu hỏi cho phiên này. Vui lòng làm mới trang (refresh) để bắt đầu cuộc trò chuyện mới.`
-            });
-            return; // Dừng xử lý
+        const promptParts = [];
+        const userPrompt = question || "Hãy giải bài toán trong hình ảnh này một cách chi tiết và từng bước.";
+        promptParts.push(userPrompt);
+
+        if (imageBase64) {
+            promptParts.push({ inlineData: { mimeType: 'image/jpeg', data: imageBase64 } });
         }
-        // --- KẾT THÚC LOGIC GIỚI HẠN TIN NHẮN ---
         
-        
-        // Gọi API Gemini
-        const response = await chat.sendMessage({ 
-            message: userMessage 
+        const chat = multimodalModel.startChat({
+            systemInstruction: { parts: [{ text: systemInstruction }] },
+            history: []
         });
 
-        // Gửi câu trả lời của AI về client
-        res.json({ 
-            response: response.text 
-        });
-
+        const result = await chat.sendMessage(promptParts);
+        const text = result.response.text();
+        res.json({ response: text });
     } catch (error) {
-        console.error("Gemini API Error:", error);
-        res.status(500).json({ 
-            error: "An error occurred while communicating with the AI model.",
-            details: error.message 
-        });
+        console.error("Math API Error:", error);
+        res.status(500).json({ message: "Đã có lỗi xảy ra khi giao tiếp với mô hình AI." });
     }
 });
 
-// 3. Khởi động Máy chủ
+// 3. API TẠO ẢNH (MỚI)
+app.post('/api/generate-image', async (req, res) => {
+    const { prompt } = req.body;
+    if (!prompt) {
+        return res.status(400).json({ message: "Nội dung để tạo ảnh không được để trống." });
+    }
+
+    try {
+        // Mẹo: Chúng ta sẽ yêu cầu AI tạo ra một URL ảnh từ dịch vụ Unsplash.
+        // Đây là cách thêm tính năng tạo ảnh mà không cần dùng đến một API tạo ảnh riêng biệt.
+        const imageGenPrompt = `Create a descriptive Unsplash image URL for the following prompt: "${prompt}". The URL format is \`https://source.unsplash.com/800x600/?<keywords>\`. Replace <keywords> with 2-3 relevant, comma-separated English words. Only return the final URL and nothing else.`;
+
+        const result = await multimodalModel.generateContent(imageGenPrompt);
+        const imageUrl = result.response.text().trim();
+
+        // Kiểm tra xem URL có hợp lệ không
+        if (imageUrl.startsWith('https://source.unsplash.com')) {
+            res.json({ imageUrl: imageUrl });
+        } else {
+            // Nếu AI không trả về đúng định dạng, cung cấp một ảnh ngẫu nhiên
+            res.json({ imageUrl: `https://source.unsplash.com/800x600/?${prompt.split(' ').join(',')}` });
+        }
+    } catch (error) {
+        console.error("Image Gen API Error:", error);
+        res.status(500).json({ message: "Đã xảy ra lỗi khi tạo ảnh." });
+    }
+});
+
+
 app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
+    console.log(`Server running on http://localhost:${PORT}`);
 });

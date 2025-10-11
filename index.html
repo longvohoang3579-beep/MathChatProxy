@@ -54,11 +54,6 @@
                 <h2 class="text-lg font-bold text-center mb-4">🎨 AI Tạo Ảnh (DeepAI)</h2>
                 <div class="space-y-4">
                     <div>
-                        <label for="deepai-key" class="block mb-1 text-sm font-medium text-gray-400">DeepAI API Key:</label>
-                        <input type="password" id="deepai-key" placeholder="Dán API Key của bạn từ DeepAI.org"
-                               class="w-full border border-gray-600 rounded-lg px-3 py-2 bg-gray-700 text-white focus:ring-blue-500 focus:border-blue-500">
-                    </div>
-                    <div>
                         <label for="image-prompt" class="block mb-1 text-sm font-medium text-gray-400">Nội dung ảnh:</label>
                         <textarea id="image-prompt" rows="3" placeholder="Ví dụ: một chú mèo phi hành gia đang cưỡi tên lửa trên dải ngân hà, tranh sơn dầu"
                                   class="w-full border border-gray-600 rounded-lg px-3 py-2 bg-gray-700 text-white focus:ring-blue-500 focus:border-blue-500"></textarea>
@@ -99,25 +94,13 @@
 
     <script>
         // --- DOM Elements ---
-        const views = {
-            chat: document.getElementById('chat-view'),
-            image: document.getElementById('image-view'),
-            math: document.getElementById('math-view')
-        };
-        const tabs = {
-            chat: document.getElementById('tab-chat'),
-            image: document.getElementById('tab-image'),
-            math: document.getElementById('tab-math')
-        };
-        // General Chat
+        const views = { chat: document.getElementById('chat-view'), image: document.getElementById('image-view'), math: document.getElementById('math-view') };
+        const tabs = { chat: document.getElementById('tab-chat'), image: document.getElementById('tab-image'), math: document.getElementById('tab-math') };
         const generalChatBox = document.getElementById('general-chat-box');
         const generalChatInput = document.getElementById('general-chat-input');
-        // Image Gen
-        const deepAiKeyInput = document.getElementById('deepai-key');
         const imagePromptInput = document.getElementById('image-prompt');
         const imageResultContainer = document.getElementById('image-result-container');
         const generateImageBtn = document.getElementById('generate-image-btn');
-        // Math Solver
         const mathChatBox = document.getElementById('math-chat-box');
         const mathTextInput = document.getElementById('math-text-input');
         const mathImagePreview = document.getElementById('math-image-preview');
@@ -132,25 +115,20 @@
 
         // --- Core Logic ---
         function switchView(viewName) {
-            Object.keys(views).forEach(key => {
-                views[key].classList.add('hidden');
-                tabs[key].classList.remove('active');
-            });
+            Object.values(views).forEach(v => v.classList.add('hidden'));
+            Object.values(tabs).forEach(t => t.classList.remove('active'));
             views[viewName].classList.remove('hidden');
             tabs[viewName].classList.add('active');
         }
 
-        function formatAiResponse(text) {
-            return text.replace(/\n/g, '<br>').replace(/`([^`]+)`/g, '<span class="highlight">$1</span>');
-        }
+        function formatAiResponse(text) { return text.replace(/\n/g, '<br>').replace(/`([^`]+)`/g, '<span class="highlight">$1</span>'); }
 
         function addMessage(chatBox, content, role = "ai", isHtml = false) {
             const div = document.createElement("div");
             div.className = `bubble ${role}`;
-            div.innerHTML = isHtml ? content : (role === 'ai' ? formatAiResponse(content) : content);
+            div.innerHTML = isHtml ? content : (role === 'ai' ? formatAiResponse(content) : content.replace(/\n/g, '<br>'));
             chatBox.appendChild(div);
             chatBox.scrollTop = chatBox.scrollHeight;
-            return div;
         }
         
         function addTypingIndicator(chatBox, message = "... đang xử lý ...") {
@@ -171,64 +149,29 @@
         async function sendGeneralChatMessage() {
             const text = generalChatInput.value.trim();
             if (!text) return;
-
             addMessage(generalChatBox, text, "user");
             generalChatInput.value = "";
             addTypingIndicator(generalChatBox, "... đang suy nghĩ ...");
-
             try {
-                const response = await fetch(API_GENERAL_CHAT_URL, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ prompt: text })
-                });
+                const response = await fetch(API_GENERAL_CHAT_URL, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ prompt: text }) });
                 if (!response.ok) throw new Error((await response.json()).message);
-                const data = await response.json();
-                addMessage(generalChatBox, data.response, "ai");
-            } catch (error) {
-                addMessage(generalChatBox, `❌ Lỗi: ${error.message}`, "ai");
-            } finally {
-                removeTypingIndicator(generalChatBox);
-            }
+                addMessage(generalChatBox, (await response.json()).response, "ai");
+            } catch (error) { addMessage(generalChatBox, `❌ Lỗi: ${error.message}`, "ai"); } finally { removeTypingIndicator(generalChatBox); }
         }
         
-        // --- Image Generation Functions ---
+        // --- Image Generation Functions (Secure) ---
         async function generateDeepAiImage() {
-            const apiKey = deepAiKeyInput.value.trim();
             const prompt = imagePromptInput.value.trim();
-
-            if (!apiKey) {
-                alert("Vui lòng nhập DeepAI API Key.");
-                return;
-            }
-            if (!prompt) {
-                alert("Vui lòng nhập nội dung ảnh muốn tạo.");
-                return;
-            }
-
+            if (!prompt) { alert("Vui lòng nhập nội dung ảnh muốn tạo."); return; }
             generateImageBtn.disabled = true;
             generateImageBtn.textContent = "Đang tạo ảnh...";
-            imageResultContainer.innerHTML = `<div class="text-center text-gray-400">Vui lòng chờ, quá trình này có thể mất một lúc...</div>`;
-
+            imageResultContainer.innerHTML = `<div class="text-center text-gray-400">Vui lòng chờ...</div>`;
             try {
-                const response = await fetch(API_DEEPAI_IMAGE_URL, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ apiKey, prompt })
-                });
-                if (!response.ok) throw new Error((await response.json()).message);
+                const response = await fetch(API_DEEPAI_IMAGE_URL, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ prompt }) });
+                if (!response.ok) throw new Error((await response.json()).message || `Lỗi HTTP ${response.status}`);
                 const data = await response.json();
-                imageResultContainer.innerHTML = `
-                    <div class="generated-image-container">
-                        <p class="text-sm text-gray-300 mb-2">"${prompt}"</p>
-                        <img src="${data.imageUrl}" class="generated-image" alt="AI generated image">
-                    </div>`;
-            } catch (error) {
-                 imageResultContainer.innerHTML = `<div class="text-center text-red-400">❌ Lỗi: ${error.message}</div>`;
-            } finally {
-                generateImageBtn.disabled = false;
-                generateImageBtn.textContent = "Tạo ảnh";
-            }
+                imageResultContainer.innerHTML = `<div class="generated-image-container"><p class="text-sm text-gray-300 mb-2">"${prompt}"</p><img src="${data.imageUrl}" class="generated-image" alt="AI generated image"></div>`;
+            } catch (error) { imageResultContainer.innerHTML = `<div class="text-center text-red-400">❌ Lỗi: ${error.message}</div>`; } finally { generateImageBtn.disabled = false; generateImageBtn.textContent = "Tạo ảnh"; }
         }
 
         // --- Math Solver Functions ---
@@ -236,13 +179,13 @@
             const file = event.target.files[0];
             if (!file) return;
             const reader = new FileReader();
-            reader.onload = function(e) {
+            reader.onload = e => {
                 mathPreviewImg.src = e.target.result;
                 mathImagePreview.classList.remove('hidden');
                 mathImageBase64 = e.target.result.split(',')[1];
             };
             reader.readAsDataURL(file);
-            event.target.value = ''; 
+            event.target.value = '';
         }
 
         function clearMathImage() {
@@ -254,33 +197,18 @@
         async function sendMathProblem() {
             const text = mathTextInput.value.trim();
             if (!text && !mathImageBase64) return;
-            
             if (mathImageBase64) addMessage(mathChatBox, `<img src="${mathPreviewImg.src}" class="max-w-xs rounded">`, "user", true);
             if (text) addMessage(mathChatBox, text, "user");
-            
-            const userQuestion = text;
-            const imageToSend = mathImageBase64;
-
+            const payload = { question: text, imageBase64: mathImageBase64 };
             mathTextInput.value = "";
             clearMathImage();
             mathSendBtn.disabled = true;
             addTypingIndicator(mathChatBox, "... đang giải toán ...");
-
             try {
-                 const response = await fetch(API_MATH_URL, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ question: userQuestion, imageBase64: imageToSend })
-                });
+                 const response = await fetch(API_MATH_URL, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
                 if (!response.ok) throw new Error((await response.json()).message);
-                const data = await response.json();
-                addMessage(mathChatBox, data.response, "ai");
-            } catch (error) {
-                addMessage(mathChatBox, `❌ Lỗi: ${error.message}`, "ai");
-            } finally {
-                removeTypingIndicator(mathChatBox);
-                mathSendBtn.disabled = false;
-            }
+                addMessage(mathChatBox, (await response.json()).response, "ai");
+            } catch (error) { addMessage(mathChatBox, `❌ Lỗi: ${error.message}`, "ai"); } finally { removeTypingIndicator(mathChatBox); mathSendBtn.disabled = false; }
         }
     </script>
 </body>

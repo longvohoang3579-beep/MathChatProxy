@@ -1,125 +1,105 @@
 // server.js
-const express = require('express');
-const { GoogleGenerativeAI } = require('@google/generative-ai');
-const path = require('path');
-const fs = require('fs');
+import express from 'express';
+import { GoogleGenerativeAI } from '@google/generative-ai';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import 'dotenv/config';
 
-// Sử dụng node-fetch để gọi API bên ngoài (DeepAI)
-const fetch = require('node-fetch');
+// Cấu hình ES Module cho __dirname
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-const apiKey = process.env.GEMINI_API_KEY;
-if (!apiKey) {
+// Khởi tạo Model
+const geminiApiKey = process.env.GEMINI_API_KEY;
+if (!geminiApiKey) {
     throw new Error("GEMINI_API_KEY is not set in environment variables.");
 }
-
-const genAI = new GoogleGenerativeAI(apiKey);
+const genAI = new GoogleGenerativeAI(geminiApiKey);
 const multimodalModel = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
-// --- SYSTEM ROLES ---
-const mathSystemRole = "You are a friendly and precise math tutoring bot. Your goal is to help users solve math problems. Provide detailed, step-by-step explanations, but keep the language clear and concise to answer quickly. Use backticks `` ` `` to highlight key formulas, numbers, or the final answer. Never answer questions that are not related to mathematics, science, or logic problems. Always respond in Vietnamese.";
+// System Roles
+const mathSystemRole = "You are a friendly and precise math tutoring bot. Your goal is to help users solve math problems. Provide detailed, step-by-step explanations. Use backticks `` ` `` to highlight key formulas, numbers, or the final answer. Only answer questions related to mathematics. Always respond in Vietnamese.";
 const generalChatSystemRole = "You are a helpful and friendly AI assistant. Chat with the user on any topic they want. Respond in Vietnamese.";
 
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
+// --- API ROUTES ---
 
-// --- ROUTES ---
-
-// 1. Serve the web page
-app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'index.html'));
-});
-
-// 2. Math Solver API
+// 1. API Giải toán (Gemini)
 app.post('/api/ask', async (req, res) => {
     const { question, imageBase64 } = req.body;
-    if (!question && !imageBase64) {
-        return res.status(400).json({ message: "Yêu cầu phải có câu hỏi hoặc hình ảnh." });
-    }
-
     try {
-        const promptParts = [];
-        const userPrompt = question || "Hãy giải bài toán trong hình ảnh này một cách chi tiết và từng bước.";
-        promptParts.push(userPrompt);
-
+        const promptParts = [question || "Hãy giải bài toán trong hình ảnh này một cách chi tiết."];
         if (imageBase64) {
             promptParts.push({ inlineData: { mimeType: 'image/jpeg', data: imageBase64 } });
         }
-        
-        const chat = multimodalModel.startChat({
-            systemInstruction: { parts: [{ text: mathSystemRole }] },
-            history: []
-        });
-
+        const chat = multimodalModel.startChat({ systemInstruction: { parts: [{ text: mathSystemRole }] } });
         const result = await chat.sendMessage(promptParts);
-        const text = result.response.text();
-        res.json({ response: text });
+        res.json({ response: result.response.text() });
     } catch (error) {
         console.error("Math API Error:", error);
         res.status(500).json({ message: "Lỗi khi giao tiếp với mô hình AI giải toán." });
     }
 });
 
-// 3. General Chat API (NEW)
+// 2. API Chat đa năng (Gemini)
 app.post('/api/general-chat', async (req, res) => {
     const { prompt } = req.body;
-    if (!prompt) {
-        return res.status(400).json({ message: "Nội dung chat không được để trống." });
-    }
-
     try {
-        const chat = multimodalModel.startChat({
-            systemInstruction: { parts: [{ text: generalChatSystemRole }] },
-            history: [] // Có thể mở rộng để lưu lịch sử chat sau này
-        });
-
+        const chat = multimodalModel.startChat({ systemInstruction: { parts: [{ text: generalChatSystemRole }] } });
         const result = await chat.sendMessage(prompt);
-        const text = result.response.text();
-        res.json({ response: text });
+        res.json({ response: result.response.text() });
     } catch (error) {
         console.error("General Chat API Error:", error);
         res.status(500).json({ message: "Lỗi khi giao tiếp với mô hình AI chat." });
     }
 });
 
-// 4. DeepAI Image Generation API (NEW)
+// 3. API Tạo ảnh (DeepAI - Bảo mật)
 app.post('/api/deepai-image', async (req, res) => {
-    const { apiKey, prompt } = req.body;
-    if (!apiKey || !prompt) {
-        return res.status(400).json({ message: "Cần có API Key và nội dung ảnh." });
-    }
+    const { prompt } = req.body;
+    const deepAiApiKey = process.env.DEEPAI_API_KEY;
+    if (!prompt) return res.status(400).json({ message: "Nội dung ảnh không được để trống." });
+    if (!deepAiApiKey) return res.status(500).json({ message: "Chưa cấu hình API Key cho DeepAI trên server." });
 
     try {
         const response = await fetch("https://api.deepai.org/api/text2img", {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'api-key': apiKey
-            },
-            body: JSON.stringify({
-                text: prompt,
-            }),
+            headers: { 'Content-Type': 'application/json', 'api-key': deepAiApiKey },
+            body: JSON.stringify({ text: prompt }),
         });
-        
         const data = await response.json();
-
         if (data.output_url) {
             res.json({ imageUrl: data.output_url });
         } else {
-            // Ném lỗi nếu DeepAI trả về thông báo lỗi
             throw new Error(data.err || 'Không nhận được URL ảnh từ DeepAI.');
         }
-
     } catch (error) {
         console.error("DeepAI API Error:", error);
-        res.status(500).json({ message: error.message || "Đã xảy ra lỗi khi tạo ảnh từ DeepAI." });
+        res.status(500).json({ message: error.message });
     }
+});
+
+// --- SERVING ROUTES ---
+
+// Route chính để phục vụ file index.html
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'index.html'));
+});
+
+// *** SỬA LỖI: Thêm Route "Catch-all" ***
+// Route này phải được đặt ở CUỐI CÙNG.
+// Nó sẽ bắt tất cả các yêu cầu GET không khớp với các route ở trên và trả về trang chính.
+app.get('*', (req, res) => {
+    console.log(`Caught a stray GET request for: ${req.path}, redirecting to homepage.`);
+    res.sendFile(path.join(__dirname, 'index.html'));
 });
 
 
 app.listen(PORT, () => {
-    console.log(`Server running on http://localhost:${PORT}`);
+    console.log(`Server is running on http://localhost:${PORT}`);
 });

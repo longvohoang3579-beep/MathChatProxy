@@ -4,6 +4,8 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import 'dotenv/config';
+// Giữ lại FormData cho khả năng tương thích Node.js, dù không dùng cho Imagen
+import FormData from 'form-data'; 
 
 // Cấu hình ES Module cho __dirname
 const __filename = fileURLToPath(import.meta.url);
@@ -15,12 +17,13 @@ const PORT = process.env.PORT || 3000;
 // Khởi tạo Model
 const geminiApiKey = process.env.GEMINI_API_KEY;
 if (!geminiApiKey) {
-    // throw new Error("GEMINI_API_KEY is not set in environment variables.");
-    // Log lỗi thay vì throw để server vẫn có thể chạy
-    console.error("LỖI CẤU HÌNH: GEMINI_API_KEY không được thiết lập.");
+    console.error("LỖI CẤU HÌNH: GEMINI_API_KEY không được thiết lập trong biến môi trường.");
 }
 const genAI = geminiApiKey ? new GoogleGenerativeAI(geminiApiKey) : null;
+// Sử dụng mô hình cho chat/multimodal
 const multimodalModel = genAI ? genAI.getGenerativeModel({ model: "gemini-1.5-flash" }) : null;
+// Dùng API Endpoint cho Imagen (imagen-3.0-generate-002)
+const IMAGEN_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict";
 
 // System Roles
 const mathSystemRole = "You are a friendly and precise math tutoring bot. Your goal is to help users solve math problems. Provide detailed, step-by-step explanations. Use backticks `` ` `` to highlight key formulas, numbers, or the final answer. Only answer questions related to mathematics. Always respond in Vietnamese.";
@@ -31,10 +34,10 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // --- API ROUTES ---
 
-// Helper function để kiểm tra API
+// Helper function để kiểm tra API Gemini đã sẵn sàng chưa
 const checkGeminiReady = (res) => {
     if (!genAI || !multimodalModel) {
-        res.status(503).json({ message: "LỖI SERVER: API Key Gemini chưa được cấu hình hoặc sai." });
+        res.status(503).json({ message: "LỖI SERVER: API Key Gemini chưa được cấu hình hoặc sai. Vui lòng kiểm tra GEMINI_API_KEY trên Render." });
         return false;
     }
     return true;
@@ -49,7 +52,6 @@ app.post('/api/ask', async (req, res) => {
         if (imageBase64) {
             promptParts.push({ inlineData: { mimeType: 'image/jpeg', data: imageBase64 } });
         }
-        // Lưu ý: Sử dụng .generateContent thay vì startChat để tránh tạo session mới mỗi lần request
         const result = await multimodalModel.generateContent({
             contents: [{ role: "user", parts: promptParts }],
             config: {
@@ -68,7 +70,6 @@ app.post('/api/general-chat', async (req, res) => {
     if (!checkGeminiReady(res)) return;
     const { prompt } = req.body;
     try {
-        // Lưu ý: Sử dụng .generateContent thay vì startChat
         const result = await multimodalModel.generateContent({
             contents: [{ role: "user", parts: [{ text: prompt }] }],
             config: {
@@ -82,40 +83,50 @@ app.post('/api/general-chat', async (req, res) => {
     }
 });
 
-// 3. API Tạo ảnh (DeepAI - ĐÃ SỬA LỖI ĐỊNH DẠNG DỮ LIỆU)
+// 3. API Tạo ảnh (ĐÃ CHUYỂN SANG IMAGEN CỦA GOOGLE)
 app.post('/api/deepai-image', async (req, res) => {
     const { prompt } = req.body;
-    const deepAiApiKey = process.env.DEEPAI_API_KEY;
-
+    
+    // Kiểm tra GEMINI_API_KEY vì Imagen dùng chung key này
+    if (!checkGeminiReady(res)) return;
     if (!prompt) return res.status(400).json({ message: "Nội dung ảnh không được để trống." });
-    if (!deepAiApiKey) return res.status(503).json({ message: "Chưa cấu hình API Key cho DeepAI trên server." });
 
     try {
-        // *** SỬA LỖI QUAN TRỌNG: DeepAI cần gửi dữ liệu qua FormData ***
-        const formData = new FormData();
-        formData.append('text', prompt);
+        // Cấu trúc payload cho Imagen API
+        const payload = { 
+            instances: [{ prompt: prompt }], 
+            parameters: { 
+                "sampleCount": 1, // Chỉ tạo 1 ảnh
+                "aspectRatio": "1:1" // Tỷ lệ khung hình vuông (có thể thay đổi)
+            } 
+        };
         
-        // Cần truyền API Key qua header 'api-key' và không truyền Content-Type (FormData tự set)
-        const response = await fetch("https://api.deepai.org/api/text2img", {
+        // Gọi Imagen API, sử dụng GEMINI_API_KEY
+        const response = await fetch(`${IMAGEN_API_URL}?key=${geminiApiKey}`, {
             method: 'POST',
-            headers: { 'api-key': deepAiApiKey },
-            body: formData, // Truyền formData, không cần JSON.stringify
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
         });
 
         const data = await response.json();
-
+        
         if (response.status !== 200) {
-             throw new Error(data.err || `Lỗi DeepAI: ${response.status} - ${JSON.stringify(data)}`);
+             // Bắt lỗi cụ thể từ Google API (ví dụ: INVALID_ARGUMENT, Quota Exceeded)
+             throw new Error(`Lỗi Imagen: ${response.status} - ${data.error?.message || JSON.stringify(data)}`);
         }
 
-        if (data.output_url) {
-            res.json({ imageUrl: data.output_url });
+        const base64Data = data.predictions?.[0]?.bytesBase64Encoded;
+
+        if (base64Data) {
+            // Trả về dữ liệu ảnh dưới dạng URL data base64 để hiển thị trực tiếp
+            const imageUrl = `data:image/png;base64,${base64Data}`;
+            res.json({ imageUrl: imageUrl });
         } else {
-            throw new Error(data.err || 'Không nhận được URL ảnh từ DeepAI. (Lỗi không xác định)');
+            throw new Error('Không nhận được dữ liệu ảnh từ Imagen. (Có thể do lỗi lọc nội dung hoặc hết hạn mức)');
         }
     } catch (error) {
-        console.error("DeepAI API Error:", error);
-        res.status(500).json({ message: error.message });
+        console.error("Imagen API Error:", error);
+        res.status(500).json({ message: error.message || "Lỗi không xác định khi tạo ảnh." });
     }
 });
 
@@ -126,9 +137,7 @@ app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-// *** SỬA LỖI GIAO DIỆN: Thêm Route "Catch-all" ***
-// Route này sẽ bắt tất cả các yêu cầu GET không khớp với các route ở trên (như /experiences/...) 
-// và trả về trang chính, giúp khắc phục lỗi "Cannot GET /experiences/..."
+// Catch-all route cho Single Page Application (SPA) - Khắc phục lỗi Cannot GET /experiences/...
 app.get('*', (req, res) => {
     console.log(`Caught a stray GET request for: ${req.path}, redirecting to homepage.`);
     res.sendFile(path.join(__dirname, 'index.html'));

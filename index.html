@@ -3,194 +3,283 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Trợ Lý Toán & Sáng Tạo AI 🎨</title>
+    <title>Trợ Lý AI Đa Năng 🧠</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         :root { --app-height: 100dvh; }
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #18191a; color: #e4e6eb; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #121212; color: #e4e6eb; }
         .full-viewport-height { height: var(--app-height); }
-        .chat-container { background-color: #242526; }
-        .bubble { padding: 10px 14px; border-radius: 18px; margin: 8px 0; max-width: 90%; word-wrap: break-word; box-shadow: 0 2px 5px rgba(0, 0, 0, 0.4); }
+        .chat-container { background-color: #1e1e1e; }
+        .bubble { padding: 10px 14px; border-radius: 18px; margin: 8px 0; max-width: 90%; word-wrap: break-word; box-shadow: 0 2px 5px rgba(0, 0, 0, 0.4); line-height: 1.5; }
         .user { background: #1e90ff; color: white; align-self: flex-end; border-bottom-right-radius: 4px; }
         .ai { background: #3a3b3c; color: #e4e6eb; align-self: flex-start; border-bottom-left-radius: 4px; }
-        .highlight { background-color: #ffc400; color: #18191a; padding: 2px 4px; border-radius: 4px; font-weight: 600; }
+        .highlight { background-color: #ffc400; color: #18191a; padding: 2px 4px; border-radius: 4px; font-weight: 600; font-family: 'Courier New', Courier, monospace; }
         .typing-indicator { animation: pulse 1.5s infinite; }
         @keyframes pulse { 0%, 100% { opacity: 0.5; } 50% { opacity: 1; } }
-        .generated-image { border-radius: 12px; border: 2px solid #4a4b4c; margin-top: 8px; max-width: 100%; height: auto; }
+        .generated-image-container { background-color: #2c2c2c; border: 1px solid #444; padding: 1rem; border-radius: 12px; margin-top: 1rem; text-align: center; }
+        .generated-image { border-radius: 8px; margin-top: 8px; max-width: 100%; height: auto; }
+        .tab-button { transition: all 0.2s ease-in-out; border-bottom: 2px solid transparent; }
+        .tab-button.active { border-bottom-color: #1e90ff; color: white; }
     </style>
 </head>
 <body class="p-0 flex items-center justify-center bg-black">
     <div class="w-full max-w-full sm:max-w-lg bg-[#242526] shadow-2xl rounded-none sm:rounded-2xl flex flex-col overflow-hidden full-viewport-height border border-gray-700">
         
-        <header class="bg-gradient-to-r from-gray-800 to-black text-white p-4 text-center shadow-lg rounded-none sm:rounded-t-xl flex-shrink-0">
-            <h1 class="text-xl font-extrabold flex items-center justify-center">🎨 Trợ Lý Toán & Sáng Tạo AI</h1>
-            <p class="text-sm opacity-80">Gõ `/vẽ [nội dung]` để tạo ảnh</p>
+        <header class="bg-gradient-to-r from-gray-800 to-black text-white p-4 text-center shadow-lg flex-shrink-0">
+            <h1 class="text-xl font-extrabold">🧠 Trợ Lý AI Đa Năng</h1>
         </header>
 
-        <main id="chat" class="chat-container overflow-y-auto p-4 flex flex-col space-y-3 flex-grow">
-            <div class="bubble ai">Chào bạn! Tôi có thể giải toán hoặc tạo hình ảnh cho bạn. Hãy thử gõ: <code>/vẽ một chú mèo phi hành gia</code>.</div>
-        </main>
+        <nav class="flex justify-around bg-gray-900 p-2 shadow-md flex-shrink-0">
+            <button id="tab-chat" onclick="switchView('chat')" class="tab-button active w-full py-2 text-gray-300 font-semibold">💬 Chat</button>
+            <button id="tab-image" onclick="switchView('image')" class="tab-button w-full py-2 text-gray-300 font-semibold">🎨 Tạo Ảnh</button>
+            <button id="tab-math" onclick="switchView('math')" class="tab-button w-full py-2 text-gray-300 font-semibold">🧮 Giải Toán</button>
+        </nav>
 
-        <footer class="p-3 border-t border-gray-700 bg-[#242526] flex-shrink-0">
-            <div id="imagePreview" class="hidden mb-2 p-2 bg-[#3a3b3c] rounded-lg border border-gray-600 shadow-sm">
-                <div class="flex items-center justify-between">
-                    <span class="text-sm font-medium text-gray-400">Ảnh đã chọn:</span>
-                    <button onclick="clearImage()" class="text-red-400 hover:text-red-300 text-xs font-bold">❌ Xóa ảnh</button>
+        <div class="flex-grow overflow-hidden relative">
+            <div id="chat-view" class="flex flex-col h-full">
+                <main id="general-chat-box" class="overflow-y-auto p-4 flex flex-col space-y-3 flex-grow chat-container">
+                    <div class="bubble ai">Xin chào! Bạn muốn trò chuyện về chủ đề gì hôm nay?</div>
+                </main>
+                <footer class="p-3 border-t border-gray-700 bg-[#242526] flex-shrink-0">
+                    <div class="flex items-end space-x-2">
+                        <input type="text" id="general-chat-input" placeholder="Nhập tin nhắn..."
+                               class="flex-grow border border-gray-600 rounded-full px-4 py-3 bg-gray-700 text-white shadow-inner"
+                               onkeypress="if(event.key === 'Enter') sendGeneralChatMessage()">
+                        <button onclick="sendGeneralChatMessage()" class="bg-blue-600 hover:bg-blue-500 text-white px-5 py-3 rounded-full font-semibold shadow-lg">Gửi</button>
+                    </div>
+                </footer>
+            </div>
+
+            <div id="image-view" class="p-4 overflow-y-auto h-full hidden">
+                <h2 class="text-lg font-bold text-center mb-4">🎨 AI Tạo Ảnh (DeepAI)</h2>
+                <div class="space-y-4">
+                    <div>
+                        <label for="deepai-key" class="block mb-1 text-sm font-medium text-gray-400">DeepAI API Key:</label>
+                        <input type="password" id="deepai-key" placeholder="Dán API Key của bạn từ DeepAI.org"
+                               class="w-full border border-gray-600 rounded-lg px-3 py-2 bg-gray-700 text-white focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                    <div>
+                        <label for="image-prompt" class="block mb-1 text-sm font-medium text-gray-400">Nội dung ảnh:</label>
+                        <textarea id="image-prompt" rows="3" placeholder="Ví dụ: một chú mèo phi hành gia đang cưỡi tên lửa trên dải ngân hà, tranh sơn dầu"
+                                  class="w-full border border-gray-600 rounded-lg px-3 py-2 bg-gray-700 text-white focus:ring-blue-500 focus:border-blue-500"></textarea>
+                    </div>
+                    <button onclick="generateDeepAiImage()" id="generate-image-btn" class="w-full bg-green-600 hover:bg-green-500 text-white px-5 py-3 rounded-lg font-semibold shadow-lg transition-colors">
+                        Tạo ảnh
+                    </button>
                 </div>
-                <img id="previewImg" class="mt-2 max-w-full h-16 object-contain rounded border border-gray-600" alt="Preview Image">
+                <div id="image-result-container" class="mt-4"></div>
             </div>
 
-            <div class="flex items-end space-x-2">
-                <button onclick="document.getElementById('fileInput').click()" title="Đính kèm ảnh từ thư viện" class="p-3 rounded-full bg-gray-700 hover:bg-gray-600 transition-colors text-xl text-white shadow-md flex-shrink-0">📎</button>
-                <input type="file" accept="image/*" id="fileInput" class="hidden" onchange="handleFileSelect(event)">
-                <button onclick="document.getElementById('cameraInput').click()" title="Chụp ảnh bài toán" class="p-3 rounded-full bg-gray-700 hover:bg-gray-600 transition-colors text-xl text-white shadow-md flex-shrink-0">📸</button>
-                <input type="file" accept="image/*" capture="environment" id="cameraInput" class="hidden" onchange="handleFileSelect(event)">
-
-                <input type="text" id="textInput" placeholder="Hỏi bài toán hoặc dùng lệnh /vẽ..."
-                       class="flex-grow border border-gray-600 rounded-full px-4 py-3 focus:ring-blue-500 focus:border-blue-500 text-sm bg-gray-700 text-white shadow-inner appearance-none"
-                       onkeypress="handleKeyPress(event)">
-                
-                <button onclick="sendMessage()" id="sendButton" class="bg-blue-600 hover:bg-blue-500 text-white px-5 py-3 rounded-full transition-colors font-semibold text-sm shadow-lg flex-shrink-0">Gửi</button>
+            <div id="math-view" class="flex flex-col h-full hidden">
+                <main id="math-chat-box" class="overflow-y-auto p-4 flex flex-col space-y-3 flex-grow chat-container">
+                    <div class="bubble ai">Chào bạn! Gửi cho tôi bài toán bằng chữ hoặc hình ảnh nhé.</div>
+                </main>
+                <footer class="p-3 border-t border-gray-700 bg-[#242526] flex-shrink-0">
+                    <div id="math-image-preview" class="hidden mb-2 p-2 bg-[#3a3b3c] rounded-lg">
+                         <div class="flex items-center justify-between">
+                            <span class="text-sm text-gray-400">Ảnh đã chọn:</span>
+                            <button onclick="clearMathImage()" class="text-red-400 hover:text-red-300 text-xs">❌ Xóa</button>
+                        </div>
+                        <img id="math-preview-img" class="mt-2 h-16 rounded">
+                    </div>
+                    <div class="flex items-end space-x-2">
+                        <button onclick="document.getElementById('fileInput').click()" title="Đính kèm ảnh" class="p-3 rounded-full bg-gray-700 hover:bg-gray-600">📎</button>
+                        <input type="file" accept="image/*" id="fileInput" class="hidden" onchange="handleMathFileSelect(event)">
+                        <button onclick="document.getElementById('cameraInput').click()" title="Chụp ảnh" class="p-3 rounded-full bg-gray-700 hover:bg-gray-600">📸</button>
+                        <input type="file" accept="image/*" capture="environment" id="cameraInput" class="hidden" onchange="handleMathFileSelect(event)">
+                        <input type="text" id="math-text-input" placeholder="Hỏi bài toán..."
+                               class="flex-grow border border-gray-600 rounded-full px-4 py-3 bg-gray-700 text-white shadow-inner"
+                               onkeypress="if(event.key === 'Enter') sendMathProblem()">
+                        <button onclick="sendMathProblem()" id="math-send-btn" class="bg-blue-600 hover:bg-blue-500 text-white px-5 py-3 rounded-full font-semibold shadow-lg">Gửi</button>
+                    </div>
+                </footer>
             </div>
-        </footer>
+        </div>
     </div>
 
     <script>
-        const chatBox = document.getElementById("chat");
-        const textInput = document.getElementById("textInput");
-        const fileInput = document.getElementById("fileInput");
-        const cameraInput = document.getElementById("cameraInput");
-        const imagePreview = document.getElementById("imagePreview");
-        const previewImg = document.getElementById("previewImg");
-        const sendButton = document.getElementById("sendButton");
-        let imageBase64 = null;
+        // --- DOM Elements ---
+        const views = {
+            chat: document.getElementById('chat-view'),
+            image: document.getElementById('image-view'),
+            math: document.getElementById('math-view')
+        };
+        const tabs = {
+            chat: document.getElementById('tab-chat'),
+            image: document.getElementById('tab-image'),
+            math: document.getElementById('tab-math')
+        };
+        // General Chat
+        const generalChatBox = document.getElementById('general-chat-box');
+        const generalChatInput = document.getElementById('general-chat-input');
+        // Image Gen
+        const deepAiKeyInput = document.getElementById('deepai-key');
+        const imagePromptInput = document.getElementById('image-prompt');
+        const imageResultContainer = document.getElementById('image-result-container');
+        const generateImageBtn = document.getElementById('generate-image-btn');
+        // Math Solver
+        const mathChatBox = document.getElementById('math-chat-box');
+        const mathTextInput = document.getElementById('math-text-input');
+        const mathImagePreview = document.getElementById('math-image-preview');
+        const mathPreviewImg = document.getElementById('math-preview-img');
+        const mathSendBtn = document.getElementById('math-send-btn');
+        let mathImageBase64 = null;
 
+        // --- API Endpoints ---
+        const API_GENERAL_CHAT_URL = "/api/general-chat";
+        const API_DEEPAI_IMAGE_URL = "/api/deepai-image";
         const API_MATH_URL = "/api/ask";
-        const API_IMAGE_URL = "/api/generate-image";
 
-        function handleFileSelect(event) { /* ... Giữ nguyên không đổi ... */ }
-        function clearImage() { /* ... Giữ nguyên không đổi ... */ }
-
-        function handleKeyPress(event) {
-            if (event.key === 'Enter' && !event.shiftKey) {
-                event.preventDefault();
-                sendMessage();
-            }
+        // --- Core Logic ---
+        function switchView(viewName) {
+            Object.keys(views).forEach(key => {
+                views[key].classList.add('hidden');
+                tabs[key].classList.remove('active');
+            });
+            views[viewName].classList.remove('hidden');
+            tabs[viewName].classList.add('active');
         }
 
         function formatAiResponse(text) {
-            return text.replace(/\n/g, '<br>').replace(/`(.*?)`/g, '<span class="highlight">$1</span>');
+            return text.replace(/\n/g, '<br>').replace(/`([^`]+)`/g, '<span class="highlight">$1</span>');
         }
 
-        function addMessage(content, role = "ai", messageType = "text") {
+        function addMessage(chatBox, content, role = "ai", isHtml = false) {
             const div = document.createElement("div");
-            div.className = `bubble ${role} flex flex-col`;
-            
-            let messageContent = '';
-            if (messageType === 'user_image') {
-                messageContent = `<img src="${content}" class="max-w-full rounded mb-1 border border-gray-600" alt="User image">`;
-            } else if (messageType === 'generated_image') {
-                messageContent = `<span>Đây là hình ảnh của bạn:</span><img src="${content}" class="generated-image" alt="AI generated image">`;
-            } else { // text
-                messageContent = `<span>${role === 'ai' ? formatAiResponse(content) : content.replace(/\n/g, '<br>')}</span>`;
-            }
-            div.innerHTML = messageContent;
+            div.className = `bubble ${role}`;
+            div.innerHTML = isHtml ? content : (role === 'ai' ? formatAiResponse(content) : content);
             chatBox.appendChild(div);
             chatBox.scrollTop = chatBox.scrollHeight;
+            return div;
         }
-
-        function addTypingIndicator(message = "... đang phân tích ...") {
+        
+        function addTypingIndicator(chatBox, message = "... đang xử lý ...") {
             const typingDiv = document.createElement("div");
-            typingDiv.id = 'typingIndicator';
-            typingDiv.className = 'bubble ai flex items-center';
-            typingDiv.innerHTML = `<span class="typing-indicator text-gray-400">${message}</span>`;
+            typingDiv.id = `typingIndicator-${chatBox.id}`;
+            typingDiv.className = 'bubble ai typing-indicator';
+            typingDiv.textContent = message;
             chatBox.appendChild(typingDiv);
             chatBox.scrollTop = chatBox.scrollHeight;
         }
 
-        function removeTypingIndicator() {
-            const indicator = document.getElementById('typingIndicator');
+        function removeTypingIndicator(chatBox) {
+            const indicator = document.getElementById(`typingIndicator-${chatBox.id}`);
             if (indicator) indicator.remove();
         }
 
-        async function sendMessage() {
-            const text = textInput.value.trim();
-            if (!text && !imageBase64) return;
-            
-            // Tách lệnh tạo ảnh ra khỏi logic chat thông thường
-            if (text.toLowerCase().startsWith('/vẽ ')) {
-                await handleImageGeneration(text);
+        // --- General Chat Functions ---
+        async function sendGeneralChatMessage() {
+            const text = generalChatInput.value.trim();
+            if (!text) return;
+
+            addMessage(generalChatBox, text, "user");
+            generalChatInput.value = "";
+            addTypingIndicator(generalChatBox, "... đang suy nghĩ ...");
+
+            try {
+                const response = await fetch(API_GENERAL_CHAT_URL, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ prompt: text })
+                });
+                if (!response.ok) throw new Error((await response.json()).message);
+                const data = await response.json();
+                addMessage(generalChatBox, data.response, "ai");
+            } catch (error) {
+                addMessage(generalChatBox, `❌ Lỗi: ${error.message}`, "ai");
+            } finally {
+                removeTypingIndicator(generalChatBox);
+            }
+        }
+        
+        // --- Image Generation Functions ---
+        async function generateDeepAiImage() {
+            const apiKey = deepAiKeyInput.value.trim();
+            const prompt = imagePromptInput.value.trim();
+
+            if (!apiKey) {
+                alert("Vui lòng nhập DeepAI API Key.");
+                return;
+            }
+            if (!prompt) {
+                alert("Vui lòng nhập nội dung ảnh muốn tạo.");
                 return;
             }
 
-            await handleMathChat(text);
-        }
-
-        async function handleMathChat(text) {
-            // Hiển thị tin nhắn của người dùng
-            if (imageBase64) addMessage(previewImg.src, "user", "user_image");
-            if (text) addMessage(text, "user");
-
-            const userQuestion = text;
-            const imageToSend = imageBase64;
-            
-            textInput.value = "";
-            clearImage();
-            sendButton.disabled = true;
-            addTypingIndicator("... đang giải toán ...");
+            generateImageBtn.disabled = true;
+            generateImageBtn.textContent = "Đang tạo ảnh...";
+            imageResultContainer.innerHTML = `<div class="text-center text-gray-400">Vui lòng chờ, quá trình này có thể mất một lúc...</div>`;
 
             try {
-                const response = await fetch(API_MATH_URL, {
+                const response = await fetch(API_DEEPAI_IMAGE_URL, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ apiKey, prompt })
+                });
+                if (!response.ok) throw new Error((await response.json()).message);
+                const data = await response.json();
+                imageResultContainer.innerHTML = `
+                    <div class="generated-image-container">
+                        <p class="text-sm text-gray-300 mb-2">"${prompt}"</p>
+                        <img src="${data.imageUrl}" class="generated-image" alt="AI generated image">
+                    </div>`;
+            } catch (error) {
+                 imageResultContainer.innerHTML = `<div class="text-center text-red-400">❌ Lỗi: ${error.message}</div>`;
+            } finally {
+                generateImageBtn.disabled = false;
+                generateImageBtn.textContent = "Tạo ảnh";
+            }
+        }
+
+        // --- Math Solver Functions ---
+        function handleMathFileSelect(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                mathPreviewImg.src = e.target.result;
+                mathImagePreview.classList.remove('hidden');
+                mathImageBase64 = e.target.result.split(',')[1];
+            };
+            reader.readAsDataURL(file);
+            event.target.value = ''; 
+        }
+
+        function clearMathImage() {
+            mathImageBase64 = null;
+            mathImagePreview.classList.add('hidden');
+            mathPreviewImg.src = '';
+        }
+
+        async function sendMathProblem() {
+            const text = mathTextInput.value.trim();
+            if (!text && !mathImageBase64) return;
+            
+            if (mathImageBase64) addMessage(mathChatBox, `<img src="${mathPreviewImg.src}" class="max-w-xs rounded">`, "user", true);
+            if (text) addMessage(mathChatBox, text, "user");
+            
+            const userQuestion = text;
+            const imageToSend = mathImageBase64;
+
+            mathTextInput.value = "";
+            clearMathImage();
+            mathSendBtn.disabled = true;
+            addTypingIndicator(mathChatBox, "... đang giải toán ...");
+
+            try {
+                 const response = await fetch(API_MATH_URL, {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ question: userQuestion, imageBase64: imageToSend })
                 });
-                if (!response.ok) {
-                    const errorData = await response.json();
-                    throw new Error(errorData.message || `Lỗi HTTP: ${response.status}`);
-                }
+                if (!response.ok) throw new Error((await response.json()).message);
                 const data = await response.json();
-                addMessage(data.response, "ai");
+                addMessage(mathChatBox, data.response, "ai");
             } catch (error) {
-                addMessage(`❌ Đã xảy ra lỗi khi giải toán: ${error.message}`, "ai");
+                addMessage(mathChatBox, `❌ Lỗi: ${error.message}`, "ai");
             } finally {
-                removeTypingIndicator();
-                sendButton.disabled = false;
-                textInput.focus();
-            }
-        }
-        
-        async function handleImageGeneration(text) {
-            const prompt = text.substring(4).trim(); // Lấy nội dung sau '/vẽ '
-            if (!prompt) {
-                addMessage("Vui lòng nhập nội dung bạn muốn vẽ. Ví dụ: `/vẽ một con hổ`", "ai");
-                return;
-            }
-
-            addMessage(text, "user");
-            textInput.value = "";
-            sendButton.disabled = true;
-            addTypingIndicator("... đang vẽ tranh ...");
-
-            try {
-                const response = await fetch(API_IMAGE_URL, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ prompt: prompt })
-                });
-                if (!response.ok) {
-                    const errorData = await response.json();
-                    throw new Error(errorData.message || `Lỗi HTTP: ${response.status}`);
-                }
-                const data = await response.json();
-                addMessage(data.imageUrl, "ai", "generated_image");
-
-            } catch (error) {
-                addMessage(`❌ Đã xảy ra lỗi khi tạo ảnh: ${error.message}`, "ai");
-            } finally {
-                removeTypingIndicator();
-                sendButton.disabled = false;
-                textInput.focus();
+                removeTypingIndicator(mathChatBox);
+                mathSendBtn.disabled = false;
             }
         }
     </script>

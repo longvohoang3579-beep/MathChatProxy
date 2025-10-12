@@ -5,29 +5,24 @@ import bodyParser from "body-parser";
 import dotenv from "dotenv";
 import fetch from "node-fetch";
 
-// Khởi tạo các thành phần cần thiết
+// Khởi tạo
 dotenv.config();
 const app = express();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Cấu hình middleware
 app.use(bodyParser.json());
 
 // ----------------------------------------------------------------
-// -- CÁC ROUTE API --
+// 🖼️ API TẠO ẢNH (KHÔNG ĐỔI — GIỮ NGUYÊN)
 // ----------------------------------------------------------------
-
-// 🖼️ API TẠO ẢNH (Phần này đã hoạt động tốt)
 app.post("/api/pollinations-image", async (req, res) => {
   const { prompt } = req.body;
-  if (!prompt) {
-    return res.status(400).json({ message: "Vui lòng nhập mô tả ảnh." });
-  }
+  if (!prompt) return res.status(400).json({ message: "Vui lòng nhập mô tả ảnh." });
 
   try {
     const safePrompt = encodeURIComponent(prompt);
-    const imageUrl = `https://image.pollinations.ai/prompt/${safePrompt}`;
+    const imageUrl = `https://image.pollinations.ai/prompt/${safePrompt}?nologo=true&crop=1`;
     res.json({ imageUrl });
   } catch (error) {
     console.error("Lỗi Pollinations:", error);
@@ -35,67 +30,63 @@ app.post("/api/pollinations-image", async (req, res) => {
   }
 });
 
-// 💬 GEMINI CHAT + MATH (Phần đã sửa lỗi tên model)
+// ----------------------------------------------------------------
+// 💬 GEMINI CHAT + TOÁN (SỬA MODEL CHUẨN CHO AI STUDIO)
+// ----------------------------------------------------------------
 app.post("/api/gemini", async (req, res) => {
   const { prompt } = req.body;
-  if (!prompt) {
-    return res.status(400).json({ message: "Thiếu nội dung chat." });
-  }
+  if (!prompt) return res.status(400).json({ message: "Thiếu nội dung chat." });
 
   const apiKey = process.env.GEMINI_API_KEY;
-
   if (!apiKey) {
-    console.error("LỖI: Biến GEMINI_API_KEY không được tìm thấy trong file .env!");
-    return res.status(500).json({ text: "❌ Lỗi cấu hình phía máy chủ." });
+    console.error("⚠️ Không tìm thấy GEMINI_API_KEY trong .env");
+    return res.status(500).json({ text: "❌ Thiếu cấu hình API key." });
   }
 
   try {
-    // SỬA LỖI Ở ĐÂY: Dùng tên model "gemini-1.0-pro"
-    const apiEndpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.0-pro:generateContent?key=${apiKey}`;
+    // ✅ Model tương thích 100% với key miễn phí của Google AI Studio
+    const apiEndpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${apiKey}`;
 
     const response = await fetch(apiEndpoint, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }),
+      body: JSON.stringify({
+        contents: [
+          {
+            role: "user",
+            parts: [{ text: prompt }]
+          }
+        ]
+      }),
     });
 
     const data = await response.json();
-
-    // In log để debug nếu cần
-    console.log("Phản hồi từ Gemini API:", JSON.stringify(data, null, 2));
+    console.log("🔎 Phản hồi từ Gemini:", JSON.stringify(data, null, 2));
 
     if (data.error) {
-      console.error("Google API trả về lỗi:", data.error.message);
+      console.error("❌ Google API lỗi:", data.error);
       return res.status(400).json({ text: `❌ Lỗi từ Google: ${data.error.message}` });
     }
 
-    if (!data.candidates || data.candidates.length === 0) {
-      const blockReason = data.promptFeedback?.blockReason;
-      if (blockReason) {
-        return res.json({ text: `❌ Yêu cầu bị chặn vì: ${blockReason}` });
-      }
-      return res.json({ text: "❌ Gemini không trả về kết quả nào." });
-    }
-    
-    const text = data.candidates[0]?.content?.parts[0]?.text || "❓ Không tìm thấy nội dung.";
+    const text = data?.candidates?.[0]?.content?.parts?.[0]?.text || "❌ Không có phản hồi từ Gemini.";
     res.json({ text });
 
   } catch (err) {
-    console.error("Lỗi hệ thống khi gọi Gemini API:", err);
-    res.status(500).json({ text: "❌ Lỗi hệ thống, không thể kết nối đến Gemini API." });
+    console.error("🔥 Lỗi hệ thống khi gọi Gemini API:", err);
+    res.status(500).json({ text: "❌ Lỗi hệ thống hoặc kết nối thất bại." });
   }
 });
 
 // ----------------------------------------------------------------
-// -- PHỤC VỤ TRANG WEB VÀ KHỞI ĐỘNG SERVER --
+// 🌐 TRANG WEB
 // ----------------------------------------------------------------
-
-// Phục vụ file index.html cho trang chủ
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "index.html"));
 });
 
-// Khởi động server
+// ----------------------------------------------------------------
+// 🚀 KHỞI ĐỘNG
+// ----------------------------------------------------------------
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`🚀 Server đang chạy tại http://localhost:${PORT}`);

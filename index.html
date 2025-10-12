@@ -72,7 +72,7 @@ img.generated-image{border-radius:12px;max-width:100%;margin-top:1rem;}
     <button id="btnChat" class="mt-2 w-full">Gửi</button>
     <div id="cameraPreviewContainer">
       <video id="cameraPreview" autoplay playsinline></video>
-      <button id="captureBtn" class="mt-2 w-full bg-green-500 rounded text-black font-bold">Chụp & Gửi</button>
+      <button id="captureBtn" class="mt-2 w-full bg-green-500 rounded text-black font-bold">Chụp</button>
     </div>
   </div>
 
@@ -87,13 +87,13 @@ img.generated-image{border-radius:12px;max-width:100%;margin-top:1rem;}
     <button id="btnMath" class="mt-2 w-full">Giải</button>
     <div id="mathCameraPreviewContainer">
       <video id="mathCameraPreview" autoplay playsinline></video>
-      <button id="mathCaptureBtn" class="mt-2 w-full bg-green-500 rounded text-black font-bold">Chụp & Gửi</button>
+      <button id="mathCaptureBtn" class="mt-2 w-full bg-green-500 rounded text-black font-bold">Chụp</button>
     </div>
   </div>
 </div>
 
 <script>
-// Tab chuyển đổi
+// Tab
 const tabs=document.querySelectorAll(".tab-btn");
 const contents=document.querySelectorAll(".tab-content");
 tabs.forEach(tab=>{
@@ -110,6 +110,7 @@ function addBubble(boxId,text,sender){const box=document.getElementById(boxId);c
 function updateLastAIBubble(boxId,text){const box=document.getElementById(boxId);const bubbles=box.getElementsByClassName("ai-bubble");if(bubbles.length>0){bubbles[bubbles.length-1].innerHTML=text;}box.scrollTop=box.scrollHeight;}
 
 let chatHistory=[];
+let chatImages=[]; // Lưu ảnh đợi gửi
 let currentLang=localStorage.getItem("geminiChatLanguage")||"vi";
 document.getElementById("language-select").value=currentLang;
 
@@ -122,6 +123,7 @@ document.getElementById("language-select").addEventListener("change",(e)=>{
   currentLang=e.target.value;
   localStorage.setItem("geminiChatLanguage",currentLang);
   chatHistory=[];
+  chatImages=[];
   document.getElementById("chatBox").innerHTML="";
   alert(`Đã chuyển ngôn ngữ sang ${e.target.options[e.target.selectedIndex].text}. Vui lòng bắt đầu chat mới.`);
 });
@@ -139,55 +141,18 @@ document.getElementById("btnCreateImage").addEventListener("click",async()=>{
   }catch{updateLastAIBubble("imageBox","❌ Lỗi kết nối server.");}
 });
 
-// Chat
-document.getElementById("btnChat").addEventListener("click",async()=>{
-  const message=document.getElementById("chatInput").value.trim();
-  if(!message)return;
-  addBubble("chatBox",message,"user");
-  chatHistory.push({role:"user",text:message});
-  document.getElementById("chatInput").value="";
-  addBubble("chatBox","🧠 ĐANG TRẢ LỜI...","ai");
-  try{
-    const res=await fetch("/api/chat",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({message,history:chatHistory,language:currentLang})});
-    const data=await res.json();
-    updateLastAIBubble("chatBox",data.response);
-    chatHistory.push({role:"assistant",text:data.response});
-  }catch{updateLastAIBubble("chatBox","❌ Lỗi kết nối server.");}
-});
-
-// Giải Toán
-document.getElementById("btnMath").addEventListener("click",async()=>{
-  const question=document.getElementById("mathPrompt").value.trim();
-  if(!question)return;
-  addBubble("mathBox",question,"user");
-  document.getElementById("mathPrompt").value="";
-  addBubble("mathBox","🧠 ĐANG GIẢI TOÁN...","ai");
-  try{
-    const res=await fetch("/api/math",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({question})});
-    const data=await res.json();
-    updateLastAIBubble("mathBox",data.response);
-    MathJax.typesetPromise();
-  }catch{updateLastAIBubble("mathBox","❌ Lỗi kết nối server.");}
-});
-
-// === Upload ảnh chat ===
+// === Upload ảnh chỉ lưu, không gửi ===
 function setupImageUpload(fileInputId, boxId){
   const input=document.getElementById(fileInputId);
-  input.addEventListener("change", async (e)=>{
+  input.addEventListener("change", e=>{
     const file=e.target.files[0];
     if(!file) return;
     if(!file.type.startsWith("image/")){ alert("Vui lòng chọn ảnh."); return; }
     const reader=new FileReader();
-    reader.onload=async function(){
+    reader.onload=function(){
       const base64=reader.result;
       addBubble(boxId, `<img src="${base64}" class="generated-image">`,"user");
-      addBubble(boxId,"🧠 ĐANG PHÂN TÍCH ẢNH...","ai");
-      try{
-        const res=await fetch("/api/chat",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({history:chatHistory,image:base64,language:currentLang})});
-        const data=await res.json();
-        updateLastAIBubble(boxId,data.response);
-        chatHistory.push({role:"assistant",text:data.response});
-      }catch{updateLastAIBubble(boxId,"❌ Lỗi kết nối server.");}
+      chatImages.push(base64); // Lưu để gửi cùng tin nhắn khi nhấn gửi
     };
     reader.readAsDataURL(file);
   });
@@ -195,7 +160,7 @@ function setupImageUpload(fileInputId, boxId){
 setupImageUpload("fileInput","chatBox");
 setupImageUpload("mathFileInput","mathBox");
 
-// === Camera trực tiếp ===
+// === Camera lưu ảnh nhưng không gửi ===
 function setupCamera(btnId, previewContainerId, previewId, captureBtnId, boxId){
   const btn=document.getElementById(btnId);
   const container=document.getElementById(previewContainerId);
@@ -213,7 +178,7 @@ function setupCamera(btnId, previewContainerId, previewId, captureBtnId, boxId){
     }
   });
 
-  captureBtn.addEventListener("click", async()=>{
+  captureBtn.addEventListener("click", ()=>{
     if(!stream) return;
     const canvas=document.createElement("canvas");
     canvas.width=preview.videoWidth;
@@ -221,23 +186,36 @@ function setupCamera(btnId, previewContainerId, previewId, captureBtnId, boxId){
     const ctx=canvas.getContext("2d");
     ctx.drawImage(preview,0,0);
     const base64=canvas.toDataURL("image/png");
-
     addBubble(boxId, `<img src="${base64}" class="generated-image">`,"user");
-    addBubble(boxId,"🧠 ĐANG PHÂN TÍCH ẢNH...","ai");
-    try{
-      const res=await fetch("/api/chat",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({history:chatHistory,image:base64,language:currentLang})});
-      const data=await res.json();
-      updateLastAIBubble(boxId,data.response);
-      chatHistory.push({role:"assistant",text:data.response});
-    }catch{updateLastAIBubble(boxId,"❌ Lỗi kết nối server.");}
-
+    chatImages.push(base64); // Lưu ảnh chờ gửi
     container.style.display="none";
     stream.getTracks().forEach(t=>t.stop());
   });
 }
-
 setupCamera("cameraBtn","cameraPreviewContainer","cameraPreview","captureBtn","chatBox");
 setupCamera("mathCameraBtn","mathCameraPreviewContainer","mathCameraPreview","mathCaptureBtn","mathBox");
+
+// === Gửi Chat / Toán ===
+async function sendMessage(messageId, textAreaId, boxId, isMath=false){
+  const message=document.getElementById(textAreaId).value.trim();
+  if(!message && chatImages.length===0) return;
+  if(message) addBubble(boxId,message,"user");
+  document.getElementById(textAreaId).value="";
+  addBubble(boxId,"🧠 ĐANG TRẢ LỜI...","ai");
+  const payload={history:chatHistory,language:currentLang};
+  if(message) payload.message=message;
+  if(chatImages.length>0) payload.image=chatImages; // gửi tất cả ảnh đang chờ
+  try{
+    const res=await fetch(isMath?"/api/math":"/api/chat",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)});
+    const data=await res.json();
+    updateLastAIBubble(boxId,data.response);
+    chatHistory.push({role:"assistant",text:data.response});
+    chatImages=[]; // xóa ảnh đã gửi
+  }catch{updateLastAIBubble(boxId,"❌ Lỗi kết nối server.");}
+}
+
+document.getElementById("btnChat").addEventListener("click",()=>sendMessage("chatBox","chatInput","chatBox"));
+document.getElementById("btnMath").addEventListener("click",()=>sendMessage("mathBox","mathPrompt","mathBox",true));
 </script>
 </body>
 </html>

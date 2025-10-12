@@ -27,7 +27,7 @@ app.post("/api/pollinations-image", async (req, res) => {
   }
 });
 
-// 💬 GEMINI CHAT + MATH (Phần được viết lại để tìm lỗi)
+// 💬 GEMINI CHAT + MATH (Đã sửa lỗi tên model)
 app.post("/api/gemini", async (req, res) => {
   const { prompt } = req.body;
   if (!prompt) {
@@ -36,14 +36,14 @@ app.post("/api/gemini", async (req, res) => {
 
   const apiKey = process.env.GEMINI_API_KEY;
 
-  // 1. KIỂM TRA XEM API KEY CÓ TỒN TẠI TRONG .env KHÔNG
   if (!apiKey) {
     console.error("LỖI NGHIÊM TRỌNG: Biến GEMINI_API_KEY không được tìm thấy trong file .env!");
     return res.status(500).json({ text: "❌ Lỗi cấu hình phía máy chủ: Thiếu API Key." });
   }
 
   try {
-    const apiEndpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${apiKey}`;
+    // SỬA LỖI Ở ĐÂY: Đổi "gemini-pro" thành "gemini-1.0-pro"
+    const apiEndpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.0-pro:generateContent?key=${apiKey}`;
 
     const response = await fetch(apiEndpoint, {
       method: "POST",
@@ -52,20 +52,13 @@ app.post("/api/gemini", async (req, res) => {
     });
 
     const data = await response.json();
+    console.log("Phản hồi đầy đủ từ Gemini API:", JSON.stringify(data, null, 2));
 
-    // 2. IN TOÀN BỘ PHẢN HỒI TỪ GOOGLE RA CONSOLE ĐỂ DEBUG
-    // Đây là bước quan trọng nhất để tìm ra lỗi!
-    console.log("--- PHẢN HỒI ĐẦY ĐỦ TỪ GEMINI API ---");
-    console.log(JSON.stringify(data, null, 2));
-    console.log("------------------------------------");
-
-    // 3. KIỂM TRA CỤ THỂ CÁC TRƯỜNG HỢP LỖI MÀ GOOGLE TRẢ VỀ
     if (data.error) {
       console.error("Google API trả về lỗi:", data.error.message);
       return res.status(400).json({ text: `❌ Lỗi từ Google: ${data.error.message}` });
     }
 
-    // 4. KIỂM TRA NỘI DUNG BỊ CHẶN VÌ LÝ DO AN TOÀN
     if (!data.candidates || data.candidates.length === 0) {
       const blockReason = data.promptFeedback?.blockReason;
       if (blockReason) {
@@ -75,7 +68,6 @@ app.post("/api/gemini", async (req, res) => {
       return res.json({ text: "❌ Gemini không trả về kết quả nào." });
     }
     
-    // 5. TRƯỜNG HỢP THÀNH CÔNG
     const text = data.candidates[0]?.content?.parts[0]?.text || "❓ Không tìm thấy nội dung văn bản trong phản hồi.";
     res.json({ text });
 
@@ -84,12 +76,3 @@ app.post("/api/gemini", async (req, res) => {
     res.status(500).json({ text: "❌ Lỗi hệ thống, không thể kết nối đến Gemini API." });
   }
 });
-
-// Trang chính
-app.get("/", (req, res) => {
-  res.sendFile(path.join(__dirname, "index.html"));
-});
-
-// Khởi động server
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`🚀 Server chạy tại http://localhost:${PORT}`));

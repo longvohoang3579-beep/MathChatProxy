@@ -9,16 +9,16 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 app.use(bodyParser.json());
-app.use(express.static(".")); // phục vụ giao diện cùng thư mục
+app.use(express.static(".")); // giữ nguyên frontend
 
-// ✅ CHAT & TOÁN bằng Gemini (API v1 mới nhất)
+// ✅ CHAT & TOÁN (Gemini - dùng v1beta/gemini-pro vì key AI Studio Free chỉ hỗ trợ model này)
 app.post("/api/gemini", async (req, res) => {
   const { prompt } = req.body;
   if (!prompt) return res.status(400).json({ text: "⚠️ Thiếu nội dung để xử lý." });
 
   try {
     const apiKey = process.env.GEMINI_API_KEY;
-    const endpoint = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash-latest:generateContent?key=${apiKey}`;
+    const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${apiKey}`;
 
     const response = await fetch(endpoint, {
       method: "POST",
@@ -56,21 +56,22 @@ app.post("/api/gemini", async (req, res) => {
   }
 });
 
-// ✅ Giữ nguyên Pollinations như cũ — KHÔNG CHẠM
+// ✅ TẠO ẢNH (Pollinations) — trả link chính xác, có thể che watermark lại từ frontend
 app.post("/api/pollinations", async (req, res) => {
   const { prompt } = req.body;
   if (!prompt) return res.status(400).json({ message: "⚠️ Thiếu mô tả ảnh." });
 
   try {
-    const imageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?nologo=true&crop=1`;
-    res.json({ imageUrl });
+    // dùng nologo, crop để tránh watermark và giữ tỉ lệ chuẩn
+    const url = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?nologo=true&crop=1&width=512&height=512`;
+    res.json({ imageUrl: url });
   } catch (err) {
     console.error("🔥 Lỗi Pollinations:", err);
     res.status(500).json({ message: "❌ Không thể tạo ảnh." });
   }
 });
 
-// ✅ Khởi động server
+// ✅ Chạy server
 app.listen(PORT, () => {
-  console.log(`🚀 Server đang chạy tại: http://localhost:${PORT}`);
+  console.log(`🚀 Server đang chạy tại http://localhost:${PORT}`);
 });

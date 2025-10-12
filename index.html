@@ -1,20 +1,18 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>MathChat Proxy AI</title>
-  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet" />
-  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tạo Ảnh & Chat Gemini</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
 
   <style>
     body {
-      background: #0f0f0f;
+      background-color: #0f0f0f;
       color: white;
       font-family: "Segoe UI", sans-serif;
       margin: 0;
-      padding-bottom: 80px;
-      overflow-x: hidden;
+      padding-bottom: 60px;
     }
 
     .tab-btn {
@@ -22,151 +20,127 @@
       padding: 0.75rem;
       cursor: pointer;
       text-align: center;
-      font-weight: 600;
-      background: #1a1a1a;
       border-bottom: 3px solid transparent;
-      transition: all 0.3s ease;
     }
 
     .tab-btn.active {
-      color: #22c55e;
       border-color: #22c55e;
-      background: #222;
+      color: #22c55e;
     }
 
-    .tab-content {
-      display: none;
-      padding: 1.5rem;
-      animation: fadeIn 0.4s ease;
+    .generated-image-container {
+      position: relative;
+      text-align: center;
+      max-width: 550px;
+      margin: 0 auto;
     }
 
-    .tab-content.active {
-      display: block;
-    }
-
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(10px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-
-    #fixed-footer {
-      position: fixed;
+    .image-watermark-cover {
+      position: absolute;
       bottom: 0;
-      left: 0;
       right: 0;
+      width: 200px;
       height: 50px;
-      background: #202020;
-      border-top: 1px solid #333;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      color: #aaa;
-      z-index: 99;
-    }
-
-    textarea {
-      width: 100%;
-      border-radius: 10px;
-      background: #222;
-      border: 1px solid #333;
-      color: white;
-      padding: 1rem;
-      resize: none;
-    }
-
-    button {
-      transition: all 0.2s ease;
+      background: linear-gradient(90deg, #0f0f0f, #0f0f0f);
     }
   </style>
 </head>
 
-<body>
-  <div class="max-w-3xl mx-auto mt-8 bg-[#181818] rounded-2xl shadow-xl overflow-hidden">
-    <div class="flex">
-      <div class="tab-btn active" data-tab="chat">💬 Chat</div>
-      <div class="tab-btn" data-tab="math">🧮 Giải Toán</div>
-      <div class="tab-btn" data-tab="image">🎨 Tạo Ảnh</div>
+<body class="min-h-screen flex flex-col items-center p-5">
+  <div class="w-full max-w-3xl bg-gray-900 rounded-2xl shadow-lg">
+    <div class="flex border-b border-gray-700">
+      <div class="tab-btn active" id="tab-image">🖼️ Tạo Ảnh</div>
+      <div class="tab-btn" id="tab-chat">💬 Chat</div>
+      <div class="tab-btn" id="tab-math">🧮 Giải Toán</div>
     </div>
 
-    <div id="chat" class="tab-content active">
-      <textarea id="chatInput" rows="4" placeholder="Nhập nội dung trò chuyện..."></textarea>
-      <button id="chatBtn" class="w-full mt-3 bg-blue-600 py-2 rounded-lg font-semibold">Gửi Chat</button>
-      <div id="chatOutput" class="mt-4 text-gray-300"></div>
+    <div id="content-image" class="p-5">
+      <textarea id="imagePrompt" rows="3"
+        class="w-full p-3 bg-gray-800 rounded-lg border border-gray-700"
+        placeholder="Nhập mô tả ảnh bạn muốn tạo..."></textarea>
+      <button id="btnCreateImage" class="w-full mt-3 bg-green-600 py-2 rounded-lg font-bold hover:bg-green-700">Tạo Ảnh</button>
+      <div id="imageResult" class="mt-4 text-center"></div>
     </div>
 
-    <div id="math" class="tab-content">
-      <textarea id="mathInput" rows="4" placeholder="Nhập bài toán cần giải..."></textarea>
-      <button id="mathBtn" class="w-full mt-3 bg-yellow-500 text-black py-2 rounded-lg font-semibold">Giải Ngay</button>
-      <div id="mathOutput" class="mt-4 text-gray-300"></div>
+    <div id="content-chat" class="p-5 hidden">
+      <textarea id="chatPrompt" rows="3"
+        class="w-full p-3 bg-gray-800 rounded-lg border border-gray-700"
+        placeholder="Nhập nội dung chat..."></textarea>
+      <button id="btnChat" class="w-full mt-3 bg-blue-600 py-2 rounded-lg font-bold hover:bg-blue-700">Gửi Chat</button>
+      <div id="chatResult" class="mt-4 text-gray-300 whitespace-pre-line"></div>
     </div>
 
-    <div id="image" class="tab-content">
-      <textarea id="imagePromptInput" rows="3" placeholder="Nhập mô tả ảnh bạn muốn tạo..."></textarea>
-      <button id="generateImageBtn" class="w-full mt-3 bg-green-600 hover:bg-green-700 py-2 rounded-lg font-semibold">
-        Tạo Ảnh
-      </button>
-      <div id="imageResultContainer" class="mt-5 text-center"></div>
+    <div id="content-math" class="p-5 hidden">
+      <textarea id="mathPrompt" rows="3"
+        class="w-full p-3 bg-gray-800 rounded-lg border border-gray-700"
+        placeholder="Nhập bài toán cần giải..."></textarea>
+      <button id="btnMath" class="w-full mt-3 bg-yellow-500 py-2 rounded-lg font-bold hover:bg-yellow-600">Giải Toán</button>
+      <div id="mathResult" class="mt-4 text-gray-300 whitespace-pre-line"></div>
     </div>
   </div>
 
-  <div id="fixed-footer">🚀 MathChat Proxy by Gemini API</div>
-
   <script>
-    // Tabs chuyển
     const tabs = document.querySelectorAll(".tab-btn");
-    const contents = document.querySelectorAll(".tab-content");
-    tabs.forEach(btn => {
-      btn.addEventListener("click", () => {
-        tabs.forEach(b => b.classList.remove("active"));
-        contents.forEach(c => c.classList.remove("active"));
-        btn.classList.add("active");
-        document.getElementById(btn.dataset.tab).classList.add("active");
+    const contents = {
+      "tab-image": document.getElementById("content-image"),
+      "tab-chat": document.getElementById("content-chat"),
+      "tab-math": document.getElementById("content-math")
+    };
+
+    tabs.forEach(tab => {
+      tab.addEventListener("click", () => {
+        tabs.forEach(t => t.classList.remove("active"));
+        Object.values(contents).forEach(c => c.classList.add("hidden"));
+        tab.classList.add("active");
+        contents[tab.id].classList.remove("hidden");
       });
     });
 
-    // Chat
-    document.getElementById("chatBtn").addEventListener("click", async () => {
-      const input = document.getElementById("chatInput").value.trim();
-      if (!input) return alert("Vui lòng nhập nội dung chat.");
-      const output = document.getElementById("chatOutput");
-      output.innerHTML = "⏳ Đang trả lời...";
-      const res = await fetch("/api/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: input }),
-      });
-      const data = await res.json();
-      output.innerHTML = marked.parse(data.reply);
-    });
-
-    // Math
-    document.getElementById("mathBtn").addEventListener("click", async () => {
-      const input = document.getElementById("mathInput").value.trim();
-      if (!input) return alert("Nhập bài toán.");
-      const output = document.getElementById("mathOutput");
-      output.innerHTML = "⏳ Đang giải...";
-      const res = await fetch("/api/math", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ question: input }),
-      });
-      const data = await res.json();
-      output.innerHTML = marked.parse(data.reply);
-    });
-
-    // Image
-    document.getElementById("generateImageBtn").addEventListener("click", async () => {
-      const prompt = document.getElementById("imagePromptInput").value.trim();
+    // 🖼️ Pollinations
+    document.getElementById("btnCreateImage").addEventListener("click", async () => {
+      const prompt = document.getElementById("imagePrompt").value.trim();
+      const resDiv = document.getElementById("imageResult");
       if (!prompt) return alert("Nhập mô tả ảnh.");
-      const output = document.getElementById("imageResultContainer");
-      output.innerHTML = "⏳ Đang tạo ảnh...";
+
+      resDiv.innerHTML = `<p class='text-gray-400'>Đang tạo ảnh...</p>`;
       const res = await fetch("/api/pollinations-image", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt }),
+        method: "POST", headers: {"Content-Type":"application/json"},
+        body: JSON.stringify({prompt})
       });
       const data = await res.json();
-      output.innerHTML = `<img src="${data.imageUrl}" class="rounded-xl mt-4 mx-auto" style="max-width:90%">`;
+      resDiv.innerHTML = `
+        <div class="generated-image-container">
+          <img src="${data.imageUrl}" class="rounded-lg w-full">
+          <div class="image-watermark-cover"></div>
+        </div>`;
+    });
+
+    // 💬 Chat
+    document.getElementById("btnChat").addEventListener("click", async () => {
+      const prompt = document.getElementById("chatPrompt").value.trim();
+      const resDiv = document.getElementById("chatResult");
+      if (!prompt) return alert("Nhập nội dung chat.");
+      resDiv.textContent = "Đang gửi đến Gemini...";
+      const res = await fetch("/api/gemini", {
+        method: "POST", headers: {"Content-Type":"application/json"},
+        body: JSON.stringify({prompt})
+      });
+      const data = await res.json();
+      resDiv.textContent = data.text;
+    });
+
+    // 🧮 Math
+    document.getElementById("btnMath").addEventListener("click", async () => {
+      const prompt = "Giải chi tiết bài toán sau: " + document.getElementById("mathPrompt").value.trim();
+      const resDiv = document.getElementById("mathResult");
+      if (!prompt) return alert("Nhập bài toán.");
+      resDiv.textContent = "Đang gửi đến Gemini...";
+      const res = await fetch("/api/gemini", {
+        method: "POST", headers: {"Content-Type":"application/json"},
+        body: JSON.stringify({prompt})
+      });
+      const data = await res.json();
+      resDiv.textContent = data.text;
     });
   </script>
 </body>

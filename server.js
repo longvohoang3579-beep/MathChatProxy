@@ -10,7 +10,9 @@ import dotenv from "dotenv";
 dotenv.config();
 const app = express();
 app.use(bodyParser.json());
-app.use(express.static("public"));
+
+// 🧩 Phục vụ file tĩnh (index.html cùng thư mục)
+app.use(express.static("."));
 
 // ============================================================
 // 🧠 CẤU HÌNH GEMINI
@@ -65,7 +67,7 @@ app.post("/api/pollinations-image", async (req, res) => {
 });
 
 // ============================================================
-// 💬 CHAT TỔNG HỢP
+// 💬 CHAT TỔNG HỢP (ngắn gọn, có highlight vàng)
 // ============================================================
 app.post("/api/chat", async (req, res) => {
   const { message } = req.body;
@@ -84,7 +86,7 @@ app.post("/api/chat", async (req, res) => {
 });
 
 // ============================================================
-// 🧮 GIẢI TOÁN (ngắn gọn, có công thức & highlight)
+// 🧮 GIẢI TOÁN (ngắn gọn hơn, có công thức & highlight)
 // ============================================================
 app.post("/api/math", async (req, res) => {
   const { question } = req.body;
@@ -93,10 +95,10 @@ app.post("/api/math", async (req, res) => {
   }
 
   const prompt = `
-  Hãy giải **ngắn gọn và dễ hiểu** bài toán sau bằng tiếng Việt. 
-  - Chỉ hiển thị bước chính và kết quả cuối.
+  Hãy giải bài toán sau **ngắn gọn nhất có thể**, bằng tiếng Việt dễ hiểu. 
+  - Chỉ hiển thị **bước chính** và **kết quả cuối cùng**.
   - Viết công thức bằng LaTeX (dấu $...$).
-  - Dùng Markdown + <mark class="highlight">...</mark> để tô màu vàng các ý chính hoặc kết quả.
+  - Tô màu vàng các kết quả và ý quan trọng bằng <mark class="highlight">...</mark>.
   Bài toán: ${question}
   `;
 

@@ -9,16 +9,14 @@ const PORT = process.env.PORT || 3000;
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 
 app.use(bodyParser.json());
-app.use(express.static(".")); // cho phép truy cập index.html
+app.use(express.static("."));
 
 // --------------------------------------------------------------
-// 🖼️ API TẠO ẢNH (Pollinations - đã hoạt động tốt, nologo)
+// 🖼️ API TẠO ẢNH (Pollinations - hoạt động tốt)
 // --------------------------------------------------------------
 app.post("/api/pollinations-image", async (req, res) => {
   const { prompt } = req.body;
-  if (!prompt) {
-    return res.status(400).json({ message: "Vui lòng nhập mô tả ảnh." });
-  }
+  if (!prompt) return res.status(400).json({ message: "Vui lòng nhập mô tả ảnh." });
 
   try {
     const safePrompt = encodeURIComponent(prompt);
@@ -31,33 +29,40 @@ app.post("/api/pollinations-image", async (req, res) => {
 });
 
 // --------------------------------------------------------------
-// 💬 API CHAT VÀ TOÁN (Gemini 1.5 Pro)
+// 💬 API CHAT & TOÁN - sử dụng Gemini v1
 // --------------------------------------------------------------
 async function callGeminiModel(prompt) {
+  const endpoint = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-pro:generateContent?key=${GEMINI_API_KEY}`;
   try {
-    const response = await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent?key=" + GEMINI_API_KEY, {
+    const response = await fetch(endpoint, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }]
+        contents: [{ role: "user", parts: [{ text: prompt }] }]
       })
     });
 
     const data = await response.json();
 
-    if (data.candidates && data.candidates[0]?.content?.parts[0]?.text) {
+    if (data.error) {
+      console.error("⚠️ Lỗi API:", data.error);
+      return `❌ Lỗi từ Gemini API: ${data.error.message}`;
+    }
+
+    // kiểm tra phản hồi thực tế
+    if (data.candidates?.[0]?.content?.parts?.[0]?.text) {
       return data.candidates[0].content.parts[0].text;
     } else {
-      console.error("❌ Phản hồi Gemini không hợp lệ:", data);
+      console.log("Phản hồi từ Gemini (debug):", JSON.stringify(data, null, 2));
       return "❌ Không có phản hồi hợp lệ từ Gemini.";
     }
   } catch (err) {
-    console.error("❌ Lỗi từ Gemini:", err);
-    return "❌ Lỗi khi kết nối đến Gemini.";
+    console.error("❌ Lỗi kết nối đến Gemini:", err);
+    return "❌ Không thể kết nối đến Gemini.";
   }
 }
 
-// 💬 Chat thường
+// 💬 Chat
 app.post("/api/chat", async (req, res) => {
   const { message } = req.body;
   if (!message) return res.status(400).json({ response: "Thiếu nội dung chat." });
@@ -69,8 +74,7 @@ app.post("/api/chat", async (req, res) => {
 app.post("/api/math", async (req, res) => {
   const { question } = req.body;
   if (!question) return res.status(400).json({ response: "Thiếu đề toán." });
-
-  const prompt = `Hãy giải chi tiết và trình bày rõ ràng bài toán sau (bằng tiếng Việt): ${question}`;
+  const prompt = `Hãy giải chi tiết bài toán sau bằng tiếng Việt: ${question}`;
   const reply = await callGeminiModel(prompt);
   res.json({ response: reply });
 });

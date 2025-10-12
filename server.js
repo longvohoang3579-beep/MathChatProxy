@@ -1,3 +1,4 @@
+// server.js
 import express from "express";
 import path from "path";
 import { fileURLToPath } from "url";
@@ -6,18 +7,20 @@ import dotenv from "dotenv";
 import fetch from "node-fetch";
 
 dotenv.config();
-const app = express();
 
-// Xử lý đường dẫn tuyệt đối
+const app = express();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Cấu hình middleware
 app.use(bodyParser.json());
+app.use(express.static(".")); // phục vụ file index.html nếu có
 
-// ======================================================
-// 🖼️ API TẠO ẢNH — ĐANG CHẠY TỐT, GIỮ NGUYÊN
-// ======================================================
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
+const PORT = process.env.PORT || 3000;
+
+// --------------------------------------------------------------
+// 🖼️ API TẠO ẢNH (Pollinations - đã hoạt động tốt, thêm nologo)
+// --------------------------------------------------------------
 app.post("/api/pollinations-image", async (req, res) => {
   const { prompt } = req.body;
   if (!prompt) {
@@ -26,8 +29,7 @@ app.post("/api/pollinations-image", async (req, res) => {
 
   try {
     const safePrompt = encodeURIComponent(prompt);
-    // Thêm nologo + crop để che watermark tự nhiên
-    const imageUrl = `https://image.pollinations.ai/prompt/${safePrompt}?nologo=true&crop=1`;
+    const imageUrl = `https://image.pollinations.ai/prompt/${safePrompt}?nologo=true&width=1024&height=1024`;
     res.json({ imageUrl });
   } catch (error) {
     console.error("Lỗi Pollinations:", error);
@@ -35,68 +37,87 @@ app.post("/api/pollinations-image", async (req, res) => {
   }
 });
 
-// ======================================================
-// 💬 API GEMINI CHAT & GIẢI TOÁN (SỬA DỨT ĐIỂM)
-// ======================================================
+// --------------------------------------------------------------
+// 💬 API CHAT & TOÁN (Gemini - sửa model và tự động fallback)
+// --------------------------------------------------------------
 app.post("/api/gemini", async (req, res) => {
   const { prompt } = req.body;
-  if (!prompt) return res.status(400).json({ message: "Thiếu nội dung chat." });
-
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) {
-    console.error("⚠️ Thiếu GEMINI_API_KEY trong file .env");
-    return res.status(500).json({ text: "❌ Thiếu cấu hình API key." });
+  if (!prompt) {
+    return res.status(400).json({ text: "Thiếu nội dung chat." });
   }
 
-  try {
-    // ✅ Model chính thức cho AI Studio (free key)
-    const apiEndpoint = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash-latest:generateContent?key=${apiKey}`;
-
-    const response = await fetch(apiEndpoint, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        contents: [
-          {
-            role: "user",
-            parts: [{ text: prompt }]
-          }
-        ]
-      }),
+  if (!GEMINI_API_KEY) {
+    return res.status(500).json({
+      text: "❌ Lỗi: Không tìm thấy GEMINI_API_KEY trong file .env",
     });
-
-    const data = await response.json();
-    console.log("🔎 Phản hồi từ Gemini:", JSON.stringify(data, null, 2));
-
-    // Kiểm tra lỗi từ Google API
-    if (data.error) {
-      console.error("❌ Google API trả về lỗi:", data.error);
-      return res.status(400).json({ text: `❌ Lỗi từ Google: ${data.error.message}` });
-    }
-
-    // Trích nội dung trả lời
-    const text =
-      data?.candidates?.[0]?.content?.parts?.[0]?.text ||
-      "❌ Không có phản hồi từ Gemini.";
-    res.json({ text });
-
-  } catch (err) {
-    console.error("🔥 Lỗi hệ thống khi gọi Gemini API:", err);
-    res.status(500).json({ text: "❌ Lỗi hệ thống hoặc kết nối thất bại." });
   }
+
+  // Danh sách model có thể dùng (ưu tiên từ trên xuống)
+  const MODELS = [
+    "gemini-1.5-flash-latest",
+    "gemini-1.5-pro-latest",
+    "gemini-1.0-pro",
+    "gemini-pro",
+  ];
+
+  // Thử lần lượt các model đến khi thành công
+  let finalText = null;
+  let lastError = null;
+
+  for (const model of MODELS) {
+    try {
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_API_KEY}`;
+
+      const response = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents: [{ role: "user", parts: [{ text: prompt }] }],
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.error) {
+        lastError = data.error.message;
+        console.warn(`⚠️ Lỗi từ model ${model}:`, lastError);
+        continue;
+      }
+
+      finalText =
+        data?.candidates?.[0]?.content?.parts
+          ?.map((p) => p.text)
+          .join("\n") || null;
+
+      if (finalText) {
+        console.log(`✅ Dùng model: ${model}`);
+        break;
+      }
+    } catch (err) {
+      console.error(`❌ Lỗi hệ thống với model ${model}:`, err);
+      lastError = err.message;
+    }
+  }
+
+  if (!finalText) {
+    return res.status(400).json({
+      text: `❌ Lỗi từ Google Gemini: ${lastError || "Không có phản hồi hợp lệ."}`,
+    });
+  }
+
+  res.json({ text: finalText });
 });
 
-// ======================================================
-// 🌐 TRANG WEB GỐC
-// ======================================================
+// --------------------------------------------------------------
+// 📜 ROUTE CHUNG - phục vụ trang chủ
+// --------------------------------------------------------------
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "index.html"));
 });
 
-// ======================================================
+// --------------------------------------------------------------
 // 🚀 KHỞI ĐỘNG SERVER
-// ======================================================
-const PORT = process.env.PORT || 3000;
+// --------------------------------------------------------------
 app.listen(PORT, () => {
-  console.log(`🚀 Server đang chạy tại http://localhost:${PORT}`);
+  console.log(`🚀 Server đang chạy tại: http://localhost:${PORT}`);
 });

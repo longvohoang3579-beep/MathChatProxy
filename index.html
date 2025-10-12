@@ -8,7 +8,7 @@
 <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 <style>
 body { background-color:#0f0f13; color:#fff; font-family:'Segoe UI',sans-serif; margin:0; padding:0;}
-.container {max-width:900px;margin:2rem auto;background:#1a1c29;border-radius:1.5rem;padding:1.5rem;box-shadow:0 15px 30px rgba(0,0,0,0.7);}
+.container {max-width:900px;margin:2rem auto;background:#1a1c29;border-radius:1.5rem;padding:1.5rem;box-shadow:0 15px 30px rgba(0,0,0,0.7);position:relative;}
 .tabs {display:flex;border-bottom:2px solid #333;margin-bottom:1rem;}
 .tab-btn {flex:1;text-align:center;padding:1rem;cursor:pointer;color:#aaa;font-weight:bold;transition:all 0.2s;}
 .tab-btn.active {color:#fff;border-bottom:3px solid #facc15;}
@@ -26,14 +26,9 @@ button{padding:0.75rem 1rem;border-radius:0.75rem;font-weight:bold;cursor:pointe
 #btnMath{background:#f59e0b;color:#111827;}#btnMath:hover{background:#d97706;}
 img.generated-image{border-radius:12px;max-width:100%;margin-top:1rem;}
 #settings-btn{position:absolute;top:1rem;right:1rem;font-size:1.5rem;cursor:pointer;color:#facc15;}
-#settings-modal{position:absolute;top:3rem;right:1rem;width:200px;background:#1a1c29;border:1px solid #facc15;border-radius:0.75rem;padding:1rem;display:none;}
-.flex-tools {display:flex;gap:0.5rem;margin-bottom:0.5rem;}
-.tool-btn {width:48px;height:48px;background:#2c2c3a;display:flex;align-items:center;justify-content:center;border-radius:0.5rem;cursor:pointer;transition:all 0.2s;}
-.tool-btn:hover {background:#3e3e55;}
-.input-row {display:flex;gap:0.5rem;margin-top:0.5rem;}
-.input-row textarea {flex:1;}
-#cameraPreviewContainer {display:none;width:100%;}
-#cameraPreview {border-radius:12px;width:100%;margin-top:0.5rem;}
+#settings-modal{position:absolute;top:3rem;right:1rem;width:220px;background:#1a1c29;border:1px solid #facc15;border-radius:0.75rem;padding:1rem;display:none;}
+.upload-container {display:flex;gap:0.5rem;margin-top:0.5rem;}
+.upload-container button,input[type="file"]{flex:1;}
 </style>
 </head>
 <body>
@@ -64,158 +59,149 @@ img.generated-image{border-radius:12px;max-width:100%;margin-top:1rem;}
   <!-- Chat -->
   <div class="tab-content" id="chat">
     <div class="chat-box" id="chatBox"></div>
-    <div class="input-row">
-      <textarea id="chatInput" rows="2" placeholder="Nhập tin nhắn..."></textarea>
-      <label class="tool-btn"><input type="file" id="fileInput" accept="image/*" class="hidden">📁</label>
-      <button id="cameraBtn" class="tool-btn">📸</button>
+    <textarea id="chatInput" rows="2" placeholder="Nhập tin nhắn..."></textarea>
+    <div class="upload-container">
+      <input type="file" id="chatFileInput" accept="image/*">
+      <button id="chatCameraBtn">📷 Camera</button>
     </div>
     <button id="btnChat" class="mt-2 w-full">Gửi</button>
-    <div id="cameraPreviewContainer">
-      <video id="cameraPreview" autoplay playsinline></video>
-      <button id="captureBtn" class="mt-2 w-full bg-green-500 rounded text-black font-bold">Chụp</button>
-    </div>
   </div>
 
   <!-- Giải Toán -->
   <div class="tab-content" id="math">
     <div class="chat-box" id="mathBox"></div>
-    <div class="input-row">
-      <textarea id="mathPrompt" rows="2" placeholder="Nhập bài toán..."></textarea>
-      <label class="tool-btn"><input type="file" id="mathFileInput" accept="image/*" class="hidden">📁</label>
-      <button id="mathCameraBtn" class="tool-btn">📸</button>
+    <textarea id="mathPrompt" rows="2" placeholder="Nhập bài toán..."></textarea>
+    <div class="upload-container">
+      <input type="file" id="mathFileInput" accept="image/*">
+      <button id="mathCameraBtn">📷 Camera</button>
     </div>
     <button id="btnMath" class="mt-2 w-full">Giải</button>
-    <div id="mathCameraPreviewContainer">
-      <video id="mathCameraPreview" autoplay playsinline></video>
-      <button id="mathCaptureBtn" class="mt-2 w-full bg-green-500 rounded text-black font-bold">Chụp</button>
-    </div>
   </div>
 </div>
 
 <script>
-// Tab
+// ----- Tabs -----
 const tabs=document.querySelectorAll(".tab-btn");
 const contents=document.querySelectorAll(".tab-content");
-tabs.forEach(tab=>{
-  tab.addEventListener("click",()=>{
-    tabs.forEach(t=>t.classList.remove("active"));
-    contents.forEach(c=>c.classList.remove("active"));
-    tab.classList.add("active");
-    document.getElementById(tab.dataset.tab).classList.add("active");
-  });
-});
+tabs.forEach(tab=>{tab.addEventListener("click",()=>{tabs.forEach(t=>t.classList.remove("active"));contents.forEach(c=>c.classList.remove("active"));tab.classList.add("active");document.getElementById(tab.dataset.tab).classList.add("active");});});
 
-// Chat & Toán
-function addBubble(boxId,text,sender){const box=document.getElementById(boxId);const div=document.createElement("div");div.className=`bubble ${sender==='user'?'user-bubble':'ai-bubble'}`;div.innerHTML=text;box.appendChild(div);box.scrollTop=box.scrollHeight;}
-function updateLastAIBubble(boxId,text){const box=document.getElementById(boxId);const bubbles=box.getElementsByClassName("ai-bubble");if(bubbles.length>0){bubbles[bubbles.length-1].innerHTML=text;}box.scrollTop=box.scrollHeight;}
+// ----- Bubble -----
+function addBubble(boxId,text,sender){
+    const box=document.getElementById(boxId);
+    const div=document.createElement("div");
+    div.className=`bubble ${sender==='user'?'user-bubble':'ai-bubble'}`;
+    div.innerHTML=text;
+    box.appendChild(div);
+    box.scrollTop=box.scrollHeight;
+}
+function updateLastAIBubble(boxId,text){
+    const box=document.getElementById(boxId);
+    const bubbles=box.getElementsByClassName("ai-bubble");
+    if(bubbles.length>0){bubbles[bubbles.length-1].innerHTML=text;}
+    box.scrollTop=box.scrollHeight;
+}
 
+// ----- Chat & Math state -----
 let chatHistory=[];
-let chatImages=[]; // Lưu ảnh đợi gửi
+let pendingChatImages=[];
+let pendingMathImages=[];
 let currentLang=localStorage.getItem("geminiChatLanguage")||"vi";
 document.getElementById("language-select").value=currentLang;
 
-// Settings
+// ----- Settings -----
 const settingsBtn=document.getElementById("settings-btn");
 const settingsModal=document.getElementById("settings-modal");
 settingsBtn.addEventListener("click",()=>{settingsModal.style.display=settingsModal.style.display==="none"?"block":"none";});
 document.addEventListener("click",(e)=>{if(!settingsModal.contains(e.target)&&!settingsBtn.contains(e.target)){settingsModal.style.display="none";}});
 document.getElementById("language-select").addEventListener("change",(e)=>{
-  currentLang=e.target.value;
-  localStorage.setItem("geminiChatLanguage",currentLang);
-  chatHistory=[];
-  chatImages=[];
-  document.getElementById("chatBox").innerHTML="";
-  alert(`Đã chuyển ngôn ngữ sang ${e.target.options[e.target.selectedIndex].text}. Vui lòng bắt đầu chat mới.`);
+    currentLang=e.target.value;
+    localStorage.setItem("geminiChatLanguage",currentLang);
+    chatHistory=[];
+    document.getElementById("chatBox").innerHTML="";
+    alert(`Đã chuyển ngôn ngữ sang ${e.target.options[e.target.selectedIndex].text}. Vui lòng bắt đầu chat mới.`);
 });
 
-// Pollinations tạo ảnh
+// ----- Pollinations tạo ảnh -----
 document.getElementById("btnCreateImage").addEventListener("click",async()=>{
-  const prompt=document.getElementById("imagePrompt").value.trim();
-  if(!prompt)return;
-  addBubble("imageBox",prompt,"user");
-  addBubble("imageBox","🧠 ĐANG TẠO ẢNH...","ai");
-  try{
-    const res=await fetch("/api/pollinations-image",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({prompt})});
-    const data=await res.json();
-    updateLastAIBubble("imageBox",`<img src="${data.imageUrl}" class="generated-image">`);
-  }catch{updateLastAIBubble("imageBox","❌ Lỗi kết nối server.");}
+    const prompt=document.getElementById("imagePrompt").value.trim();
+    if(!prompt)return;
+    addBubble("imageBox",prompt,"user");
+    addBubble("imageBox","🧠 ĐANG TẠO ẢNH...","ai");
+    try{
+        const res=await fetch("/api/pollinations-image",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({prompt})});
+        const data=await res.json();
+        updateLastAIBubble("imageBox",`<img src="${data.imageUrl}" class="generated-image">`);
+    }catch{updateLastAIBubble("imageBox","❌ Lỗi kết nối server.");}
 });
 
-// === Upload ảnh chỉ lưu, không gửi ===
-function setupImageUpload(fileInputId, boxId){
-  const input=document.getElementById(fileInputId);
-  input.addEventListener("change", e=>{
+// ----- Upload ảnh cho chat -----
+const chatFileInput=document.getElementById("chatFileInput");
+chatFileInput.addEventListener("change",(e)=>{
     const file=e.target.files[0];
     if(!file) return;
-    if(!file.type.startsWith("image/")){ alert("Vui lòng chọn ảnh."); return; }
     const reader=new FileReader();
-    reader.onload=function(){
-      const base64=reader.result;
-      addBubble(boxId, `<img src="${base64}" class="generated-image">`,"user");
-      chatImages.push(base64); // Lưu để gửi cùng tin nhắn khi nhấn gửi
+    reader.onload=(event)=>{
+        pendingChatImages.push(event.target.result);
+        addBubble("chatBox","<i>Ảnh đã sẵn sàng, chờ gửi...</i>","ai");
     };
     reader.readAsDataURL(file);
-  });
-}
-setupImageUpload("fileInput","chatBox");
-setupImageUpload("mathFileInput","mathBox");
+});
 
-// === Camera lưu ảnh nhưng không gửi ===
-function setupCamera(btnId, previewContainerId, previewId, captureBtnId, boxId){
-  const btn=document.getElementById(btnId);
-  const container=document.getElementById(previewContainerId);
-  const preview=document.getElementById(previewId);
-  const captureBtn=document.getElementById(captureBtnId);
-  let stream=null;
+// ----- Upload ảnh cho toán -----
+const mathFileInput=document.getElementById("mathFileInput");
+mathFileInput.addEventListener("change",(e)=>{
+    const file=e.target.files[0];
+    if(!file) return;
+    const reader=new FileReader();
+    reader.onload=(event)=>{
+        pendingMathImages.push(event.target.result);
+        addBubble("mathBox","<i>Ảnh đã sẵn sàng, chờ gửi...</i>","ai");
+    };
+    reader.readAsDataURL(file);
+});
 
-  btn.addEventListener("click", async()=>{
-    if(container.style.display==="none"||container.style.display===""){
-      container.style.display="block";
-      try{stream=await navigator.mediaDevices.getUserMedia({video:true});preview.srcObject=stream;}catch{alert("Không thể truy cập camera.");}
-    } else {
-      container.style.display="none";
-      if(stream) stream.getTracks().forEach(t=>t.stop());
-    }
-  });
+// ----- Chat gửi -----
+document.getElementById("btnChat").addEventListener("click",async()=>{
+    const message=document.getElementById("chatInput").value.trim();
+    if(!message && pendingChatImages.length===0) return;
+    addBubble("chatBox",message,"user");
+    chatHistory.push({role:"user",text:message});
+    addBubble("chatBox","🧠 ĐANG TRẢ LỜI...","ai");
+    try{
+        const res=await fetch("/api/chat",{method:"POST",headers:{"Content-Type":"application/json"},
+            body:JSON.stringify({
+                message,
+                history:chatHistory,
+                language:currentLang,
+                image:pendingChatImages[0]||null
+            })});
+        const data=await res.json();
+        updateLastAIBubble("chatBox",data.response);
+        chatHistory.push({role:"assistant",text:data.response});
+        pendingChatImages=[];
+    }catch{updateLastAIBubble("chatBox","❌ Lỗi kết nối server.");}
+    document.getElementById("chatInput").value="";
+});
 
-  captureBtn.addEventListener("click", ()=>{
-    if(!stream) return;
-    const canvas=document.createElement("canvas");
-    canvas.width=preview.videoWidth;
-    canvas.height=preview.videoHeight;
-    const ctx=canvas.getContext("2d");
-    ctx.drawImage(preview,0,0);
-    const base64=canvas.toDataURL("image/png");
-    addBubble(boxId, `<img src="${base64}" class="generated-image">`,"user");
-    chatImages.push(base64); // Lưu ảnh chờ gửi
-    container.style.display="none";
-    stream.getTracks().forEach(t=>t.stop());
-  });
-}
-setupCamera("cameraBtn","cameraPreviewContainer","cameraPreview","captureBtn","chatBox");
-setupCamera("mathCameraBtn","mathCameraPreviewContainer","mathCameraPreview","mathCaptureBtn","mathBox");
-
-// === Gửi Chat / Toán ===
-async function sendMessage(messageId, textAreaId, boxId, isMath=false){
-  const message=document.getElementById(textAreaId).value.trim();
-  if(!message && chatImages.length===0) return;
-  if(message) addBubble(boxId,message,"user");
-  document.getElementById(textAreaId).value="";
-  addBubble(boxId,"🧠 ĐANG TRẢ LỜI...","ai");
-  const payload={history:chatHistory,language:currentLang};
-  if(message) payload.message=message;
-  if(chatImages.length>0) payload.image=chatImages; // gửi tất cả ảnh đang chờ
-  try{
-    const res=await fetch(isMath?"/api/math":"/api/chat",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)});
-    const data=await res.json();
-    updateLastAIBubble(boxId,data.response);
-    chatHistory.push({role:"assistant",text:data.response});
-    chatImages=[]; // xóa ảnh đã gửi
-  }catch{updateLastAIBubble(boxId,"❌ Lỗi kết nối server.");}
-}
-
-document.getElementById("btnChat").addEventListener("click",()=>sendMessage("chatBox","chatInput","chatBox"));
-document.getElementById("btnMath").addEventListener("click",()=>sendMessage("mathBox","mathPrompt","mathBox",true));
+// ----- Toán gửi -----
+document.getElementById("btnMath").addEventListener("click",async()=>{
+    const question=document.getElementById("mathPrompt").value.trim();
+    if(!question && pendingMathImages.length===0) return;
+    addBubble("mathBox",question,"user");
+    addBubble("mathBox","🧠 ĐANG GIẢI TOÁN...","ai");
+    try{
+        const res=await fetch("/api/math",{method:"POST",headers:{"Content-Type":"application/json"},
+            body:JSON.stringify({
+                question,
+                image:pendingMathImages[0]||null
+            })});
+        const data=await res.json();
+        updateLastAIBubble("mathBox",data.response);
+        pendingMathImages=[];
+        MathJax.typesetPromise();
+    }catch{updateLastAIBubble("mathBox","❌ Lỗi kết nối server.");}
+    document.getElementById("mathPrompt").value="";
+});
 </script>
 </body>
 </html>

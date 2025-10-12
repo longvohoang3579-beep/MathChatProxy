@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Tạo Ảnh & Chat Gemini</title>
-  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet" />
 
   <style>
     body {
@@ -14,7 +14,6 @@
       margin: 0;
       padding-bottom: 60px;
     }
-
     .tab-btn {
       flex: 1;
       padding: 0.75rem;
@@ -22,19 +21,16 @@
       text-align: center;
       border-bottom: 3px solid transparent;
     }
-
     .tab-btn.active {
       border-color: #22c55e;
       color: #22c55e;
     }
-
     .generated-image-container {
       position: relative;
       text-align: center;
       max-width: 550px;
       margin: 0 auto;
     }
-
     .image-watermark-cover {
       position: absolute;
       bottom: 0;
@@ -54,25 +50,25 @@
       <div class="tab-btn" id="tab-math">🧮 Giải Toán</div>
     </div>
 
+    <!-- 🖼️ TẠO ẢNH -->
     <div id="content-image" class="p-5">
-      <textarea id="imagePrompt" rows="3"
-        class="w-full p-3 bg-gray-800 rounded-lg border border-gray-700"
+      <textarea id="imagePrompt" rows="3" class="w-full p-3 bg-gray-800 rounded-lg border border-gray-700"
         placeholder="Nhập mô tả ảnh bạn muốn tạo..."></textarea>
       <button id="btnCreateImage" class="w-full mt-3 bg-green-600 py-2 rounded-lg font-bold hover:bg-green-700">Tạo Ảnh</button>
       <div id="imageResult" class="mt-4 text-center"></div>
     </div>
 
+    <!-- 💬 CHAT -->
     <div id="content-chat" class="p-5 hidden">
-      <textarea id="chatPrompt" rows="3"
-        class="w-full p-3 bg-gray-800 rounded-lg border border-gray-700"
+      <textarea id="chatPrompt" rows="3" class="w-full p-3 bg-gray-800 rounded-lg border border-gray-700"
         placeholder="Nhập nội dung chat..."></textarea>
       <button id="btnChat" class="w-full mt-3 bg-blue-600 py-2 rounded-lg font-bold hover:bg-blue-700">Gửi Chat</button>
       <div id="chatResult" class="mt-4 text-gray-300 whitespace-pre-line"></div>
     </div>
 
+    <!-- 🧮 GIẢI TOÁN -->
     <div id="content-math" class="p-5 hidden">
-      <textarea id="mathPrompt" rows="3"
-        class="w-full p-3 bg-gray-800 rounded-lg border border-gray-700"
+      <textarea id="mathPrompt" rows="3" class="w-full p-3 bg-gray-800 rounded-lg border border-gray-700"
         placeholder="Nhập bài toán cần giải..."></textarea>
       <button id="btnMath" class="w-full mt-3 bg-yellow-500 py-2 rounded-lg font-bold hover:bg-yellow-600">Giải Toán</button>
       <div id="mathResult" class="mt-4 text-gray-300 whitespace-pre-line"></div>
@@ -80,6 +76,7 @@
   </div>
 
   <script>
+    // ----- Tab chuyển đổi -----
     const tabs = document.querySelectorAll(".tab-btn");
     const contents = {
       "tab-image": document.getElementById("content-image"),
@@ -96,7 +93,7 @@
       });
     });
 
-    // 🖼️ Pollinations
+    // 🖼️ Pollinations (OK)
     document.getElementById("btnCreateImage").addEventListener("click", async () => {
       const prompt = document.getElementById("imagePrompt").value.trim();
       const resDiv = document.getElementById("imageResult");
@@ -104,8 +101,9 @@
 
       resDiv.innerHTML = `<p class='text-gray-400'>Đang tạo ảnh...</p>`;
       const res = await fetch("/api/pollinations-image", {
-        method: "POST", headers: {"Content-Type":"application/json"},
-        body: JSON.stringify({prompt})
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prompt })
       });
       const data = await res.json();
       resDiv.innerHTML = `
@@ -120,27 +118,41 @@
       const prompt = document.getElementById("chatPrompt").value.trim();
       const resDiv = document.getElementById("chatResult");
       if (!prompt) return alert("Nhập nội dung chat.");
-      resDiv.textContent = "Đang gửi đến Gemini...";
-      const res = await fetch("/api/gemini", {
-        method: "POST", headers: {"Content-Type":"application/json"},
-        body: JSON.stringify({prompt})
-      });
-      const data = await res.json();
-      resDiv.textContent = data.text;
+      resDiv.textContent = "⏳ Đang gửi đến Gemini...";
+
+      try {
+        const res = await fetch("/api/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ message: prompt })
+        });
+        const data = await res.json();
+        resDiv.textContent = data.response || "❌ Không có phản hồi từ Gemini.";
+      } catch (err) {
+        resDiv.textContent = "❌ Lỗi kết nối đến server.";
+        console.error(err);
+      }
     });
 
     // 🧮 Math
     document.getElementById("btnMath").addEventListener("click", async () => {
-      const prompt = "Giải chi tiết bài toán sau: " + document.getElementById("mathPrompt").value.trim();
+      const question = document.getElementById("mathPrompt").value.trim();
       const resDiv = document.getElementById("mathResult");
-      if (!prompt) return alert("Nhập bài toán.");
-      resDiv.textContent = "Đang gửi đến Gemini...";
-      const res = await fetch("/api/gemini", {
-        method: "POST", headers: {"Content-Type":"application/json"},
-        body: JSON.stringify({prompt})
-      });
-      const data = await res.json();
-      resDiv.textContent = data.text;
+      if (!question) return alert("Nhập bài toán.");
+      resDiv.textContent = "⏳ Đang gửi đến Gemini...";
+
+      try {
+        const res = await fetch("/api/math", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ question })
+        });
+        const data = await res.json();
+        resDiv.textContent = data.response || "❌ Không có phản hồi từ Gemini.";
+      } catch (err) {
+        resDiv.textContent = "❌ Lỗi kết nối đến server.";
+        console.error(err);
+      }
     });
   </script>
 </body>

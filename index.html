@@ -3,133 +3,276 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Tạo Ảnh & Chat Gemini</title>
+  <title>AI Assistant</title>
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet" />
-    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+
 
   <style>
+    /* -------------------------------------- */
+    /* Màu sắc và Font Body        */
+    /* -------------------------------------- */
     body {
-      background-color: #0f0f0f;
-      color: white;
-      font-family: "Segoe UI", sans-serif;
+      background-color: #1a1a2e; /* Deep purple-blue */
+      color: #e0e0e0; /* Off-white for text */
+      font-family: 'Inter', sans-serif; /* Modern, clean font */
       margin: 0;
       padding-bottom: 60px;
     }
+
+    /* Main container */
+    .main-container {
+      background-color: #242640; /* Slightly lighter than body, deep blue */
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5); /* Stronger shadow */
+      border: 1px solid rgba(110, 89, 230, 0.2); /* Subtle border */
+    }
+
+    /* -------------------------------------- */
+    /* Tab Buttons             */
+    /* -------------------------------------- */
     .tab-btn {
       flex: 1;
-      padding: 0.75rem;
+      padding: 1rem 0.75rem; /* Increased padding */
       cursor: pointer;
       text-align: center;
       border-bottom: 3px solid transparent;
+      transition: all 0.2s ease-in-out; /* Smooth transition */
+      font-weight: 600; /* Semi-bold */
+      color: #b0b0c0; /* Lighter gray */
+    }
+    .tab-btn:hover {
+      color: #8c7ae6; /* Purple on hover */
+      border-color: rgba(140, 122, 230, 0.5);
     }
     .tab-btn.active {
-      border-color: #22c55e;
-      color: #22c55e;
+      border-color: #6a4cff; /* Vibrant purple */
+      color: #6a4cff;
+      background-color: rgba(106, 76, 255, 0.1); /* Subtle active background */
     }
+
+    /* -------------------------------------- */
+    /* Input/Textarea          */
+    /* -------------------------------------- */
+    textarea, select {
+      background-color: #3e2b5e; /* Darker purple for inputs */
+      border: 1px solid #6a4cff; /* Purple border */
+      color: #e0e0e0;
+      padding: 0.75rem;
+      border-radius: 0.75rem; /* More rounded */
+      transition: border-color 0.2s ease-in-out;
+    }
+    textarea:focus, select:focus {
+      outline: none;
+      border-color: #a78bfa; /* Lighter purple on focus */
+      box-shadow: 0 0 0 3px rgba(167, 139, 250, 0.3);
+    }
+    /* Placeholder color */
+    textarea::placeholder {
+      color: #9ca3af;
+    }
+
+    /* -------------------------------------- */
+    /* Buttons               */
+    /* -------------------------------------- */
+    button {
+      padding: 0.75rem 1.5rem; /* Increased padding */
+      border-radius: 0.75rem; /* More rounded */
+      font-weight: 700; /* Bold */
+      transition: background-color 0.2s ease-in-out, transform 0.1s ease-in-out;
+      letter-spacing: 0.05em; /* Slightly spaced letters */
+    }
+    #btnCreateImage {
+      background-color: #34d399; /* Emerald green */
+      color: #1a1a2e;
+    }
+    #btnCreateImage:hover {
+      background-color: #10b981; /* Darker green */
+      transform: translateY(-2px);
+    }
+    #btnChat {
+      background-color: #6a4cff; /* Vibrant purple */
+      color: white;
+    }
+    #btnChat:hover {
+      background-color: #5d3dfa; /* Darker purple */
+      transform: translateY(-2px);
+    }
+    #btnMath {
+      background-color: #fbbf24; /* Amber yellow */
+      color: #1a1a2e;
+    }
+    #btnMath:hover {
+      background-color: #f59e0b; /* Darker amber */
+      transform: translateY(-2px);
+    }
+    button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    /* -------------------------------------- */
+    /* Image Container          */
+    /* -------------------------------------- */
     .generated-image-container {
       position: relative;
       text-align: center;
       max-width: 550px;
       margin: 0 auto;
+      background-color: #3e2b5e;
+      padding: 1rem;
+      border-radius: 1rem;
+      border: 1px solid #6a4cff;
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+    }
+    .generated-image-container img {
+      border-radius: 0.75rem;
     }
     .image-watermark-cover {
-      position: absolute;
-      bottom: 0;
-      right: 0;
-      width: 200px;
-      height: 50px;
-      background: linear-gradient(90deg, #0f0f0f, #0f0f0f);
+      background: linear-gradient(90deg, #242640, #242640); /* Match main container */
+      opacity: 0.8; /* Slightly visible */
     }
-    /* Thiết lập khung chat */
-    .chat-message {
-      padding: 0.5rem 1rem;
+
+    /* -------------------------------------- */
+    /* Chat Bubbles           */
+    /* -------------------------------------- */
+    .chat-history {
+      background-color: #1a1a2e; /* Darker background for chat history */
       border-radius: 0.75rem;
-      margin-bottom: 0.5rem;
-      max-width: 85%;
+      padding: 0.5rem;
+      border: 1px solid rgba(110, 89, 230, 0.2);
+    }
+    .chat-message {
+      padding: 0.75rem 1.25rem; /* More padding */
+      border-radius: 1.25rem; /* More rounded */
+      margin-bottom: 0.75rem; /* More space */
+      max-width: 80%; /* Slightly smaller max width */
+      word-wrap: break-word; /* Ensure long words wrap */
+      line-height: 1.5; /* Better readability */
     }
     .user-message {
-      background-color: #3b82f6; /* Blue */
+      background-color: #6a4cff; /* Vibrant purple */
+      color: white;
       align-self: flex-end;
       margin-left: auto;
+      border-bottom-right-radius: 0.5rem; /* Slightly less rounded on one corner */
     }
     .ai-message {
-      background-color: #4b5563; /* Gray */
+      background-color: #3e2b5e; /* Darker purple for AI */
+      color: #e0e0e0;
       align-self: flex-start;
       margin-right: auto;
+      border-bottom-left-radius: 0.5rem; /* Slightly less rounded on one corner */
     }
-    /* Style cho highlight vàng */
+
+    /* -------------------------------------- */
+    /* Highlight              */
+    /* -------------------------------------- */
     .highlight {
-      background-color: #fcd34d; /* Yellow-400 */
-      color: #1f2937; /* Dark text */
-      padding: 2px 4px;
-      border-radius: 4px;
+      background-color: #fde047; /* Bright yellow */
+      color: #1a1a2e; /* Dark text for contrast */
+      padding: 2px 5px;
+      border-radius: 6px;
+      font-weight: 600;
     }
-    /* Nút Settings */
+
+    /* -------------------------------------- */
+    /* Settings Button/Modal  */
+    /* -------------------------------------- */
     #settings-btn {
-      position: absolute;
-      top: 1rem;
-      right: 1rem;
-      background: #374151;
-      padding: 0.5rem;
-      border-radius: 9999px;
-      cursor: pointer;
-      z-index: 10;
+      background: #3e2b5e; /* Match AI message/input */
+      color: #a78bfa; /* Light purple icon */
+      padding: 0.75rem 1rem; /* Bigger button */
+      border-radius: 0.75rem; /* More rounded */
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
+      transition: all 0.2s ease-in-out;
+    }
+    #settings-btn:hover {
+      background: #4b3270;
+      color: #e0e0e0;
+      transform: translateY(-2px);
     }
     #settings-modal {
-      top: 3.5rem;
-      right: 1rem;
-      background: #1f2937;
+      background: #2f2c4a; /* Slightly lighter than main container */
+      border: 1px solid #6a4cff;
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.6);
+      transform-origin: top right;
+      animation: fadeInScale 0.2s ease-out forwards;
+    }
+    @keyframes fadeInScale {
+      from { opacity: 0; transform: scale(0.9) translateY(-10px); }
+      to { opacity: 1; transform: scale(1) translateY(0); }
+    }
+    #settings-modal.hidden {
+      animation: fadeOutScale 0.2s ease-in forwards;
+    }
+    @keyframes fadeOutScale {
+      from { opacity: 1; transform: scale(1) translateY(0); }
+      to { opacity: 0; transform: scale(0.9) translateY(-10px); }
+    }
+
+    /* MathJax specific styles */
+    .math-container .MJX-TEX {
+      color: #a78bfa !important; /* Math equations in a light purple */
+    }
+    .math-container {
+      background-color: #1a1a2e; /* Dark background for math result */
       padding: 1rem;
-      border-radius: 0.5rem;
-      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.5);
-      z-index: 20;
+      border-radius: 0.75rem;
+      border: 1px dashed rgba(167, 139, 250, 0.3); /* Dashed purple border */
+      margin-top: 1rem;
+      font-size: 1.1em;
     }
   </style>
 </head>
 
 <body class="min-h-screen flex flex-col items-center p-5 relative">
-    <div id="settings-btn">⚙️</div>
+    <div id="settings-btn" class="absolute top-4 right-4 text-xl cursor-pointer">
+      <i class="fas fa-cog"></i>     </div>
 
-    <div id="settings-modal" class="absolute hidden">
-    <h3 class="font-bold mb-3 text-lg">Cài đặt AI Chat</h3>
-    <div>
-      <label for="language-select" class="block text-sm font-medium mb-1">Ngôn ngữ Chat:</label>
-      <select id="language-select" class="w-full p-2 rounded-md bg-gray-700 text-white border-gray-600">
-        <option value="vi">Tiếng Việt</option>
-        <option value="en">English (Tiếng Anh)</option>
-        <option value="zh-CN">简体中文 (Tiếng Trung Giản thể)</option>
-      </select>
+    <div id="settings-modal" class="absolute hidden top-16 right-4 p-5 rounded-lg w-72">
+      <h3 class="font-bold mb-4 text-xl text-center text-[#a78bfa]">AI Settings</h3>
+      <div>
+        <label for="language-select" class="block text-sm font-medium mb-2 text-gray-300">Ngôn ngữ Chat:</label>
+        <select id="language-select" class="w-full p-2 rounded-md bg-gray-700 text-white border border-gray-600 focus:ring-2 focus:ring-[#a78bfa]">
+          <option value="vi">Tiếng Việt</option>
+          <option value="en">English (Tiếng Anh)</option>
+          <option value="zh-CN">简体中文 (Tiếng Trung Giản thể)</option>
+        </select>
+      </div>
     </div>
-  </div>
 
-  <div class="w-full max-w-3xl bg-gray-900 rounded-2xl shadow-lg">
+  <div class="w-full max-w-3xl main-container rounded-2xl">
     <div class="flex border-b border-gray-700">
       <div class="tab-btn active" id="tab-image">🖼️ Tạo Ảnh</div>
       <div class="tab-btn" id="tab-chat">💬 Chat</div>
       <div class="tab-btn" id="tab-math">🧮 Giải Toán</div>
     </div>
 
-        <div id="content-image" class="p-5">
-      <textarea id="imagePrompt" rows="3" class="w-full p-3 bg-gray-800 rounded-lg border border-gray-700"
-        placeholder="Nhập mô tả ảnh bạn muốn tạo..."></textarea>
-      <button id="btnCreateImage" class="w-full mt-3 bg-green-600 py-2 rounded-lg font-bold hover:bg-green-700">Tạo Ảnh</button>
-      <div id="imageResult" class="mt-4 text-center"></div>
+    <div id="content-image" class="p-6">
+      <textarea id="imagePrompt" rows="3" class="w-full mt-2"
+        placeholder="Nhập mô tả ảnh bạn muốn tạo (ví dụ: 'một con mèo máy ngồi trên mặt trăng với mũ phi hành gia')..."></textarea>
+      <button id="btnCreateImage" class="w-full mt-4">Tạo Ảnh</button>
+      <div id="imageResult" class="mt-6 text-center text-gray-400"></div>
     </div>
 
-        <div id="content-chat" class="p-5 hidden flex flex-col h-96">
-      <div id="chatHistory" class="flex-grow overflow-y-auto mb-4 p-2 flex flex-col">
+    <div id="content-chat" class="p-6 hidden flex flex-col h-[500px]">
+      <div id="chatHistory" class="flex-grow overflow-y-auto mb-4 chat-history flex flex-col">
               </div>
-      <textarea id="chatPrompt" rows="2" class="w-full p-3 bg-gray-800 rounded-lg border border-gray-700"
-        placeholder="Nhập nội dung chat..."></textarea>
-      <button id="btnChat" class="w-full mt-3 bg-blue-600 py-2 rounded-lg font-bold hover:bg-blue-700">Gửi Chat</button>
+      <textarea id="chatPrompt" rows="2" class="w-full"
+        placeholder="Nhập tin nhắn của bạn..."></textarea>
+      <button id="btnChat" class="w-full mt-4">Gửi Chat</button>
     </div>
 
-        <div id="content-math" class="p-5 hidden">
-      <textarea id="mathPrompt" rows="3" class="w-full p-3 bg-gray-800 rounded-lg border border-gray-700"
-        placeholder="Nhập bài toán cần giải..."></textarea>
-      <button id="btnMath" class="w-full mt-3 bg-yellow-500 py-2 rounded-lg font-bold hover:bg-yellow-600">Giải Toán</button>
-      <div id="mathResult" class="mt-4 text-gray-300 math-container"></div>
-      <p class="text-xs text-gray-500 mt-2">Lưu ý: Phần giải toán được thiết lập để trả lời ngắn gọn, tập trung vào kết quả và sử dụng LaTeX.</p>
+    <div id="content-math" class="p-6 hidden">
+      <textarea id="mathPrompt" rows="3" class="w-full"
+        placeholder="Nhập bài toán cần giải (ví dụ: 'Giải phương trình x^2 - 4x + 4 = 0')..."></textarea>
+      <button id="btnMath" class="w-full mt-4">Giải Toán</button>
+      <div id="mathResult" class="mt-6 text-gray-300 math-container"></div>
+      <p class="text-xs text-gray-500 mt-4 text-center">
+        *Lưu ý: Phần giải toán được tối ưu để trả lời ngắn gọn, tập trung vào kết quả và sử dụng LaTeX.*
+      </p>
     </div>
   </div>
 
@@ -150,6 +293,14 @@
       settingsModal.classList.toggle('hidden');
     });
 
+    // Đóng modal khi click ra ngoài
+    document.addEventListener('click', (event) => {
+      if (!settingsModal.contains(event.target) && !settingsBtn.contains(event.target)) {
+        settingsModal.classList.add('hidden');
+      }
+    });
+
+
     langSelect.addEventListener('change', (e) => {
       currentLang = e.target.value;
       localStorage.setItem('geminiChatLanguage', currentLang);
@@ -157,7 +308,7 @@
       chatHistory = [];
       document.getElementById("chatHistory").innerHTML = '';
       settingsModal.classList.add('hidden');
-      alert(`Đã chuyển ngôn ngữ sang: ${e.target.options[e.target.selectedIndex].text}.`);
+      alert(`Đã chuyển ngôn ngữ sang: ${e.target.options[e.target.selectedIndex].text}. Vui lòng bắt đầu cuộc trò chuyện mới.`);
     });
 
     // Hàm chuyển đổi Markdown cơ bản và thẻ <mark> sang HTML
@@ -207,25 +358,37 @@
       });
     });
 
-    // 🖼️ Pollinations (Giữ nguyên)
+    // 🖼️ Pollinations
     document.getElementById("btnCreateImage").addEventListener("click", async () => {
       const prompt = document.getElementById("imagePrompt").value.trim();
       const resDiv = document.getElementById("imageResult");
-      if (!prompt) return alert("Nhập mô tả ảnh.");
+      if (!prompt) {
+        resDiv.innerHTML = `<p class='text-red-400'>Vui lòng nhập mô tả ảnh.</p>`;
+        return;
+      }
 
-      resDiv.innerHTML = `<p class='text-gray-400 font-bold'>ĐANG TẠO ẢNH...</p>`; 
+      resDiv.innerHTML = `<p class='text-green-400 font-bold animate-pulse'>ĐANG TẠO ẢNH...</p>`; 
       
-      const res = await fetch("/api/pollinations-image", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt })
-      });
-      const data = await res.json();
-      resDiv.innerHTML = `
-        <div class="generated-image-container">
-          <img src="${data.imageUrl}" class="rounded-lg w-full">
-          <div class="image-watermark-cover"></div>
-        </div>`;
+      try {
+        const res = await fetch("/api/pollinations-image", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ prompt })
+        });
+        const data = await res.json();
+        if (data.imageUrl) {
+          resDiv.innerHTML = `
+            <div class="generated-image-container">
+              <img src="${data.imageUrl}" class="rounded-lg w-full">
+              <div class="image-watermark-cover"></div>
+            </div>`;
+        } else {
+          resDiv.innerHTML = `<p class='text-red-400'>${data.message || 'Lỗi khi tạo ảnh.'}</p>`;
+        }
+      } catch (err) {
+        console.error(err);
+        resDiv.innerHTML = `<p class='text-red-400'>Lỗi kết nối đến server.</p>`;
+      }
     });
 
     // 💬 Chat (ĐÃ CẬP NHẬT GỬI NGÔN NGỮ)
@@ -241,7 +404,7 @@
       document.getElementById("chatPrompt").value = '';
 
       const statusDiv = document.createElement("div");
-      statusDiv.classList.add("ai-message", "text-gray-400", "font-bold");
+      statusDiv.classList.add("ai-message", "text-gray-400", "font-bold", "animate-pulse");
       statusDiv.id = "chatStatus";
       statusDiv.textContent = "ĐANG TRẢ LỜI...";
       historyDiv.appendChild(statusDiv);
@@ -269,22 +432,25 @@
         chatHistory.push({ role: "assistant", text: reply }); 
         
       } catch (err) {
-        statusDiv.textContent = "❌ Lỗi kết nối đến server. (Kiểm tra terminal server)";
+        statusDiv.textContent = "❌ Lỗi kết nối đến server.";
         console.error(err);
       } finally {
         btn.disabled = false;
       }
     });
 
-    // 🧮 Math (Giữ nguyên)
+    // 🧮 Math
     document.getElementById("btnMath").addEventListener("click", async () => {
       const question = document.getElementById("mathPrompt").value.trim();
       const resDiv = document.getElementById("mathResult");
       const btn = document.getElementById("btnMath");
 
-      if (!question) return alert("Nhập bài toán.");
+      if (!question) {
+        resDiv.innerHTML = `<p class='text-red-400'>Vui lòng nhập bài toán.</p>`;
+        return;
+      }
       
-      resDiv.innerHTML = `<p class='text-gray-400 font-bold'>ĐANG TRẢ LỜI...</p>`;
+      resDiv.innerHTML = `<p class='text-yellow-400 font-bold animate-pulse'>ĐANG GIẢI TOÁN...</p>`;
       btn.disabled = true;
 
       try {
@@ -304,7 +470,7 @@
         MathJax.typesetPromise([resDiv]).catch((err) => console.error("MathJax Error:", err));
 
       } catch (err) {
-        resDiv.textContent = "❌ Lỗi kết nối đến server.";
+        resDiv.innerHTML = `<p class='text-red-400'>Lỗi kết nối đến server.</p>`;
         console.error(err);
       } finally {
         btn.disabled = false;

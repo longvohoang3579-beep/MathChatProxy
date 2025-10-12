@@ -9,60 +9,71 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 app.use(bodyParser.json());
-app.use(express.static(".")); // phục vụ file HTML / JS ở thư mục gốc
+app.use(express.static(".")); // phục vụ file giao diện cùng thư mục
 
-// ✅ API Chat Gemini
+// ✅ API CHAT & GIẢI TOÁN (Gemini)
 app.post("/api/gemini", async (req, res) => {
   const { prompt } = req.body;
-  if (!prompt) return res.status(400).json({ message: "Thiếu nội dung chat." });
+  if (!prompt) return res.status(400).json({ text: "⚠️ Thiếu nội dung để xử lý." });
 
   try {
     const apiKey = process.env.GEMINI_API_KEY;
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${apiKey}`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          contents: [{ role: "user", parts: [{ text: prompt }] }]
-        }),
-      }
-    );
+    const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+
+    const response = await fetch(endpoint, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        contents: [
+          {
+            role: "user",
+            parts: [{ text: prompt }]
+          }
+        ]
+      }),
+    });
 
     const data = await response.json();
 
-    // Kiểm tra phản hồi rõ ràng
-    if (!data.candidates || data.candidates.length === 0) {
-      console.error("Phản hồi từ Gemini:", JSON.stringify(data, null, 2));
-      return res.json({ text: "❌ Không có phản hồi từ Gemini (có thể do API key hoặc giới hạn truy cập)." });
+    // Nếu API phản hồi lỗi
+    if (data.error) {
+      console.error("❌ Lỗi từ Gemini:", data.error);
+      return res.json({ text: `❌ Lỗi Gemini: ${data.error.message}` });
     }
 
+    // Nếu không có candidate nào
+    if (!data.candidates || data.candidates.length === 0) {
+      console.error("⚠️ Phản hồi không có nội dung:", JSON.stringify(data, null, 2));
+      return res.json({ text: "❌ Không có phản hồi từ Gemini." });
+    }
+
+    // ✅ Lấy phần text trả về
     const text = data.candidates[0].content.parts
-      .map(part => part.text)
+      .map(p => p.text)
       .join("\n");
 
     res.json({ text });
   } catch (err) {
-    console.error("Gemini error:", err);
+    console.error("🔥 Lỗi kết nối Gemini:", err);
     res.status(500).json({ text: "❌ Lỗi khi gọi Gemini API." });
   }
 });
 
-// ✅ API tạo ảnh Pollinations (hoạt động tốt)
+// ✅ API TẠO ẢNH (Pollinations)
 app.post("/api/pollinations", async (req, res) => {
   const { prompt } = req.body;
-  if (!prompt) return res.status(400).json({ message: "Thiếu mô tả ảnh." });
+  if (!prompt) return res.status(400).json({ message: "⚠️ Thiếu mô tả ảnh." });
 
   try {
-    const imageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?nologo=true`;
+    const imageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?nologo=true&crop=1`;
     res.json({ imageUrl });
   } catch (err) {
-    console.error("Pollinations error:", err);
-    res.status(500).json({ message: "❌ Lỗi khi tạo ảnh." });
+    console.error("🔥 Lỗi Pollinations:", err);
+    res.status(500).json({ message: "❌ Không thể tạo ảnh." });
   }
 });
 
-// ✅ Khởi chạy server
+// ✅ Khởi động server
 app.listen(PORT, () => {
-  console.log(`🚀 Server đang chạy tại http://localhost:${PORT}`);
+  console.log(`🚀 Server đang chạy tại: http://localhost:${PORT}`);
 });

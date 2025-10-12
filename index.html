@@ -1,141 +1,137 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>AI Chat - Gemini 2.5 + Pollinations</title>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>AI Assistant Pro</title>
+<link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet" />
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 <style>
-  body {background:#0f172a;color:white;font-family:sans-serif;margin:0;padding:0;display:flex;flex-direction:column;align-items:center;}
-  .tabs {display:flex;gap:10px;margin:10px;}
-  .tab {padding:8px 16px;border-radius:8px;background:#1e293b;cursor:pointer;}
-  .tab.active {background:#2563eb;}
-  .tab-content {display:none;width:90%;max-width:700px;background:#1e293b;padding:12px;border-radius:12px;}
-  .tab-content.active {display:block;}
-  .chat-box {height:420px;overflow-y:auto;padding:10px;display:flex;flex-direction:column;gap:8px;}
-  .bubble {padding:8px 12px;border-radius:10px;max-width:80%;word-wrap:break-word;}
-  .user {background:#2563eb;align-self:flex-end;}
-  .ai {background:#334155;align-self:flex-start;}
-  .pending-preview {display:flex;gap:8px;flex-wrap:wrap;margin:6px 0;}
-  .pending-preview img {width:60px;height:60px;object-fit:cover;border-radius:8px;border:2px solid #475569;}
-  .input-row {display:flex;align-items:center;gap:8px;margin-top:8px;}
-  textarea {flex:1;resize:none;border:none;padding:8px;border-radius:8px;background:#0f172a;color:white;}
-  .icon-btn {padding:8px;border-radius:8px;background:#334155;cursor:pointer;font-size:18px;}
-  .icon-btn:hover {background:#475569;}
-  .send-btn {background:#2563eb;color:white;font-size:22px;padding:8px 14px;border-radius:10px;}
-  .send-btn:hover {background:#3b82f6;}
-  .file-link {color:#93c5fd;text-decoration:underline;}
+body { background-color:#0f0f13; color:#fff; font-family:'Segoe UI',sans-serif; margin:0; padding:0;}
+.container {max-width:900px;margin:2rem auto;background:#1a1c29;border-radius:1.5rem;padding:1.5rem;box-shadow:0 15px 30px rgba(0,0,0,0.7);}
+.tabs {display:flex;border-bottom:2px solid #333;margin-bottom:1rem;}
+.tab-btn {flex:1;text-align:center;padding:1rem;cursor:pointer;color:#aaa;font-weight:bold;transition:all 0.2s;}
+.tab-btn.active {color:#fff;border-bottom:3px solid #facc15;}
+.tab-content {display:none;}
+.tab-content.active {display:block;}
+.chat-box {background:#111827;border-radius:12px;padding:1rem;height:400px;overflow-y:auto;display:flex;flex-direction:column;}
+.bubble {max-width:80%;padding:10px 14px;border-radius:12px;margin-bottom:10px;line-height:1.5;word-wrap:break-word;white-space:pre-wrap;}
+.user-bubble {background:#2563eb;align-self:flex-end;color:white;border-bottom-right-radius:2px;}
+.ai-bubble {background:#374151;align-self:flex-start;color:#e5e7eb;border-bottom-left-radius:2px;}
+mark.highlight {background-color:#fde047;color:black;font-weight:bold;padding:0 3px;border-radius:3px;}
+textarea,input{width:100%;padding:0.75rem;border-radius:0.75rem;background:#1e1e2a;border:1px solid #333;color:white;resize:none;outline:none;}
+button{padding:0.75rem 1rem;border-radius:0.75rem;font-weight:bold;cursor:pointer;transition:all 0.2s;}
+#btnCreateImage{background:#10b981;color:#111827;}#btnCreateImage:hover{background:#059669;}
+#btnChat{background:#6366f1;color:white;}#btnChat:hover{background:#4f46e5;}
+#btnMath{background:#f59e0b;color:#111827;}#btnMath:hover{background:#d97706;}
+img.generated-image{border-radius:12px;max-width:100%;margin-top:1rem;}
+#settings-btn{position:absolute;top:1rem;right:1rem;font-size:1.5rem;cursor:pointer;color:#facc15;}
+#settings-modal{position:absolute;top:3rem;right:1rem;width:200px;background:#1a1c29;border:1px solid #facc15;border-radius:0.75rem;padding:1rem;display:none;}
+.pending-preview{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px;}
+.pending-preview img{width:60px;height:60px;object-fit:cover;border-radius:8px;border:2px solid #475569;}
+.input-row{display:flex;align-items:center;gap:6px;margin-top:8px;}
+.icon-btn{background:#27293a;padding:8px;border-radius:8px;cursor:pointer;transition:0.2s;}
+.icon-btn:hover{background:#3f4259;}
+.icon-btn svg{width:22px;height:22px;color:#facc15;}
+.send-btn{background:#6366f1;padding:10px;border-radius:50%;display:flex;align-items:center;justify-content:center;}
+.send-btn:hover{background:#4f46e5;}
+.send-btn svg{width:22px;height:22px;}
 </style>
 </head>
 <body>
-<h2>✨ Gemini 2.5 Chat + Giải toán + Pollinations</h2>
-<div class="tabs">
-  <div class="tab active" data-tab="chat">💬 Chat</div>
-  <div class="tab" data-tab="math">🧮 Giải toán</div>
-  <div class="tab" data-tab="image">🎨 Tạo ảnh</div>
-</div>
-
-<!-- CHAT TAB -->
-<div id="chat" class="tab-content active">
-  <div id="chatBox" class="chat-box"></div>
-  <div id="chatPreview" class="pending-preview"></div>
-  <div class="input-row">
-    <label class="icon-btn" for="chatFileInput">📁</label>
-    <input type="file" id="chatFileInput" accept="image/*,.pdf,.docx" style="display:none">
-    <button class="icon-btn" id="chatCameraBtn">📷</button>
-    <textarea id="chatInput" placeholder="Nhập tin nhắn..."></textarea>
-    <button class="send-btn" id="btnChat">›</button>
+<div class="container relative">
+  <div id="settings-btn">⚙️</div>
+  <div id="settings-modal">
+    <label class="block mb-2">Ngôn ngữ chat:</label>
+    <select id="language-select" class="w-full p-2 rounded bg-gray-800 text-white">
+      <option value="vi">Tiếng Việt</option>
+      <option value="en">English</option>
+      <option value="zh-CN">简体中文</option>
+    </select>
   </div>
-</div>
 
-<!-- MATH TAB -->
-<div id="math" class="tab-content">
-  <div id="mathBox" class="chat-box"></div>
-  <div id="mathPreview" class="pending-preview"></div>
-  <div class="input-row">
-    <label class="icon-btn" for="mathFileInput">📁</label>
-    <input type="file" id="mathFileInput" accept="image/*,.pdf,.docx" style="display:none">
-    <button class="icon-btn" id="mathCameraBtn">📷</button>
-    <textarea id="mathPrompt" placeholder="Nhập bài toán..."></textarea>
-    <button class="send-btn" id="btnMath">›</button>
+  <div class="tabs">
+    <div class="tab-btn active" data-tab="image">🖼️ Tạo Ảnh</div>
+    <div class="tab-btn" data-tab="chat">💬 Chat</div>
+    <div class="tab-btn" data-tab="math">🧮 Giải Toán</div>
   </div>
-</div>
 
-<!-- IMAGE TAB -->
-<div id="image" class="tab-content">
-  <div id="imageBox" class="chat-box"></div>
-  <div class="input-row">
-    <textarea id="imagePrompt" placeholder="Nhập mô tả ảnh..."></textarea>
-    <button class="send-btn" id="btnCreateImage">›</button>
+  <!-- Tạo Ảnh -->
+  <div class="tab-content active" id="image">
+    <div class="chat-box" id="imageBox"></div>
+    <textarea id="imagePrompt" rows="2" placeholder="Nhập mô tả ảnh..."></textarea>
+    <button id="btnCreateImage" class="mt-2 w-full">Tạo Ảnh</button>
+  </div>
+
+  <!-- Chat -->
+  <div class="tab-content" id="chat">
+    <div class="chat-box" id="chatBox"></div>
+    <div class="pending-preview" id="chatPreview"></div>
+    <div class="input-row">
+      <label class="icon-btn" for="chatFileInput" title="Tải ảnh hoặc file">
+        📁
+      </label>
+      <input type="file" id="chatFileInput" accept="image/*,.pdf,.txt,.docx" hidden />
+      <label class="icon-btn" id="chatCameraBtn" title="Chụp ảnh">
+        📷
+      </label>
+      <textarea id="chatInput" rows="1" placeholder="Nhập tin nhắn..."></textarea>
+      <button id="btnChat" class="send-btn" title="Gửi">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="white" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12l14-7-7 7 7 7-14-7z"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- Giải Toán -->
+  <div class="tab-content" id="math">
+    <div class="chat-box" id="mathBox"></div>
+    <div class="pending-preview" id="mathPreview"></div>
+    <div class="input-row">
+      <label class="icon-btn" for="mathFileInput" title="Tải ảnh hoặc file">
+        📁
+      </label>
+      <input type="file" id="mathFileInput" accept="image/*,.pdf,.txt,.docx" hidden />
+      <label class="icon-btn" id="mathCameraBtn" title="Chụp ảnh">
+        📷
+      </label>
+      <textarea id="mathPrompt" rows="1" placeholder="Nhập bài toán..."></textarea>
+      <button id="btnMath" class="send-btn" title="Giải">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="white" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12l14-7-7 7 7 7-14-7z"/></svg>
+      </button>
+    </div>
   </div>
 </div>
 
 <script>
-let chatPendingFiles = [], mathPendingFiles = [];
+const tabs=document.querySelectorAll(".tab-btn");
+const contents=document.querySelectorAll(".tab-content");
+tabs.forEach(tab=>{tab.addEventListener("click",()=>{tabs.forEach(t=>t.classList.remove("active"));contents.forEach(c=>c.classList.remove("active"));tab.classList.add("active");document.getElementById(tab.dataset.tab).classList.add("active");});});
 
-// Gắn event tab
-document.querySelectorAll(".tab").forEach(tab=>{
-  tab.onclick=()=>{
-    document.querySelectorAll(".tab").forEach(t=>t.classList.remove("active"));
-    document.querySelectorAll(".tab-content").forEach(c=>c.classList.remove("active"));
-    tab.classList.add("active");
-    document.getElementById(tab.dataset.tab).classList.add("active");
-  }
-});
-
-// ==== CHAT ====
-document.getElementById("chatFileInput").addEventListener("change",e=>{
-  chatPendingFiles=[...e.target.files];
-  renderPreview("chatPreview",chatPendingFiles);
-});
-document.getElementById("btnChat").addEventListener("click",async()=>{
-  const text=document.getElementById("chatInput").value.trim();
-  if(!text && chatPendingFiles.length===0)return;
-  addUserBubble("chatBox",text,chatPendingFiles);
-  const files=await filesToBase64(chatPendingFiles);
-  document.getElementById("chatPreview").innerHTML="";
-  chatPendingFiles=[];
-  document.getElementById("chatInput").value="";
-  try{
-    const res=await fetch("/api/chat",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({message:text,images:files})});
-    const data=await res.json();
-    addAIBubble("chatBox",data.reply||"❌ Không có phản hồi hợp lệ từ Gemini.");
-  }catch{addAIBubble("chatBox","❌ Lỗi kết nối server.");}
-});
-
-// ==== MATH ====
-document.getElementById("mathFileInput").addEventListener("change",e=>{
-  mathPendingFiles=[...e.target.files];
-  renderPreview("mathPreview",mathPendingFiles);
-});
-document.getElementById("btnMath").addEventListener("click",async()=>{
-  const text=document.getElementById("mathPrompt").value.trim();
-  if(!text && mathPendingFiles.length===0)return;
-  addUserBubble("mathBox",text,mathPendingFiles);
-  const files=await filesToBase64(mathPendingFiles);
-  document.getElementById("mathPreview").innerHTML="";
-  mathPendingFiles=[];
-  document.getElementById("mathPrompt").value="";
-  try{
-    const res=await fetch("/api/math",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({message:text,images:files})});
-    const data=await res.json();
-    addAIBubble("mathBox",data.reply||"❌ Không có phản hồi hợp lệ từ Gemini.");
-  }catch{addAIBubble("mathBox","❌ Lỗi kết nối server.");}
-});
-
-// ==== IMAGE (Pollinations) ====
-document.getElementById("btnCreateImage").addEventListener("click",async()=>{
-  const text=document.getElementById("imagePrompt").value.trim();
-  if(!text)return;
-  addUserBubble("imageBox",text);
-  addAIBubble("imageBox","🧠 Đang tạo ảnh...");
-  try{
-    const res=await fetch("/api/pollinations-image",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({prompt:text})});
-    const data=await res.json();
-    updateLastAIBubble("imageBox",`<img src="${data.imageUrl}" style="max-width:100%;border-radius:10px;">`);
-  }catch{updateLastAIBubble("imageBox","❌ Lỗi kết nối server.");}
-});
-
-// ==== HÀM PHỤ ====
+function addBubble(boxId,text,sender){const box=document.getElementById(boxId);const div=document.createElement("div");div.className=`bubble ${sender==='user'?'user-bubble':'ai-bubble'}`;div.innerHTML=text;box.appendChild(div);box.scrollTop=box.scrollHeight;}
+function updateLastAIBubble(boxId,text){const box=document.getElementById(boxId);const bubbles=box.getElementsByClassName("ai-bubble");if(bubbles.length>0){bubbles[bubbles.length-1].innerHTML=text;}box.scrollTop=box.scrollHeight;}
+function addBubbleWithFiles(boxId,text,files=[],sender='user'){
+  const box=document.getElementById(boxId);
+  const div=document.createElement("div");
+  div.className=`bubble ${sender==='user'?'user-bubble':'ai-bubble'}`;
+  files.forEach(f=>{
+    if(f.type.startsWith("image/")){
+      const img=document.createElement("img");
+      img.src=URL.createObjectURL(f);
+      img.style="max-width:120px;border-radius:6px;display:block;margin-bottom:6px;";
+      div.appendChild(img);
+    }else{
+      const a=document.createElement("a");
+      a.href=URL.createObjectURL(f);
+      a.textContent=f.name;
+      a.target="_blank";
+      a.className="underline text-yellow-300 block mb-1";
+      div.appendChild(a);
+    }
+  });
+  div.append(text);
+  box.appendChild(div);
+  box.scrollTop=box.scrollHeight;
+}
 function renderPreview(id,files){
   const container=document.getElementById(id);
   container.innerHTML="";
@@ -152,60 +148,95 @@ function renderPreview(id,files){
   });
 }
 
-function addUserBubble(boxId,text,files=[]){
-  const box=document.getElementById(boxId);
-  const div=document.createElement("div");
-  div.className="bubble user";
-  if(files?.length){
-    files.forEach(f=>{
-      if(f.type.startsWith("image/")){
-        const img=document.createElement("img");
-        img.src=URL.createObjectURL(f);
-        img.style="max-width:120px;border-radius:6px;display:block;margin-bottom:6px;";
-        div.appendChild(img);
-      }else{
-        const a=document.createElement("a");
-        a.href=URL.createObjectURL(f);
-        a.textContent=f.name;
-        a.className="file-link";
-        a.target="_blank";
-        div.appendChild(a);
-      }
-    });
+// Ngôn ngữ & settings
+let chatHistory=[];
+let currentLang=localStorage.getItem("geminiChatLanguage")||"vi";
+document.getElementById("language-select").value=currentLang;
+const settingsBtn=document.getElementById("settings-btn");
+const settingsModal=document.getElementById("settings-modal");
+settingsBtn.addEventListener("click",()=>{settingsModal.style.display=settingsModal.style.display==="none"?"block":"none";});
+document.addEventListener("click",(e)=>{if(!settingsModal.contains(e.target)&&!settingsBtn.contains(e.target)){settingsModal.style.display="none";}});
+document.getElementById("language-select").addEventListener("change",(e)=>{currentLang=e.target.value;localStorage.setItem("geminiChatLanguage",currentLang);chatHistory=[];document.getElementById("chatBox").innerHTML="";alert(`Đã chuyển ngôn ngữ sang ${e.target.options[e.target.selectedIndex].text}. Vui lòng bắt đầu chat mới.`);});
+
+// Preview & upload
+let chatPendingFiles=[], mathPendingFiles=[];
+document.getElementById("chatFileInput").addEventListener("change",e=>{chatPendingFiles=[...e.target.files];renderPreview("chatPreview",chatPendingFiles);});
+document.getElementById("mathFileInput").addEventListener("change",e=>{mathPendingFiles=[...e.target.files];renderPreview("mathPreview",mathPendingFiles);});
+document.getElementById("chatCameraBtn").addEventListener("click",()=>alert("📷 Camera đang được phát triển"));
+document.getElementById("mathCameraBtn").addEventListener("click",()=>alert("📷 Camera đang được phát triển"));
+
+// Chat
+document.getElementById("btnChat").addEventListener("click",async()=>{
+  const message=document.getElementById("chatInput").value.trim();
+  if(!message&&!chatPendingFiles.length)return;
+  addBubbleWithFiles("chatBox",message,chatPendingFiles,"user");
+  chatHistory.push({role:"user",text:message});
+  document.getElementById("chatInput").value="";
+  document.getElementById("chatPreview").innerHTML="";
+  addBubble("chatBox","🧠 ĐANG TRẢ LỜI...","ai");
+
+  let imageBase64=null;
+  if(chatPendingFiles.length>0&&chatPendingFiles[0].type.startsWith("image/")){
+    const file=chatPendingFiles[0];
+    imageBase64=await toBase64(file);
   }
-  if(text)div.append(text);
-  box.appendChild(div);
-  box.scrollTop=box.scrollHeight;
-}
+  chatPendingFiles=[];
 
-function addAIBubble(boxId,content){
-  const box=document.getElementById(boxId);
-  const div=document.createElement("div");
-  div.className="bubble ai";
-  div.innerHTML=content;
-  box.appendChild(div);
-  box.scrollTop=box.scrollHeight;
-}
+  try{
+    const res=await fetch("/api/chat",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({message,history:chatHistory,language:currentLang,image:imageBase64})});
+    const data=await res.json();
+    updateLastAIBubble("chatBox",data.response);
+    chatHistory.push({role:"assistant",text:data.response});
+  }catch{updateLastAIBubble("chatBox","❌ Lỗi kết nối server.");}
+});
 
-function updateLastAIBubble(boxId,html){
-  const box=document.getElementById(boxId);
-  const last=box.querySelector(".bubble.ai:last-child");
-  if(last)last.innerHTML=html;
-}
+// Giải Toán
+document.getElementById("btnMath").addEventListener("click",async()=>{
+  const question=document.getElementById("mathPrompt").value.trim();
+  if(!question&&!mathPendingFiles.length)return;
+  addBubbleWithFiles("mathBox",question,mathPendingFiles,"user");
+  document.getElementById("mathPrompt").value="";
+  document.getElementById("mathPreview").innerHTML="";
+  addBubble("mathBox","🧠 ĐANG GIẢI TOÁN...","ai");
 
-async function filesToBase64(files){
-  const arr=[];
-  for(const f of files){
-    const base64=await new Promise((res,rej)=>{
-      const r=new FileReader();
-      r.onload=()=>res(r.result);
-      r.onerror=rej;
-      r.readAsDataURL(f);
-    });
-    arr.push({name:f.name,type:f.type,data:base64});
+  let imageBase64=null;
+  if(mathPendingFiles.length>0&&mathPendingFiles[0].type.startsWith("image/")){
+    const file=mathPendingFiles[0];
+    imageBase64=await toBase64(file);
   }
-  return arr;
+  mathPendingFiles=[];
+
+  try{
+    const res=await fetch("/api/math",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({question,image:imageBase64})});
+    const data=await res.json();
+    updateLastAIBubble("mathBox",data.response);
+    MathJax.typesetPromise();
+  }catch{updateLastAIBubble("mathBox","❌ Lỗi kết nối server.");}
+});
+
+function toBase64(file){
+  return new Promise((resolve,reject)=>{
+    const reader=new FileReader();
+    reader.onload=()=>resolve(reader.result);
+    reader.onerror=e=>reject(e);
+    reader.readAsDataURL(file);
+  });
 }
+
+// Pollinations tạo ảnh
+document.getElementById("btnCreateImage").addEventListener("click",async()=>{
+  const prompt=document.getElementById("imagePrompt").value.trim();
+  if(!prompt)return;
+  addBubble("imageBox",prompt,"user");
+  addBubble("imageBox","🧠 ĐANG TẠO ẢNH...","ai");
+  try{
+    const res=await fetch("/api/pollinations-image",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({prompt})});
+    const data=await res.json();
+    updateLastAIBubble("imageBox",`<img src="${data.imageUrl}" class="generated-image">`);
+  }catch{
+    updateLastAIBubble("imageBox","❌ Lỗi kết nối server.");
+  }
+});
 </script>
 </body>
 </html>

@@ -3,266 +3,224 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Math Chat AI</title>
+  <title>Math Chat & AI</title>
   <style>
     body {
-      font-family: 'Segoe UI', sans-serif;
-      background: #0d1117;
-      color: #fff;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: flex-start;
-      height: 100vh;
+      font-family: "Segoe UI", sans-serif;
+      background: #0f172a;
+      color: white;
       margin: 0;
-    }
-
-    h2 {
-      margin: 15px 0 5px 0;
-      color: #ffd54f;
-    }
-
-    .chat-container {
-      display: flex;
-      justify-content: space-around;
-      width: 95%;
-      flex-wrap: wrap;
-    }
-
-    .chat-box {
-      background: #161b22;
-      border-radius: 12px;
-      box-shadow: 0 0 12px rgba(255, 255, 255, 0.1);
-      width: 30%;
-      min-width: 340px;
+      padding: 0;
       display: flex;
       flex-direction: column;
+      height: 100vh;
       overflow: hidden;
-      height: 70vh;
+    }
+
+    header {
+      background: #1e293b;
+      padding: 10px 20px;
+      text-align: center;
+      font-weight: bold;
+      font-size: 1.2rem;
+      letter-spacing: 1px;
+      color: #facc15;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+    }
+
+    main {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+    }
+
+    .chat-section {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      border-right: 1px solid #334155;
+      background: #1e293b;
     }
 
     .messages {
       flex: 1;
+      padding: 15px;
       overflow-y: auto;
-      padding: 10px;
+    }
+
+    .message {
+      margin-bottom: 12px;
+    }
+
+    .user-msg {
+      text-align: right;
+      color: #facc15;
+    }
+
+    .ai-msg {
+      text-align: left;
+      color: #a5b4fc;
     }
 
     .input-area {
       display: flex;
       align-items: center;
-      padding: 8px;
-      background: #1f2937;
-      border-top: 1px solid #2d3748;
+      padding: 10px;
+      border-top: 1px solid #334155;
+      background: #0f172a;
+      gap: 10px;
     }
 
-    .file-preview {
-      display: none;
-      flex-wrap: wrap;
-      gap: 8px;
-      padding: 8px;
-      background: #1f2937;
-      border-top: 1px solid #2d3748;
-    }
-
-    .file-preview img {
-      width: 60px;
-      height: 60px;
-      border-radius: 8px;
-      object-fit: cover;
-      border: 1px solid #444;
-    }
-
-    .input-area input[type="file"] {
-      display: none;
-    }
-
-    .upload-btn {
+    .file-input {
       background: transparent;
       border: none;
-      color: #ffd54f;
-      font-size: 22px;
       cursor: pointer;
-      margin-right: 10px;
+    }
+
+    .file-input svg {
+      width: 24px;
+      height: 24px;
+      fill: #facc15;
     }
 
     .text-input {
       flex: 1;
-      background: #111827;
-      border: 1px solid #374151;
+      padding: 8px 12px;
       border-radius: 20px;
-      padding: 10px;
-      color: #fff;
-      font-size: 15px;
+      border: none;
       outline: none;
+      font-size: 1rem;
+      background: #334155;
+      color: white;
     }
 
     .send-btn {
-      background: #f5a623;
+      background: #facc15;
       border: none;
       border-radius: 50%;
-      width: 42px;
-      height: 42px;
-      margin-left: 10px;
+      width: 40px;
+      height: 40px;
       cursor: pointer;
       display: flex;
-      align-items: center;
       justify-content: center;
+      align-items: center;
       transition: background 0.3s;
     }
 
     .send-btn:hover {
-      background: #ffb300;
+      background: #fbbf24;
     }
 
     .send-btn svg {
-      width: 20px;
-      height: 20px;
-      fill: white;
-      transform: rotate(-45deg); /* ✅ Xoay icon sang phải */
+      width: 22px;
+      height: 22px;
+      stroke: white;
+      stroke-width: 2;
     }
 
-    .message {
-      margin-bottom: 10px;
-      padding: 8px 12px;
-      border-radius: 12px;
-      max-width: 80%;
-      word-wrap: break-word;
+    .preview-area {
+      padding: 8px;
+      text-align: center;
+      border-top: 1px solid #334155;
+      background: #0f172a;
     }
 
-    .user {
-      background: #2563eb;
-      align-self: flex-end;
+    .preview-img {
+      max-width: 120px;
+      border-radius: 10px;
+      margin-top: 5px;
     }
 
-    .bot {
-      background: #374151;
-      align-self: flex-start;
+    .error {
+      color: #f87171;
+      text-align: center;
+      font-size: 0.9rem;
     }
+
   </style>
 </head>
 <body>
-  <h2>💬 Math Chat AI</h2>
-
-  <div class="chat-container">
-    <!-- Khung Chat -->
-    <div class="chat-box" id="chat-box">
-      <div class="messages" id="chat-messages"></div>
-      <div class="file-preview" id="chat-preview"></div>
+  <header>💬 Math & AI Chat</header>
+  <main>
+    <!-- KHUNG CHAT -->
+    <div class="chat-section" id="chatSection">
+      <div class="messages" id="chatMessages"></div>
+      <div class="preview-area" id="chatPreview"></div>
       <div class="input-area">
-        <button class="upload-btn" onclick="document.getElementById('chat-file').click()">📎</button>
-        <input type="file" id="chat-file" multiple accept="image/*,.pdf,.txt" />
-        <input type="text" class="text-input" id="chat-input" placeholder="Nhập tin nhắn..." />
-        <button class="send-btn" onclick="sendMessage('chat')">
-          <svg viewBox="0 0 24 24">
-            <path d="M2 21l21-9L2 3v7l15 2-15 2v7z"/>
+        <button class="file-input" id="chatFileBtn" title="Tải ảnh / file">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <path fill="currentColor"
+              d="M12 16a4 4 0 0 0 4-4V5a3 3 0 1 0-6 0v7a1 1 0 0 0 2 0V6a1 1 0 1 1 2 0v6a2 2 0 1 1-4 0V5a4 4 0 1 1 8 0v7a6 6 0 1 1-12 0V6a1 1 0 0 0-2 0v6a8 8 0 1 0 16 0V5a5 5 0 1 0-10 0v7a3 3 0 0 0 6 0V6a1 1 0 0 0-2 0v6a1 1 0 0 1-2 0V5a4 4 0 1 1 8 0v7a8 8 0 1 1-16 0V5a1 1 0 1 0-2 0v7a10 10 0 1 0 20 0V5a6 6 0 1 0-12 0v7a2 2 0 0 0 4 0V6a1 1 0 1 1 2 0v6a3 3 0 0 1-6 0V5a5 5 0 1 1 10 0v7a7 7 0 1 1-14 0V5a1 1 0 1 0-2 0v7a9 9 0 1 0 18 0V5a8 8 0 1 0-16 0v7a10 10 0 1 0 20 0V5a9 9 0 1 0-18 0v7a11 11 0 1 0 22 0V5a10 10 0 1 0-20 0v7Z" />
+          </svg>
+        </button>
+        <input type="file" id="chatFileInput" style="display:none" accept="image/*,application/pdf" />
+        <input type="text" id="chatInput" class="text-input" placeholder="Nhập tin nhắn..." />
+        <button id="btnChat" class="send-btn" title="Gửi">
+          <!-- ✅ XOAY ICON RA HƯỚNG PHẢI -->
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12l14 7-7-7 7-7-14 7z"/>
           </svg>
         </button>
       </div>
     </div>
-
-    <!-- Khung Giải Toán -->
-    <div class="chat-box" id="math-box">
-      <div class="messages" id="math-messages"></div>
-      <div class="file-preview" id="math-preview"></div>
-      <div class="input-area">
-        <button class="upload-btn" onclick="document.getElementById('math-file').click()">📎</button>
-        <input type="file" id="math-file" multiple accept="image/*,.pdf,.txt" />
-        <input type="text" class="text-input" id="math-input" placeholder="Nhập bài toán..." />
-        <button class="send-btn" onclick="sendMessage('math')">
-          <svg viewBox="0 0 24 24">
-            <path d="M2 21l21-9L2 3v7l15 2-15 2v7z"/>
-          </svg>
-        </button>
-      </div>
-    </div>
-
-    <!-- Khung Tạo Ảnh -->
-    <div class="chat-box" id="image-box">
-      <div class="messages" id="image-messages"></div>
-      <div class="input-area">
-        <input type="text" class="text-input" id="image-input" placeholder="Mô tả ảnh bạn muốn tạo..." />
-        <button class="send-btn" onclick="sendMessage('image')">
-          <svg viewBox="0 0 24 24">
-            <path d="M2 21l21-9L2 3v7l15 2-15 2v7z"/>
-          </svg>
-        </button>
-      </div>
-    </div>
-  </div>
+  </main>
 
   <script>
-    function previewFiles(prefix) {
-      const input = document.getElementById(`${prefix}-file`);
-      const preview = document.getElementById(`${prefix}-preview`);
-      preview.innerHTML = '';
-      if (input.files.length > 0) {
-        preview.style.display = 'flex';
-        Array.from(input.files).forEach(file => {
-          if (file.type.startsWith('image/')) {
-            const img = document.createElement('img');
-            img.src = URL.createObjectURL(file);
-            preview.appendChild(img);
+    const chatInput = document.getElementById("chatInput");
+    const chatMessages = document.getElementById("chatMessages");
+    const btnChat = document.getElementById("btnChat");
+    const chatFileBtn = document.getElementById("chatFileBtn");
+    const chatFileInput = document.getElementById("chatFileInput");
+    const chatPreview = document.getElementById("chatPreview");
+
+    let selectedFile = null;
+
+    chatFileBtn.onclick = () => chatFileInput.click();
+
+    chatFileInput.onchange = (e) => {
+      const file = e.target.files[0];
+      if (file) {
+        selectedFile = file;
+        const reader = new FileReader();
+        reader.onload = () => {
+          if (file.type.startsWith("image/")) {
+            chatPreview.innerHTML = `<img src="${reader.result}" class="preview-img" alt="preview">`;
           } else {
-            const div = document.createElement('div');
-            div.textContent = file.name;
-            div.style.background = '#222';
-            div.style.padding = '6px 8px';
-            div.style.borderRadius = '6px';
-            preview.appendChild(div);
+            chatPreview.innerHTML = `<div>${file.name}</div>`;
           }
-        });
-      } else {
-        preview.style.display = 'none';
+        };
+        reader.readAsDataURL(file);
       }
-    }
+    };
 
-    document.getElementById('chat-file').addEventListener('change', () => previewFiles('chat'));
-    document.getElementById('math-file').addEventListener('change', () => previewFiles('math'));
+    btnChat.onclick = async () => {
+      const text = chatInput.value.trim();
+      if (!text && !selectedFile) return;
 
-    async function sendMessage(type) {
-      const input = document.getElementById(`${type}-input`);
-      const messages = document.getElementById(`${type}-messages`);
-      const preview = document.getElementById(`${type}-preview`);
-      const files = document.getElementById(`${type}-file`).files;
+      // Hiển thị tin nhắn của người dùng
+      const msgDiv = document.createElement("div");
+      msgDiv.className = "message user-msg";
+      msgDiv.innerHTML = selectedFile
+        ? `<div><img src="${selectedFile ? URL.createObjectURL(selectedFile) : ''}" class="preview-img"></div>${text}`
+        : text;
+      chatMessages.appendChild(msgDiv);
+      chatMessages.scrollTop = chatMessages.scrollHeight;
 
-      const userMsg = input.value.trim();
-      if (!userMsg && files.length === 0) return;
+      chatInput.value = "";
+      chatPreview.innerHTML = "";
+      selectedFile = null;
 
-      const userDiv = document.createElement('div');
-      userDiv.className = 'message user';
+      // Giả lập trả lời
+      const aiDiv = document.createElement("div");
+      aiDiv.className = "message ai-msg";
+      aiDiv.textContent = "🤖 Đang xử lý...";
+      chatMessages.appendChild(aiDiv);
+      chatMessages.scrollTop = chatMessages.scrollHeight;
 
-      // Hiển thị ảnh/file đã chọn bên trên nội dung
-      if (files.length > 0) {
-        Array.from(files).forEach(file => {
-          if (file.type.startsWith('image/')) {
-            const img = document.createElement('img');
-            img.src = URL.createObjectURL(file);
-            img.style.width = '120px';
-            img.style.borderRadius = '8px';
-            img.style.display = 'block';
-            img.style.marginBottom = '5px';
-            userDiv.appendChild(img);
-          } else {
-            const div = document.createElement('div');
-            div.textContent = file.name;
-            div.style.background = '#333';
-            div.style.padding = '6px 8px';
-            div.style.borderRadius = '6px';
-            div.style.marginBottom = '5px';
-            userDiv.appendChild(div);
-          }
-        });
-      }
-
-      userDiv.textContent += userMsg;
-      messages.appendChild(userDiv);
-      input.value = '';
-      preview.innerHTML = '';
-      preview.style.display = 'none';
-      document.getElementById(`${type}-file`).value = '';
-
-      messages.scrollTop = messages.scrollHeight;
-    }
+      setTimeout(() => {
+        aiDiv.textContent = "✅ AI đã nhận tin nhắn và file của bạn!";
+      }, 1200);
+    };
   </script>
 </body>
 </html>

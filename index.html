@@ -14,7 +14,7 @@ body { background-color:#0f0f13; color:#fff; font-family:'Segoe UI',sans-serif; 
 .tab-btn.active {color:#fff;border-bottom:3px solid #facc15;}
 .tab-content {display:none;}
 .tab-content.active {display:block;}
-.chat-box {background:#111827;border-radius:12px;padding:1rem;height:400px;overflow-y:auto;display:flex;flex-direction:column;}
+.chat-box {background:#111827;border-radius:12px;padding:1rem;height:350px;overflow-y:auto;display:flex;flex-direction:column;}
 .bubble {max-width:80%;padding:10px 14px;border-radius:12px;margin-bottom:10px;line-height:1.5;word-wrap:break-word;white-space:pre-wrap;}
 .user-bubble {background:#2563eb;align-self:flex-end;color:white;border-bottom-right-radius:2px;}
 .ai-bubble {background:#374151;align-self:flex-start;color:#e5e7eb;border-bottom-left-radius:2px;}
@@ -30,7 +30,9 @@ img.generated-image{border-radius:12px;max-width:100%;margin-top:1rem;}
 .flex-tools {display:flex;gap:0.5rem;margin-bottom:0.5rem;}
 .tool-btn {width:48px;height:48px;background:#2c2c3a;display:flex;align-items:center;justify-content:center;border-radius:0.5rem;cursor:pointer;transition:all 0.2s;}
 .tool-btn:hover {background:#3e3e55;}
-#cameraPreviewContainer {display:none;}
+.input-row {display:flex;gap:0.5rem;margin-top:0.5rem;}
+.input-row textarea {flex:1;}
+#cameraPreviewContainer {display:none;width:100%;}
 #cameraPreview {border-radius:12px;width:100%;margin-top:0.5rem;}
 </style>
 </head>
@@ -62,22 +64,12 @@ img.generated-image{border-radius:12px;max-width:100%;margin-top:1rem;}
   <!-- Chat -->
   <div class="tab-content" id="chat">
     <div class="chat-box" id="chatBox"></div>
-
-    <!-- Hàng công cụ upload & camera -->
-    <div class="flex-tools">
-      <!-- Upload file -->
-      <label class="tool-btn">
-        📁
-        <input type="file" id="fileInput" accept="image/*" class="hidden">
-      </label>
-      <!-- Camera -->
+    <div class="input-row">
+      <textarea id="chatInput" rows="2" placeholder="Nhập tin nhắn..."></textarea>
+      <label class="tool-btn"><input type="file" id="fileInput" accept="image/*" class="hidden">📁</label>
       <button id="cameraBtn" class="tool-btn">📸</button>
     </div>
-
-    <textarea id="chatInput" rows="2" placeholder="Nhập tin nhắn..."></textarea>
     <button id="btnChat" class="mt-2 w-full">Gửi</button>
-
-    <!-- Video preview camera -->
     <div id="cameraPreviewContainer">
       <video id="cameraPreview" autoplay playsinline></video>
       <button id="captureBtn" class="mt-2 w-full bg-green-500 rounded text-black font-bold">Chụp & Gửi</button>
@@ -87,8 +79,16 @@ img.generated-image{border-radius:12px;max-width:100%;margin-top:1rem;}
   <!-- Giải Toán -->
   <div class="tab-content" id="math">
     <div class="chat-box" id="mathBox"></div>
-    <textarea id="mathPrompt" rows="2" placeholder="Nhập bài toán..."></textarea>
+    <div class="input-row">
+      <textarea id="mathPrompt" rows="2" placeholder="Nhập bài toán..."></textarea>
+      <label class="tool-btn"><input type="file" id="mathFileInput" accept="image/*" class="hidden">📁</label>
+      <button id="mathCameraBtn" class="tool-btn">📸</button>
+    </div>
     <button id="btnMath" class="mt-2 w-full">Giải</button>
+    <div id="mathCameraPreviewContainer">
+      <video id="mathCameraPreview" autoplay playsinline></video>
+      <button id="mathCaptureBtn" class="mt-2 w-full bg-green-500 rounded text-black font-bold">Chụp & Gửi</button>
+    </div>
   </div>
 </div>
 
@@ -170,77 +170,74 @@ document.getElementById("btnMath").addEventListener("click",async()=>{
   }catch{updateLastAIBubble("mathBox","❌ Lỗi kết nối server.");}
 });
 
-// === Upload file/ảnh từ máy ===
-const fileInput = document.getElementById("fileInput");
-fileInput.addEventListener("change", async (e) => {
-  const file = e.target.files[0];
-  if (!file) return;
-  if (!file.type.startsWith("image/")) { alert("Vui lòng chọn ảnh."); return; }
-
-  const reader = new FileReader();
-  reader.onload = async function () {
-    const base64 = reader.result;
-    addBubble("chatBox", `<img src="${base64}" class="generated-image">`, "user");
-    addBubble("chatBox", "🧠 ĐANG PHÂN TÍCH ẢNH...", "ai");
-    try {
-      const res = await fetch("/api/chat", {
-        method: "POST",
-        headers: {"Content-Type":"application/json"},
-        body: JSON.stringify({ history: chatHistory, image: base64, language: currentLang })
-      });
-      const data = await res.json();
-      updateLastAIBubble("chatBox", data.response);
-      chatHistory.push({ role: "assistant", text: data.response });
-    } catch { updateLastAIBubble("chatBox","❌ Lỗi kết nối server."); }
-  };
-  reader.readAsDataURL(file);
-});
+// === Upload ảnh chat ===
+function setupImageUpload(fileInputId, boxId){
+  const input=document.getElementById(fileInputId);
+  input.addEventListener("change", async (e)=>{
+    const file=e.target.files[0];
+    if(!file) return;
+    if(!file.type.startsWith("image/")){ alert("Vui lòng chọn ảnh."); return; }
+    const reader=new FileReader();
+    reader.onload=async function(){
+      const base64=reader.result;
+      addBubble(boxId, `<img src="${base64}" class="generated-image">`,"user");
+      addBubble(boxId,"🧠 ĐANG PHÂN TÍCH ẢNH...","ai");
+      try{
+        const res=await fetch("/api/chat",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({history:chatHistory,image:base64,language:currentLang})});
+        const data=await res.json();
+        updateLastAIBubble(boxId,data.response);
+        chatHistory.push({role:"assistant",text:data.response});
+      }catch{updateLastAIBubble(boxId,"❌ Lỗi kết nối server.");}
+    };
+    reader.readAsDataURL(file);
+  });
+}
+setupImageUpload("fileInput","chatBox");
+setupImageUpload("mathFileInput","mathBox");
 
 // === Camera trực tiếp ===
-const cameraBtn = document.getElementById("cameraBtn");
-const cameraPreviewContainer = document.getElementById("cameraPreviewContainer");
-const cameraPreview = document.getElementById("cameraPreview");
-const captureBtn = document.getElementById("captureBtn");
-let cameraStream = null;
+function setupCamera(btnId, previewContainerId, previewId, captureBtnId, boxId){
+  const btn=document.getElementById(btnId);
+  const container=document.getElementById(previewContainerId);
+  const preview=document.getElementById(previewId);
+  const captureBtn=document.getElementById(captureBtnId);
+  let stream=null;
 
-cameraBtn.addEventListener("click", async () => {
-  if (cameraPreviewContainer.style.display === "none") {
-    cameraPreviewContainer.style.display = "block";
-    try {
-      cameraStream = await navigator.mediaDevices.getUserMedia({ video: true });
-      cameraPreview.srcObject = cameraStream;
-    } catch { alert("Không thể truy cập camera."); }
-  } else {
-    cameraPreviewContainer.style.display = "none";
-    if (cameraStream) cameraStream.getTracks().forEach(track => track.stop());
-  }
-});
+  btn.addEventListener("click", async()=>{
+    if(container.style.display==="none"||container.style.display===""){
+      container.style.display="block";
+      try{stream=await navigator.mediaDevices.getUserMedia({video:true});preview.srcObject=stream;}catch{alert("Không thể truy cập camera.");}
+    } else {
+      container.style.display="none";
+      if(stream) stream.getTracks().forEach(t=>t.stop());
+    }
+  });
 
-captureBtn.addEventListener("click", async () => {
-  if (!cameraStream) return;
-  const canvas = document.createElement("canvas");
-  canvas.width = cameraPreview.videoWidth;
-  canvas.height = cameraPreview.videoHeight;
-  const ctx = canvas.getContext("2d");
-  ctx.drawImage(cameraPreview, 0, 0);
-  const base64 = canvas.toDataURL("image/png");
+  captureBtn.addEventListener("click", async()=>{
+    if(!stream) return;
+    const canvas=document.createElement("canvas");
+    canvas.width=preview.videoWidth;
+    canvas.height=preview.videoHeight;
+    const ctx=canvas.getContext("2d");
+    ctx.drawImage(preview,0,0);
+    const base64=canvas.toDataURL("image/png");
 
-  addBubble("chatBox", `<img src="${base64}" class="generated-image">`, "user");
-  addBubble("chatBox", "🧠 ĐANG PHÂN TÍCH ẢNH...", "ai");
-  try {
-    const res = await fetch("/api/chat", {
-      method: "POST",
-      headers: {"Content-Type":"application/json"},
-      body: JSON.stringify({ history: chatHistory, image: base64, language: currentLang })
-    });
-    const data = await res.json();
-    updateLastAIBubble("chatBox", data.response);
-    chatHistory.push({ role: "assistant", text: data.response });
-  } catch { updateLastAIBubble("chatBox","❌ Lỗi kết nối server."); }
+    addBubble(boxId, `<img src="${base64}" class="generated-image">`,"user");
+    addBubble(boxId,"🧠 ĐANG PHÂN TÍCH ẢNH...","ai");
+    try{
+      const res=await fetch("/api/chat",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({history:chatHistory,image:base64,language:currentLang})});
+      const data=await res.json();
+      updateLastAIBubble(boxId,data.response);
+      chatHistory.push({role:"assistant",text:data.response});
+    }catch{updateLastAIBubble(boxId,"❌ Lỗi kết nối server.");}
 
-  cameraPreviewContainer.style.display = "none";
-  cameraStream.getTracks().forEach(track => track.stop());
-});
+    container.style.display="none";
+    stream.getTracks().forEach(t=>t.stop());
+  });
+}
+
+setupCamera("cameraBtn","cameraPreviewContainer","cameraPreview","captureBtn","chatBox");
+setupCamera("mathCameraBtn","mathCameraPreviewContainer","mathCameraPreview","mathCaptureBtn","mathBox");
 </script>
 </body>
 </html>

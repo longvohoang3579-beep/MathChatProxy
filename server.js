@@ -1,4 +1,3 @@
-// server.js
 import express from "express";
 import path from "path";
 import { fileURLToPath } from "url";
@@ -6,17 +5,12 @@ import bodyParser from "body-parser";
 import dotenv from "dotenv";
 import fetch from "node-fetch";
 
+// Cấu hình cơ bản
 dotenv.config();
-
 const app = express();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-
 app.use(bodyParser.json());
-app.use(express.static(".")); // phục vụ file index.html nếu có
-
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-const PORT = process.env.PORT || 3000;
 
 // --------------------------------------------------------------
 // 🖼️ API TẠO ẢNH (Pollinations - đã hoạt động tốt, thêm nologo)
@@ -38,78 +32,90 @@ app.post("/api/pollinations-image", async (req, res) => {
 });
 
 // --------------------------------------------------------------
-// 💬 API CHAT & TOÁN (Gemini - sửa model và tự động fallback)
+// 💬 API CHAT ĐA NĂNG (Gemini 1.5 Flash)
 // --------------------------------------------------------------
-app.post("/api/gemini", async (req, res) => {
-  const { prompt } = req.body;
-  if (!prompt) {
-    return res.status(400).json({ text: "Thiếu nội dung chat." });
+app.post("/api/chat", async (req, res) => {
+  const { message } = req.body;
+
+  if (!message) {
+    return res.status(400).json({ response: "❌ Vui lòng nhập nội dung chat." });
   }
 
-  if (!GEMINI_API_KEY) {
-    return res.status(500).json({
-      text: "❌ Lỗi: Không tìm thấy GEMINI_API_KEY trong file .env",
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) {
+    return res.status(500).json({ response: "❌ Thiếu khóa API Gemini trong .env" });
+  }
+
+  try {
+    const apiUrl = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+
+    const response = await fetch(apiUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        contents: [{ role: "user", parts: [{ text: message }] }],
+      }),
     });
-  }
 
-  // Danh sách model có thể dùng (ưu tiên từ trên xuống)
-  const MODELS = [
-    "gemini-1.5-flash-latest",
-    "gemini-1.5-pro-latest",
-    "gemini-1.0-pro",
-    "gemini-pro",
-  ];
+    const data = await response.json();
 
-  // Thử lần lượt các model đến khi thành công
-  let finalText = null;
-  let lastError = null;
-
-  for (const model of MODELS) {
-    try {
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_API_KEY}`;
-
-      const response = await fetch(url, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          contents: [{ role: "user", parts: [{ text: prompt }] }],
-        }),
-      });
-
-      const data = await response.json();
-
-      if (data.error) {
-        lastError = data.error.message;
-        console.warn(`⚠️ Lỗi từ model ${model}:`, lastError);
-        continue;
-      }
-
-      finalText =
-        data?.candidates?.[0]?.content?.parts
-          ?.map((p) => p.text)
-          .join("\n") || null;
-
-      if (finalText) {
-        console.log(`✅ Dùng model: ${model}`);
-        break;
-      }
-    } catch (err) {
-      console.error(`❌ Lỗi hệ thống với model ${model}:`, err);
-      lastError = err.message;
+    if (data.error) {
+      console.error("Lỗi Gemini:", data.error.message);
+      return res.json({ response: `❌ Lỗi Gemini: ${data.error.message}` });
     }
-  }
 
-  if (!finalText) {
-    return res.status(400).json({
-      text: `❌ Lỗi từ Google Gemini: ${lastError || "Không có phản hồi hợp lệ."}`,
-    });
+    const text = data.candidates?.[0]?.content?.parts?.[0]?.text || "❌ Không có phản hồi từ Gemini.";
+    res.json({ response: text });
+  } catch (error) {
+    console.error("Lỗi khi gọi Gemini:", error);
+    res.json({ response: "❌ Không thể kết nối với Gemini API." });
   }
-
-  res.json({ text: finalText });
 });
 
 // --------------------------------------------------------------
-// 📜 ROUTE CHUNG - phục vụ trang chủ
+// 🧮 API GIẢI TOÁN (Gemini 1.5 Flash)
+// --------------------------------------------------------------
+app.post("/api/math", async (req, res) => {
+  const { question } = req.body;
+
+  if (!question) {
+    return res.status(400).json({ response: "❌ Vui lòng nhập câu hỏi toán." });
+  }
+
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) {
+    return res.status(500).json({ response: "❌ Thiếu khóa API Gemini trong .env" });
+  }
+
+  try {
+    const apiUrl = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+    const prompt = `Hãy giải chi tiết bài toán sau, trình bày từng bước và giải thích ngắn gọn:\n\n${question}`;
+
+    const response = await fetch(apiUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        contents: [{ role: "user", parts: [{ text: prompt }] }],
+      }),
+    });
+
+    const data = await response.json();
+
+    if (data.error) {
+      console.error("Lỗi Gemini:", data.error.message);
+      return res.json({ response: `❌ Lỗi Gemini: ${data.error.message}` });
+    }
+
+    const text = data.candidates?.[0]?.content?.parts?.[0]?.text || "❌ Không có phản hồi từ Gemini.";
+    res.json({ response: text });
+  } catch (error) {
+    console.error("Lỗi khi gọi Gemini:", error);
+    res.json({ response: "❌ Không thể kết nối với Gemini API." });
+  }
+});
+
+// --------------------------------------------------------------
+// 🌐 PHỤC VỤ GIAO DIỆN
 // --------------------------------------------------------------
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "index.html"));
@@ -118,6 +124,7 @@ app.get("/", (req, res) => {
 // --------------------------------------------------------------
 // 🚀 KHỞI ĐỘNG SERVER
 // --------------------------------------------------------------
+const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`🚀 Server đang chạy tại: http://localhost:${PORT}`);
+  console.log(`✅ Server đang chạy tại: http://localhost:${PORT}`);
 });

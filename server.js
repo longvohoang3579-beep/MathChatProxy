@@ -15,17 +15,16 @@ app.use(bodyParser.json());
 app.use(express.static("."));
 
 // ============================================================
-// 🧠 CẤU HÌNH GEMINI
+// 🧠 CẤU HÌNH GEMINI 1.5
 // ============================================================
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY; // dùng đúng tên biến
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 const GEMINI_API_URL =
   "https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent";
 
-// ----- Cảnh báo nếu thiếu API key -----
+// Cảnh báo nếu thiếu API key
 if (!GEMINI_API_KEY) {
   console.warn(
-    "⚠️  WARNING: GEMINI_API_KEY chưa được thiết lập trong .env. " +
-      "Chat và giải toán sẽ không hoạt động!"
+    "⚠️  WARNING: GEMINI_API_KEY chưa được thiết lập trong .env. Chat và giải toán sẽ không hoạt động!"
   );
 }
 
@@ -44,12 +43,32 @@ async function callGeminiModel(prompt) {
 
     const data = await response.json();
 
-    if (!data.candidates || !data.candidates[0].content.parts[0].text) {
+    // DEBUG nếu cần
+    // console.log("Gemini response:", JSON.stringify(data, null, 2));
+
+    if (!data.candidates || data.candidates.length === 0) {
       console.error("❌ Lỗi từ Google Gemini:", data);
       return "❌ Không có phản hồi hợp lệ từ Gemini.";
     }
 
-    return data.candidates[0].content.parts[0].text;
+    const content = data.candidates[0].content;
+
+    // Gom tất cả text từ content parts (linh hoạt hơn)
+    let textResult = "";
+    if (Array.isArray(content)) {
+      content.forEach(c => {
+        if (c.parts && Array.isArray(c.parts)) {
+          c.parts.forEach(p => {
+            if (p.text) textResult += p.text + "\n";
+          });
+        } else if (c.text) {
+          textResult += c.text + "\n";
+        }
+      });
+    }
+
+    textResult = textResult.trim();
+    return textResult || "❌ Không có phản hồi hợp lệ từ Gemini.";
   } catch (error) {
     console.error("🔥 Lỗi khi gọi Gemini:", error);
     return "❌ Lỗi khi kết nối đến Google Gemini.";
@@ -57,13 +76,11 @@ async function callGeminiModel(prompt) {
 }
 
 // ============================================================
-// 🖼️ API TẠO ẢNH (Pollinations - giữ nguyên như yêu cầu)
+// 🖼️ API TẠO ẢNH (Pollinations)
 // ============================================================
 app.post("/api/pollinations-image", async (req, res) => {
   const { prompt } = req.body;
-  if (!prompt) {
-    return res.status(400).json({ message: "Vui lòng nhập mô tả ảnh." });
-  }
+  if (!prompt) return res.status(400).json({ message: "Vui lòng nhập mô tả ảnh." });
 
   try {
     const safePrompt = encodeURIComponent(prompt);
@@ -76,13 +93,11 @@ app.post("/api/pollinations-image", async (req, res) => {
 });
 
 // ============================================================
-// 💬 CHAT TỔNG HỢP (ngắn gọn, có highlight vàng)
+// 💬 CHAT TỔNG HỢP (highlight vàng)
 // ============================================================
 app.post("/api/chat", async (req, res) => {
   const { message } = req.body;
-  if (!message) {
-    return res.status(400).json({ response: "Thiếu nội dung chat." });
-  }
+  if (!message) return res.status(400).json({ response: "Thiếu nội dung chat." });
 
   const prompt = `
   Bạn là trợ lý AI thông minh, trả lời bằng tiếng Việt, thân thiện, ngắn gọn. 
@@ -95,13 +110,11 @@ app.post("/api/chat", async (req, res) => {
 });
 
 // ============================================================
-// 🧮 GIẢI TOÁN (ngắn gọn hơn, có công thức & highlight)
+// 🧮 GIẢI TOÁN (ngắn gọn, LaTeX, highlight vàng)
 // ============================================================
 app.post("/api/math", async (req, res) => {
   const { question } = req.body;
-  if (!question) {
-    return res.status(400).json({ response: "Thiếu đề toán." });
-  }
+  if (!question) return res.status(400).json({ response: "Thiếu đề toán." });
 
   const prompt = `
   Hãy giải bài toán sau **ngắn gọn nhất có thể**, bằng tiếng Việt dễ hiểu. 

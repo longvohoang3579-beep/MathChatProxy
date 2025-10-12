@@ -5,7 +5,6 @@ import bodyParser from "body-parser";
 import dotenv from "dotenv";
 import fetch from "node-fetch";
 
-// Khởi tạo
 dotenv.config();
 const app = express();
 const __filename = fileURLToPath(import.meta.url);
@@ -14,7 +13,7 @@ const __dirname = path.dirname(__filename);
 app.use(bodyParser.json());
 
 // ----------------------------------------------------------------
-// 🖼️ API TẠO ẢNH (KHÔNG ĐỔI — GIỮ NGUYÊN)
+// 🖼️ ẢNH (GIỮ NGUYÊN)
 // ----------------------------------------------------------------
 app.post("/api/pollinations-image", async (req, res) => {
   const { prompt } = req.body;
@@ -31,7 +30,7 @@ app.post("/api/pollinations-image", async (req, res) => {
 });
 
 // ----------------------------------------------------------------
-// 💬 GEMINI CHAT + TOÁN (SỬA MODEL CHUẨN CHO AI STUDIO)
+// 💬 CHAT + TOÁN (ĐÃ SỬA HOÀN TOÀN CHO v1)
 // ----------------------------------------------------------------
 app.post("/api/gemini", async (req, res) => {
   const { prompt } = req.body;
@@ -44,8 +43,8 @@ app.post("/api/gemini", async (req, res) => {
   }
 
   try {
-    // ✅ Model tương thích 100% với key miễn phí của Google AI Studio
-    const apiEndpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${apiKey}`;
+    // 🔥 Endpoint mới, tương thích hoàn toàn với AI Studio (10/2025)
+    const apiEndpoint = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
 
     const response = await fetch(apiEndpoint, {
       method: "POST",
@@ -68,9 +67,10 @@ app.post("/api/gemini", async (req, res) => {
       return res.status(400).json({ text: `❌ Lỗi từ Google: ${data.error.message}` });
     }
 
-    const text = data?.candidates?.[0]?.content?.parts?.[0]?.text || "❌ Không có phản hồi từ Gemini.";
+    const text =
+      data?.candidates?.[0]?.content?.parts?.[0]?.text ||
+      "❌ Không có phản hồi từ Gemini.";
     res.json({ text });
-
   } catch (err) {
     console.error("🔥 Lỗi hệ thống khi gọi Gemini API:", err);
     res.status(500).json({ text: "❌ Lỗi hệ thống hoặc kết nối thất bại." });

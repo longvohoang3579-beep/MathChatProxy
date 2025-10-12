@@ -12,7 +12,7 @@ const __dirname = path.dirname(__filename);
 
 app.use(bodyParser.json());
 
-// 🧠 Pollinations Image API
+// 🖼️ API TẠO ẢNH (Phần này đã OK, giữ nguyên)
 app.post("/api/pollinations-image", async (req, res) => {
   const { prompt } = req.body;
   if (!prompt) return res.status(400).json({ message: "Vui lòng nhập mô tả ảnh." });
@@ -27,51 +27,69 @@ app.post("/api/pollinations-image", async (req, res) => {
   }
 });
 
-// 💬 Gemini Chat + Math
+// 💬 GEMINI CHAT + MATH (Phần được viết lại để tìm lỗi)
 app.post("/api/gemini", async (req, res) => {
   const { prompt } = req.body;
-  if (!prompt) return res.status(400).json({ message: "Thiếu nội dung chat." });
+  if (!prompt) {
+    return res.status(400).json({ message: "Thiếu nội dung chat." });
+  }
+
+  const apiKey = process.env.GEMINI_API_KEY;
+
+  // 1. KIỂM TRA XEM API KEY CÓ TỒN TẠI TRONG .env KHÔNG
+  if (!apiKey) {
+    console.error("LỖI NGHIÊM TRỌNG: Biến GEMINI_API_KEY không được tìm thấy trong file .env!");
+    return res.status(500).json({ text: "❌ Lỗi cấu hình phía máy chủ: Thiếu API Key." });
+  }
 
   try {
-    const apiKey = process.env.GEMINI_API_KEY;
-    if (!apiKey) {
-      console.error("Thiếu GEMINI_API_KEY trong file .env");
-      return res.status(500).json({ text: "❌ Lỗi cấu hình phía server." });
-    }
+    const apiEndpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${apiKey}`;
 
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${apiKey}`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }),
-      }
-    );
+    const response = await fetch(apiEndpoint, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }),
+    });
 
     const data = await response.json();
 
-    // GHI LẠI TOÀN BỘ PHẢN HỒI TỪ GOOGLE ĐỂ DEBUG
-    console.log("Phản hồi từ Gemini API:", JSON.stringify(data, null, 2));
+    // 2. IN TOÀN BỘ PHẢN HỒI TỪ GOOGLE RA CONSOLE ĐỂ DEBUG
+    // Đây là bước quan trọng nhất để tìm ra lỗi!
+    console.log("--- PHẢN HỒI ĐẦY ĐỦ TỪ GEMINI API ---");
+    console.log(JSON.stringify(data, null, 2));
+    console.log("------------------------------------");
 
-    // Kiểm tra xem có lỗi từ API không
+    // 3. KIỂM TRA CỤ THỂ CÁC TRƯỜNG HỢP LỖI MÀ GOOGLE TRẢ VỀ
     if (data.error) {
-      return res.status(500).json({ text: `❌ Lỗi từ Google: ${data.error.message}` });
+      console.error("Google API trả về lỗi:", data.error.message);
+      return res.status(400).json({ text: `❌ Lỗi từ Google: ${data.error.message}` });
     }
 
-    // Kiểm tra xem nội dung có bị chặn vì lý do an toàn không
+    // 4. KIỂM TRA NỘI DUNG BỊ CHẶN VÌ LÝ DO AN TOÀN
     if (!data.candidates || data.candidates.length === 0) {
       const blockReason = data.promptFeedback?.blockReason;
       if (blockReason) {
-        return res.json({ text: `❌ Nội dung bị chặn vì: ${blockReason}` });
+        console.warn(`Yêu cầu bị chặn vì lý do: ${blockReason}`);
+        return res.json({ text: `❌ Yêu cầu của bạn đã bị chặn vì lý do an toàn: ${blockReason}` });
       }
-      return res.json({ text: "❌ Không có phản hồi từ Gemini." });
+      return res.json({ text: "❌ Gemini không trả về kết quả nào." });
     }
-
-    const text = data.candidates[0]?.content?.parts[0]?.text || "❓ Không tìm thấy nội dung trả lời.";
+    
+    // 5. TRƯỜNG HỢP THÀNH CÔNG
+    const text = data.candidates[0]?.content?.parts[0]?.text || "❓ Không tìm thấy nội dung văn bản trong phản hồi.";
     res.json({ text });
 
   } catch (err) {
-    console.error("Lỗi hệ thống khi gọi Gemini:", err);
-    res.status(500).json({ text: "❌ Lỗi hệ thống khi gọi Gemini API." });
+    console.error("Lỗi hệ thống khi cố gắng gọi Gemini API:", err);
+    res.status(500).json({ text: "❌ Lỗi hệ thống, không thể kết nối đến Gemini API." });
   }
 });
+
+// Trang chính
+app.get("/", (req, res) => {
+  res.sendFile(path.join(__dirname, "index.html"));
+});
+
+// Khởi động server
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => console.log(`🚀 Server chạy tại http://localhost:${PORT}`));

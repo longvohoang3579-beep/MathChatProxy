@@ -5,18 +5,15 @@ import bodyParser from "body-parser";
 
 const app = express();
 
-// Cấu hình đường dẫn hiện tại
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 app.use(bodyParser.json());
 
-// API gọi Pollinations
+// API Pollinations
 app.post("/api/pollinations-image", async (req, res) => {
   const { prompt } = req.body;
-  if (!prompt) {
-    return res.status(400).json({ message: "Vui lòng nhập mô tả ảnh." });
-  }
+  if (!prompt) return res.status(400).json({ message: "Vui lòng nhập mô tả ảnh." });
 
   try {
     const safePrompt = encodeURIComponent(prompt);
@@ -28,13 +25,11 @@ app.post("/api/pollinations-image", async (req, res) => {
   }
 });
 
-// Trả về trang web index.html
+// Route mặc định
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "index.html"));
 });
 
-// Khởi động server
+// Chạy server
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () =>
-  console.log(`🚀 Server đang chạy tại: http://localhost:${PORT}`)
-);
+app.listen(PORT, () => console.log(`🚀 Server chạy tại http://localhost:${PORT}`));

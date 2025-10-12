@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Tạo Ảnh với Pollinations</title>
+  <title>Tạo Ảnh & Chatbot Toán Học</title>
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet" />
 
   <style>
@@ -12,42 +12,77 @@
       color: white;
       font-family: "Segoe UI", sans-serif;
       margin: 0;
-      padding-bottom: 60px; /* tránh che phần chat */
+      padding-bottom: 80px;
       overflow-x: hidden;
     }
+
+    /* ======= KHỐI TẠO ẢNH ======= */
     #pollinations-section {
       background: #181818;
       border-radius: 16px;
       padding: 1.5rem;
       max-width: 700px;
       margin: 2rem auto;
-      box-shadow: 0 0 12px rgba(0,0,0,0.5);
+      box-shadow: 0 0 12px rgba(0, 0, 0, 0.5);
     }
+
     .generated-image-container {
       position: relative;
       text-align: center;
       max-width: 550px;
       margin: 0 auto;
     }
+
     .generated-image {
       width: 100%;
       border-radius: 16px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.7);
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.7);
       opacity: 0;
       transition: opacity 0.3s ease;
     }
-    /* Che watermark pollinations.ai */
+
+    /* Che watermark hoàn toàn */
     .image-watermark-cover {
       position: absolute;
       bottom: 0;
       right: 0;
-      width: 140px;
-      height: 35px;
-      background: linear-gradient(90deg, rgba(24,24,24,1), rgba(24,24,24,0.9));
+      width: 180px; /* tăng thêm để che hết */
+      height: 40px;
+      background: linear-gradient(90deg, rgba(24,24,24,1), rgba(24,24,24,1));
       border-radius: 10px 0 0 0;
     }
-    /* Khu chat không bị che */
-    #chat-area {
+
+    /* ======= KHỐI CHATBOT ======= */
+    #chat-area, #math-area {
+      background: #181818;
+      border-radius: 16px;
+      padding: 1.5rem;
+      max-width: 700px;
+      margin: 2rem auto;
+      box-shadow: 0 0 12px rgba(0, 0, 0, 0.5);
+    }
+
+    #chatbox, #mathbox {
+      width: 100%;
+      min-height: 100px;
+      border-radius: 10px;
+      padding: 1rem;
+      background: #222;
+      color: white;
+      border: 1px solid #333;
+      resize: none;
+    }
+
+    button {
+      transition: all 0.2s ease;
+    }
+
+    button:hover {
+      opacity: 0.9;
+    }
+
+    /* ======= KHUNG CỐ ĐỊNH CUỐI ======= */
+    #fixed-footer {
       position: fixed;
       bottom: 0;
       left: 0;
@@ -63,23 +98,41 @@
     }
   </style>
 </head>
+
 <body>
 
+  <!-- ========== KHỐI 1: TẠO ẢNH ========== -->
   <section id="pollinations-section">
-    <h2 class="text-lg font-bold text-center mb-4">🎨 Tạo Ảnh bằng Pollinations AI</h2>
+    <h2 class="text-lg font-bold text-center mb-4">🎨 Tạo Ảnh Tự Động</h2>
+
     <textarea id="imagePromptInput" rows="3"
       placeholder="Nhập mô tả ảnh bạn muốn tạo..."
       class="w-full p-3 rounded-lg bg-gray-800 text-white border border-gray-700 focus:ring-2 focus:ring-green-500"></textarea>
 
     <button id="generateImageBtn"
-      class="w-full mt-3 bg-green-600 hover:bg-green-700 text-white font-bold py-2 rounded-lg transition">
+      class="w-full mt-3 bg-green-600 hover:bg-green-700 text-white font-bold py-2 rounded-lg">
       Tạo Ảnh
     </button>
 
     <div id="imageResultContainer" class="mt-5 text-center"></div>
   </section>
 
-  <div id="chat-area">💬 Khu vực Chatbot — luôn hiển thị rõ</div>
+  <!-- ========== KHỐI 2: CHATBOT ĐA NĂNG ========== -->
+  <section id="chat-area">
+    <h2 class="text-lg font-bold text-center mb-4">💬 Chat Đa Năng</h2>
+    <textarea id="chatbox" placeholder="Nhập nội dung trò chuyện..."></textarea>
+    <button class="w-full mt-3 bg-blue-600 py-2 rounded-lg">Gửi Chat</button>
+  </section>
+
+  <!-- ========== KHỐI 3: GIẢI TOÁN ========== -->
+  <section id="math-area">
+    <h2 class="text-lg font-bold text-center mb-4">🧮 Giải Toán AI</h2>
+    <textarea id="mathbox" placeholder="Nhập bài toán cần giải..."></textarea>
+    <button class="w-full mt-3 bg-yellow-500 py-2 rounded-lg">Giải Ngay</button>
+  </section>
+
+  <!-- ========== CHÂN TRANG ========== -->
+  <div id="fixed-footer">💡 Khu vực Chatbot & Giải toán — luôn hiển thị rõ</div>
 
   <script>
     const generateImageBtn = document.getElementById("generateImageBtn");
@@ -100,7 +153,6 @@
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ prompt }),
         });
-
         const data = await res.json();
         if (!res.ok) throw new Error(data.message);
 

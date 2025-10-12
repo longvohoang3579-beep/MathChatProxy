@@ -1,404 +1,201 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>AI Assistant Pro</title>
-  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet" />
-  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
-  
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap" rel="stylesheet">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Assistant Pro</title>
+<link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap" rel="stylesheet">
 
-
-  <style>
-    /* -------------------------------------- */
-    /* Màu sắc và Font Body - TĂNG ĐỘ TƯƠNG PHẢN */
-    /* -------------------------------------- */
-    body {
-      background-color: #0b0d19; /* Siêu tối, gần như đen */
-      color: #ffffff; /* Trắng tinh cho chữ */
-      font-family: 'Inter', sans-serif; 
-      margin: 0;
-      padding-bottom: 60px;
-    }
-
-    /* Main container - NỀN CHÍNH */
-    .main-container {
-      background-color: #1a1e36; /* Xanh tím than đậm */
-      box-shadow: 0 15px 40px rgba(0, 0, 0, 0.7); /* Đổ bóng sâu hơn */
-      border: 1px solid #4a4e8d; /* Viền tím nhạt */
-      border-radius: 1.5rem; /* Bo góc nhiều hơn */
-    }
-
-    /* -------------------------------------- */
-    /* Tab Buttons - NỔI BẬT HƠN */
-    /* -------------------------------------- */
-    .tab-btn {
-      flex: 1;
-      padding: 1rem 0.75rem;
-      cursor: pointer;
-      text-align: center;
-      border-bottom: 3px solid transparent;
-      transition: all 0.2s ease-in-out; 
-      font-weight: 700; /* Dày hơn */
-      color: #a1a6cc; 
-    }
-    .tab-btn:hover {
-      color: #c0c0ff; /* Sáng hơn khi hover */
-      background-color: rgba(74, 78, 141, 0.2); /* Nền hover */
-      border-color: #7b68ee;
-    }
-    .tab-btn.active {
-      border-color: #6a4cff; /* Tím nổi bật */
-      color: #ffffff;
-      background-color: rgba(106, 76, 255, 0.15); /* Nền tím mờ */
-    }
-
-    /* -------------------------------------- */
-    /* Input/Textarea - SÁNG VÀ DỄ NHÌN */
-    /* -------------------------------------- */
-    textarea, select {
-      background-color: #2c3258; /* Nền input hơi sáng */
-      border: 1px solid #6a4cff;
-      color: #ffffff;
-      border-radius: 0.75rem; 
-    }
-    textarea:focus, select:focus {
-      border-color: #a78bfa; 
-      box-shadow: 0 0 0 3px rgba(167, 139, 250, 0.5); /* Tăng độ sáng đổ bóng */
-    }
-    textarea::placeholder {
-      color: #a1a6cc;
-    }
-
-    /* -------------------------------------- */
-    /* Buttons - BOLD VÀ HIỆU ỨNG 3D MỎNG */
-    /* -------------------------------------- */
-    button {
-      font-weight: 800; /* Siêu đậm */
-      text-transform: uppercase;
-      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
-    }
-    #btnCreateImage {
-      background-color: #34d399; /* Emerald green */
-      color: #1a1e36;
-    }
-    #btnCreateImage:hover {
-      background-color: #10b981;
-    }
-    #btnChat {
-      background-color: #6a4cff; /* Vibrant purple */
-      color: white;
-    }
-    #btnChat:hover {
-      background-color: #5d3dfa;
-    }
-    #btnMath {
-      background-color: #fbbf24; /* Amber yellow */
-      color: #1a1e36;
-    }
-    #btnMath:hover {
-      background-color: #f59e0b;
-    }
-
-    /* -------------------------------------- */
-    /* Chat Bubbles - RÕ RÀNG VÀ SẮC NÉT */
-    /* -------------------------------------- */
-    .chat-history {
-      background-color: #0b0d19; /* Nền chat box tối hẳn */
-      border: 1px solid #4a4e8d;
-    }
-    .user-message {
-      background-color: #6a4cff; /* Tím nổi bật */
-      color: white;
-      border-radius: 1.25rem 1.25rem 0.5rem 1.25rem; /* Đổi kiểu bo góc */
-    }
-    .ai-message {
-      background-color: #2c3258; /* Xanh tím cho AI */
-      color: #ffffff;
-      border-radius: 1.25rem 1.25rem 1.25rem 0.5rem; /* Đổi kiểu bo góc */
-    }
-
-    /* -------------------------------------- */
-    /* Settings Button/Modal */
-    /* -------------------------------------- */
-    #settings-btn {
-      background: #2c3258;
-      color: #a78bfa; 
-      box-shadow: 0 4px 15px rgba(167, 139, 250, 0.2);
-    }
-    #settings-btn:hover {
-      background: #3e446d;
-      color: #ffffff;
-    }
-    #settings-modal {
-      background: #1a1e36;
-      border: 1px solid #6a4cff;
-      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.8);
-    }
-
-    /* MathJax specific styles */
-    .math-container {
-      background-color: #0b0d19; 
-      border: 2px solid #a78bfa; /* Tăng độ dày viền */
-      border-radius: 0.75rem;
-    }
-    /* Đảm bảo MathJax hiển thị màu trắng trong nền tối */
-    .math-container .MJX-TEX {
-      color: #ffffff !important; 
-    }
-  </style>
+<style>
+/* ---------- BODY & FONTS ---------- */
+body {
+  background: linear-gradient(145deg,#0b0d19,#1a1e36);
+  color: #fff;
+  font-family: 'Inter', sans-serif;
+  margin: 0;
+  padding-bottom: 60px;
+}
+.main-container {
+  max-width: 3xl;
+  background: #1a1e36;
+  margin: auto;
+  border-radius: 2rem;
+  box-shadow: 0 20px 50px rgba(0,0,0,0.8);
+  border: 1px solid #4a4e8d;
+  overflow: hidden;
+}
+/* ---------- HEADER & TABS ---------- */
+.tab-btn {
+  flex: 1;
+  padding: 1rem;
+  cursor: pointer;
+  text-align: center;
+  font-weight: 700;
+  color: #a1a6cc;
+  transition: all 0.3s ease;
+  position: relative;
+}
+.tab-btn::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  width: 0;
+  height: 3px;
+  background: #6a4cff;
+  transition: all 0.3s ease;
+  border-radius: 2px;
+}
+.tab-btn:hover::after {
+  width: 60%;
+  left: 20%;
+}
+.tab-btn.active {
+  color: #fff;
+  background: rgba(106,76,255,0.15);
+}
+.tab-btn.active::after {
+  width: 100%;
+  left: 0;
+}
+/* ---------- INPUT & TEXTAREA ---------- */
+textarea {
+  width: 100%;
+  border-radius: 0.75rem;
+  border: 1px solid #6a4cff;
+  background: #2c3258;
+  color: #fff;
+  padding: 0.75rem;
+  transition: all 0.3s ease;
+}
+textarea:focus {
+  outline: none;
+  border-color: #a78bfa;
+  box-shadow: 0 0 0 3px rgba(167,139,250,0.5);
+}
+/* ---------- BUTTONS ---------- */
+button {
+  font-weight: 800;
+  text-transform: uppercase;
+  transition: all 0.3s ease;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+  border-radius: 0.75rem;
+}
+#btnCreateImage { background: #34d399; color: #1a1e36; }
+#btnCreateImage:hover { background: #10b981; }
+#btnChat { background: #6a4cff; color: #fff; }
+#btnChat:hover { background: #5d3dfa; }
+#btnMath { background: #fbbf24; color: #1a1e36; }
+#btnMath:hover { background: #f59e0b; }
+/* ---------- CHAT BUBBLES ---------- */
+.chat-history {
+  background: #0b0d19;
+  border: 1px solid #4a4e8d;
+  padding: 1rem;
+  border-radius: 1.5rem;
+  flex-grow: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.user-message {
+  align-self: flex-end;
+  background: linear-gradient(135deg,#6a4cff,#8b6eff);
+  color: #fff;
+  padding: 0.75rem 1rem;
+  border-radius: 1.5rem 1.5rem 0.5rem 1.5rem;
+  max-width: 80%;
+  word-break: break-word;
+  box-shadow: 0 4px 15px rgba(106,76,255,0.4);
+}
+.ai-message {
+  align-self: flex-start;
+  background: linear-gradient(135deg,#2c3258,#3e446d);
+  color: #fff;
+  padding: 0.75rem 1rem;
+  border-radius: 1.5rem 1.5rem 1.5rem 0.5rem;
+  max-width: 80%;
+  word-break: break-word;
+  box-shadow: 0 4px 15px rgba(46,49,72,0.5);
+}
+mark.highlight {
+  background-color: #fde047;
+  color: #000;
+  font-weight: bold;
+  padding: 0 3px;
+  border-radius: 3px;
+}
+/* ---------- MATH CONTAINER ---------- */
+.math-container {
+  background: #0b0d19;
+  border: 2px solid #a78bfa;
+  border-radius: 0.75rem;
+  padding: 1rem;
+  color: #fff;
+  min-height: 120px;
+}
+/* ---------- IMAGE RESULT ---------- */
+.generated-image-container img {
+  border-radius: 1rem;
+  max-width: 100%;
+  box-shadow: 0 15px 40px rgba(0,0,0,0.7);
+  transition: transform 0.3s ease;
+}
+.generated-image-container img:hover {
+  transform: scale(1.02);
+}
+/* ---------- SETTINGS BUTTON ---------- */
+#settings-btn { position: absolute; top:1rem; right:1rem; font-size:1.5rem; cursor:pointer; color:#a78bfa; }
+#settings-modal {
+  position: absolute; top:4rem; right:1rem; background: #1a1e36; border:1px solid #6a4cff;
+  padding: 1rem; border-radius: 1rem; width: 14rem; display:none;
+  box-shadow:0 8px 30px rgba(0,0,0,0.8);
+}
+#settings-modal.show { display:block; }
+#settings-modal h3 { text-align:center; font-weight:700; color:#a78bfa; margin-bottom:0.5rem; }
+</style>
 </head>
-
 <body class="min-h-screen flex flex-col items-center p-5 relative">
-    <div id="settings-btn" class="absolute top-4 right-4 text-2xl cursor-pointer p-3 rounded-xl">
-      <i class="fas fa-cogs"></i>     </div>
 
-    <div id="settings-modal" class="absolute hidden top-20 right-4 p-5 rounded-lg w-72">
-      <h3 class="font-bold mb-4 text-xl text-center text-[#a78bfa]">CÀI ĐẶT AI</h3>
-      <div>
-        <label for="language-select" class="block text-sm font-medium mb-2 text-gray-300">NGÔN NGỮ CHAT</label>
-        <select id="language-select" class="w-full p-2 rounded-md focus:ring-2 focus:ring-[#a78bfa]">
-          <option value="vi">Tiếng Việt</option>
-          <option value="en">English (Tiếng Anh)</option>
-          <option value="zh-CN">简体中文 (Tiếng Trung Giản thể)</option>
-        </select>
-      </div>
-    </div>
+<div id="settings-btn"><i class="fas fa-cogs"></i></div>
+<div id="settings-modal">
+  <h3>CÀI ĐẶT AI</h3>
+  <div>
+    <label for="language-select" class="block text-sm font-medium mb-2 text-gray-300">NGÔN NGỮ CHAT</label>
+    <select id="language-select" class="w-full p-2 rounded-md focus:ring-2 focus:ring-[#a78bfa]">
+      <option value="vi">Tiếng Việt</option>
+      <option value="en">English</option>
+      <option value="zh-CN">简体中文</option>
+    </select>
+  </div>
+</div>
 
-  <div class="w-full max-w-3xl main-container">
-    <div class="flex border-b border-gray-700">
-      <div class="tab-btn active" id="tab-image">🖼️ TẠO ẢNH</div>
-      <div class="tab-btn" id="tab-chat">💬 CHAT</div>
-      <div class="tab-btn" id="tab-math">🧮 GIẢI TOÁN</div>
-    </div>
+<div class="main-container flex flex-col">
+  <!-- TABS -->
+  <div class="flex">
+    <div class="tab-btn active" id="tab-image">🖼️ TẠO ẢNH</div>
+    <div class="tab-btn" id="tab-chat">💬 CHAT</div>
+    <div class="tab-btn" id="tab-math">🧮 GIẢI TOÁN</div>
+  </div>
 
-    <div id="content-image" class="p-6">
-      <textarea id="imagePrompt" rows="3" class="w-full mt-2"
-        placeholder="Nhập mô tả ảnh bạn muốn tạo (ví dụ: 'một con mèo máy ngồi trên mặt trăng với mũ phi hành gia')..."></textarea>
-      <button id="btnCreateImage" class="w-full mt-4">Tạo Ảnh AI</button>
-      <div id="imageResult" class="mt-6 text-center text-gray-400"></div>
-    </div>
+  <!-- IMAGE -->
+  <div id="content-image" class="p-6 flex flex-col gap-4">
+    <textarea id="imagePrompt" rows="3" placeholder="Nhập mô tả ảnh..."></textarea>
+    <button id="btnCreateImage">Tạo Ảnh AI</button>
+    <div id="imageResult" class="mt-4 text-center text-gray-400"></div>
+  </div>
 
-    <div id="content-chat" class="p-6 hidden flex flex-col h-[500px]">
-      <div id="chatHistory" class="flex-grow overflow-y-auto mb-4 chat-history flex flex-col p-4">
-              </div>
-      <textarea id="chatPrompt" rows="2" class="w-full"
-        placeholder="Bắt đầu cuộc trò chuyện mới..."></textarea>
-      <button id="btnChat" class="w-full mt-4">GỬI</button>
-    </div>
+  <!-- CHAT -->
+  <div id="content-chat" class="p-6 hidden flex flex-col h-[500px]">
+    <div id="chatHistory" class="chat-history"></div>
+    <textarea id="chatPrompt" rows="2" placeholder="Bắt đầu cuộc trò chuyện mới..."></textarea>
+    <button id="btnChat" class="mt-2">Gửi</button>
+  </div>
 
-    <div id="content-math" class="p-6 hidden">
-      <textarea id="mathPrompt" rows="3" class="w-full"
-        placeholder="Nhập bài toán cần giải (ví dụ: 'Giải phương trình x^2 - 4x + 4 = 0' hoặc 'Tính đạo hàm của sin(x^2)')..."></textarea>
-      <button id="btnMath" class="w-full mt-4">GIẢI TOÁN</button>
-      <div id="mathResult" class="mt-6 text-gray-300 math-container"></div>
-      <p class="text-xs text-gray-500 mt-4 text-center">
-        *Phần giải toán tập trung vào kết quả chính và sử dụng công thức LaTeX.*
-      </p>
-    </div>
-  </div>
-
-  <script>
-    // Biến toàn cục để lưu lịch sử chat
-    let chatHistory = [];
-    
-    // ----- Xử lý Settings Ngôn ngữ -----
-    const settingsBtn = document.getElementById("settings-btn");
-    const settingsModal = document.getElementById("settings-modal");
-    const langSelect = document.getElementById("language-select");
-
-    // Tải ngôn ngữ đã lưu, mặc định là Tiếng Việt
-    let currentLang = localStorage.getItem('geminiChatLanguage') || 'vi';
-    langSelect.value = currentLang;
-
-    settingsBtn.addEventListener('click', () => {
-      settingsModal.classList.toggle('hidden');
-    });
-
-    // Đóng modal khi click ra ngoài
-    document.addEventListener('click', (event) => {
-      if (!settingsModal.contains(event.target) && !settingsBtn.contains(event.target)) {
-        settingsModal.classList.add('hidden');
-      }
-    });
-
-
-    langSelect.addEventListener('change', (e) => {
-      currentLang = e.target.value;
-      localStorage.setItem('geminiChatLanguage', currentLang);
-      // Khi đổi ngôn ngữ, xóa lịch sử chat để bắt đầu cuộc trò chuyện mới
-      chatHistory = [];
-      document.getElementById("chatHistory").innerHTML = '';
-      settingsModal.classList.add('hidden');
-      alert(`Đã chuyển ngôn ngữ sang: ${e.target.options[e.target.selectedIndex].text}. Vui lòng bắt đầu cuộc trò chuyện mới.`);
-    });
-
-    // Hàm chuyển đổi Markdown cơ bản và thẻ <mark> sang HTML
-    function markdownToHtml(text) {
-      // 1. Chuyển đổi **in đậm**
-      let html = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-      // 2. Chuyển đổi xuống dòng
-      html = html.replace(/\n/g, '<br>');
-      return html;
-    }
-
-    // Hàm hiển thị tin nhắn trong khung chat
-    function appendMessage(sender, text) {
-      const historyDiv = document.getElementById("chatHistory");
-      const msgDiv = document.createElement("div");
-      const htmlContent = markdownToHtml(text);
-      
-      msgDiv.classList.add("chat-message");
-      
-      if (sender === 'user') {
-        msgDiv.classList.add("user-message");
-        msgDiv.innerHTML = htmlContent;
-      } else {
-        msgDiv.classList.add("ai-message");
-        msgDiv.innerHTML = htmlContent;
-      }
-      
-      historyDiv.appendChild(msgDiv);
-      // Cuộn xuống dưới cùng
-      historyDiv.scrollTop = historyDiv.scrollHeight;
-    }
-
-    // ----- Tab chuyển đổi (Giữ nguyên) -----
-    const tabs = document.querySelectorAll(".tab-btn");
-    const contents = {
-      "tab-image": document.getElementById("content-image"),
-      "tab-chat": document.getElementById("content-chat"),
-      "tab-math": document.getElementById("content-math")
-    };
-
-    tabs.forEach(tab => {
-      tab.addEventListener("click", () => {
-        tabs.forEach(t => t.classList.remove("active"));
-        Object.values(contents).forEach(c => c.classList.add("hidden"));
-        tab.classList.add("active");
-        contents[tab.id].classList.remove("hidden");
-      });
-    });
-
-    // 🖼️ Pollinations
-    document.getElementById("btnCreateImage").addEventListener("click", async () => {
-      const prompt = document.getElementById("imagePrompt").value.trim();
-      const resDiv = document.getElementById("imageResult");
-      if (!prompt) {
-        resDiv.innerHTML = `<p class='text-red-400'>Vui lòng nhập mô tả ảnh.</p>`;
-        return;
-      }
-
-      resDiv.innerHTML = `<p class='text-green-400 font-bold animate-pulse'>ĐANG TẠO ẢNH...</p>`; 
-      
-      try {
-        const res = await fetch("/api/pollinations-image", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ prompt })
-        });
-        const data = await res.json();
-        if (data.imageUrl) {
-          resDiv.innerHTML = `
-            <div class="generated-image-container">
-              <img src="${data.imageUrl}" class="rounded-lg w-full">
-              <div class="image-watermark-cover"></div>
-            </div>`;
-        } else {
-          resDiv.innerHTML = `<p class='text-red-400'>${data.message || 'Lỗi khi tạo ảnh.'}</p>`;
-        }
-      } catch (err) {
-        console.error(err);
-        resDiv.innerHTML = `<p class='text-red-400'>Lỗi kết nối đến server.</p>`;
-      }
-    });
-
-    // 💬 Chat
-    document.getElementById("btnChat").addEventListener("click", async () => {
-      const prompt = document.getElementById("chatPrompt").value.trim();
-      const historyDiv = document.getElementById("chatHistory");
-      const btn = document.getElementById("btnChat");
-
-      if (!prompt) return;
-
-      appendMessage('user', prompt);
-      chatHistory.push({ role: "user", text: prompt });
-      document.getElementById("chatPrompt").value = '';
-
-      const statusDiv = document.createElement("div");
-      statusDiv.classList.add("ai-message", "text-gray-400", "font-bold", "animate-pulse");
-      statusDiv.id = "chatStatus";
-      statusDiv.textContent = "ĐANG TRẢ LỜI...";
-      historyDiv.appendChild(statusDiv);
-      historyDiv.scrollTop = historyDiv.scrollHeight;
-      btn.disabled = true;
-
-      try {
-        const res = await fetch("/api/chat", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ 
-            message: prompt, 
-            history: chatHistory,
-            language: currentLang 
-          })
-        });
-        const data = await res.json();
-
-        statusDiv.remove();
-
-        const reply = data.response || "❌ Không có phản hồi từ Gemini.";
-        
-        appendMessage('assistant', reply);
-        chatHistory.push({ role: "assistant", text: reply }); 
-        
-      } catch (err) {
-        statusDiv.textContent = "❌ Lỗi kết nối đến server.";
-        console.error(err);
-      } finally {
-        btn.disabled = false;
-      }
-    });
-
-    // 🧮 Math
-    document.getElementById("btnMath").addEventListener("click", async () => {
-      const question = document.getElementById("mathPrompt").value.trim();
-      const resDiv = document.getElementById("mathResult");
-      const btn = document.getElementById("btnMath");
-
-      if (!question) {
-        resDiv.innerHTML = `<p class='text-red-400'>Vui lòng nhập bài toán.</p>`;
-        return;
-      }
-      
-      resDiv.innerHTML = `<p class='text-yellow-400 font-bold animate-pulse'>ĐANG GIẢI TOÁN...</p>`;
-      btn.disabled = true;
-
-      try {
-        const res = await fetch("/api/math", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ question })
-        });
-        const data = await res.json();
-        
-        const rawResponse = data.response || "❌ Không có phản hồi từ Gemini.";
-        
-        let htmlContent = markdownToHtml(rawResponse);
-
-        resDiv.innerHTML = htmlContent;
-        
-        MathJax.typesetPromise([resDiv]).catch((err) => console.error("MathJax Error:", err));
-
-      } catch (err) {
-        resDiv.innerHTML = `<p class='text-red-400'>Lỗi kết nối đến server.</p>`;
-        console.error(err);
-      } finally {
-        btn.disabled = false;
-      }
-    });
-  </script>
-</body>
-</html>
+  <!-- MATH -->
+  <div id="content-math" class="p-6 hidden flex flex-col gap-4">
+    <textarea id

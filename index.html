@@ -3,49 +3,19 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>AI Chatbot & Pollinations Image</title>
-  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <title>Tạo Ảnh với Pollinations</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet" />
+
   <style>
     body {
       background-color: #0f0f0f;
       color: white;
-      font-family: 'Segoe UI', sans-serif;
-      overflow-x: hidden;
+      font-family: "Segoe UI", sans-serif;
       margin: 0;
-      padding-bottom: 60px;
+      padding-bottom: 60px; /* tránh che phần chat */
+      overflow-x: hidden;
     }
-
-    /* ========== PHẦN TẠO ẢNH ========== */
-    .generated-image-container {
-      max-width: 550px;
-      margin: 0 auto;
-      text-align: center;
-    }
-
-    .generated-image {
-      width: 100%;
-      max-height: 400px;
-      object-fit: cover;
-      border-radius: 16px;
-      display: block;
-      margin: 0 auto;
-      box-shadow: 0 0 12px rgba(0, 0, 0, 0.6);
-      transition: opacity 0.4s ease;
-    }
-
-    /* Che watermark Pollinations */
-    .image-watermark-cover {
-      position: absolute;
-      bottom: 0;
-      right: 0;
-      width: 130px;
-      height: 32px;
-      background: linear-gradient(90deg, rgba(24,24,24,0.9), rgba(24,24,24,1));
-      border-radius: 12px 0 0 0;
-    }
-
     #pollinations-section {
-      overflow: hidden;
       background: #181818;
       border-radius: 16px;
       padding: 1.5rem;
@@ -53,8 +23,30 @@
       margin: 2rem auto;
       box-shadow: 0 0 12px rgba(0,0,0,0.5);
     }
-
-    /* Khung chat phía dưới (mô phỏng) */
+    .generated-image-container {
+      position: relative;
+      text-align: center;
+      max-width: 550px;
+      margin: 0 auto;
+    }
+    .generated-image {
+      width: 100%;
+      border-radius: 16px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.7);
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+    /* Che watermark pollinations.ai */
+    .image-watermark-cover {
+      position: absolute;
+      bottom: 0;
+      right: 0;
+      width: 140px;
+      height: 35px;
+      background: linear-gradient(90deg, rgba(24,24,24,1), rgba(24,24,24,0.9));
+      border-radius: 10px 0 0 0;
+    }
+    /* Khu chat không bị che */
     #chat-area {
       position: fixed;
       bottom: 0;
@@ -67,82 +59,66 @@
       justify-content: center;
       align-items: center;
       color: #aaa;
+      z-index: 99;
     }
   </style>
 </head>
 <body>
 
-  <!-- 🎨 Phần tạo ảnh -->
   <section id="pollinations-section">
-    <h2 class="text-lg font-bold text-center mb-4">🎨 Tạo Ảnh với Pollinations</h2>
-    
-    <textarea 
-      id="imagePromptInput" 
-      placeholder="Nhập mô tả ảnh bạn muốn tạo..." 
-      class="w-full p-3 rounded-lg bg-gray-800 text-white border border-gray-600 focus:outline-none focus:ring-2 focus:ring-green-500" 
-      rows="3"></textarea>
+    <h2 class="text-lg font-bold text-center mb-4">🎨 Tạo Ảnh bằng Pollinations AI</h2>
+    <textarea id="imagePromptInput" rows="3"
+      placeholder="Nhập mô tả ảnh bạn muốn tạo..."
+      class="w-full p-3 rounded-lg bg-gray-800 text-white border border-gray-700 focus:ring-2 focus:ring-green-500"></textarea>
 
-    <button 
-      id="generateImageBtn" 
+    <button id="generateImageBtn"
       class="w-full mt-3 bg-green-600 hover:bg-green-700 text-white font-bold py-2 rounded-lg transition">
-      Tạo ảnh
+      Tạo Ảnh
     </button>
 
     <div id="imageResultContainer" class="mt-5 text-center"></div>
   </section>
 
-  <!-- Khung chat demo -->
-  <div id="chat-area">💬 Khu vực Chatbot (3 ô chuyển chat vẫn hiển thị bình thường)</div>
+  <div id="chat-area">💬 Khu vực Chatbot — luôn hiển thị rõ</div>
 
   <script>
-    const API_POLLINATIONS_IMAGE_URL = "/api/pollinations-image";
     const generateImageBtn = document.getElementById("generateImageBtn");
     const imagePromptInput = document.getElementById("imagePromptInput");
     const imageResultContainer = document.getElementById("imageResultContainer");
 
-    async function generatePollinationsImage() {
+    async function generateImage() {
       const prompt = imagePromptInput.value.trim();
-      if (!prompt) {
-        alert("Vui lòng nhập nội dung ảnh muốn tạo.");
-        return;
-      }
+      if (!prompt) return alert("⚠️ Vui lòng nhập mô tả ảnh.");
 
       generateImageBtn.disabled = true;
       generateImageBtn.textContent = "⏳ Đang tạo ảnh...";
-      imageResultContainer.innerHTML = `<div class="text-gray-400">Đang tạo ảnh, vui lòng chờ...</div>`;
+      imageResultContainer.innerHTML = `<div class="text-gray-400">Đang tạo ảnh...</div>`;
 
       try {
-        const response = await fetch(API_POLLINATIONS_IMAGE_URL, {
+        const res = await fetch("/api/pollinations-image", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ prompt })
+          body: JSON.stringify({ prompt }),
         });
 
-        if (!response.ok) {
-          const err = await response.json();
-          throw new Error(err.message || "Lỗi khi tạo ảnh.");
-        }
-
-        const data = await response.json();
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.message);
 
         imageResultContainer.innerHTML = `
           <div class="generated-image-container">
-            <p class="text-sm text-gray-300 mb-2">"${prompt}"</p>
-            <div style="position: relative; display: inline-block;">
-              <img src="${data.imageUrl}" class="generated-image" alt="AI generated image" onload="this.style.opacity='1'">
-              <div class="image-watermark-cover"></div>
-            </div>
+            <img src="${data.imageUrl}" alt="Kết quả ảnh" class="generated-image" onload="this.style.opacity=1">
+            <div class="image-watermark-cover"></div>
           </div>
         `;
-      } catch (error) {
-        imageResultContainer.innerHTML = `<div class="text-red-400">❌ Lỗi: ${error.message}</div>`;
-      } finally {
-        generateImageBtn.disabled = false;
-        generateImageBtn.textContent = "Tạo ảnh";
+      } catch (err) {
+        imageResultContainer.innerHTML = `<p class="text-red-400">❌ Lỗi: ${err.message}</p>`;
       }
+
+      generateImageBtn.disabled = false;
+      generateImageBtn.textContent = "Tạo Ảnh";
     }
 
-    generateImageBtn.addEventListener("click", generatePollinationsImage);
+    generateImageBtn.addEventListener("click", generateImage);
   </script>
 </body>
 </html>

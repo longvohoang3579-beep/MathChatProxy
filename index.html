@@ -3,239 +3,163 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>AI Assistant</title>
+  <title>AI Assistant Pro</title>
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet" />
   <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+  
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap" rel="stylesheet">
 
 
   <style>
     /* -------------------------------------- */
-    /* Màu sắc và Font Body        */
+    /* Màu sắc và Font Body - TĂNG ĐỘ TƯƠNG PHẢN */
     /* -------------------------------------- */
     body {
-      background-color: #1a1a2e; /* Deep purple-blue */
-      color: #e0e0e0; /* Off-white for text */
-      font-family: 'Inter', sans-serif; /* Modern, clean font */
+      background-color: #0b0d19; /* Siêu tối, gần như đen */
+      color: #ffffff; /* Trắng tinh cho chữ */
+      font-family: 'Inter', sans-serif; 
       margin: 0;
       padding-bottom: 60px;
     }
 
-    /* Main container */
+    /* Main container - NỀN CHÍNH */
     .main-container {
-      background-color: #242640; /* Slightly lighter than body, deep blue */
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5); /* Stronger shadow */
-      border: 1px solid rgba(110, 89, 230, 0.2); /* Subtle border */
+      background-color: #1a1e36; /* Xanh tím than đậm */
+      box-shadow: 0 15px 40px rgba(0, 0, 0, 0.7); /* Đổ bóng sâu hơn */
+      border: 1px solid #4a4e8d; /* Viền tím nhạt */
+      border-radius: 1.5rem; /* Bo góc nhiều hơn */
     }
 
     /* -------------------------------------- */
-    /* Tab Buttons             */
+    /* Tab Buttons - NỔI BẬT HƠN */
     /* -------------------------------------- */
     .tab-btn {
       flex: 1;
-      padding: 1rem 0.75rem; /* Increased padding */
+      padding: 1rem 0.75rem;
       cursor: pointer;
       text-align: center;
       border-bottom: 3px solid transparent;
-      transition: all 0.2s ease-in-out; /* Smooth transition */
-      font-weight: 600; /* Semi-bold */
-      color: #b0b0c0; /* Lighter gray */
+      transition: all 0.2s ease-in-out; 
+      font-weight: 700; /* Dày hơn */
+      color: #a1a6cc; 
     }
     .tab-btn:hover {
-      color: #8c7ae6; /* Purple on hover */
-      border-color: rgba(140, 122, 230, 0.5);
+      color: #c0c0ff; /* Sáng hơn khi hover */
+      background-color: rgba(74, 78, 141, 0.2); /* Nền hover */
+      border-color: #7b68ee;
     }
     .tab-btn.active {
-      border-color: #6a4cff; /* Vibrant purple */
-      color: #6a4cff;
-      background-color: rgba(106, 76, 255, 0.1); /* Subtle active background */
+      border-color: #6a4cff; /* Tím nổi bật */
+      color: #ffffff;
+      background-color: rgba(106, 76, 255, 0.15); /* Nền tím mờ */
     }
 
     /* -------------------------------------- */
-    /* Input/Textarea          */
+    /* Input/Textarea - SÁNG VÀ DỄ NHÌN */
     /* -------------------------------------- */
     textarea, select {
-      background-color: #3e2b5e; /* Darker purple for inputs */
-      border: 1px solid #6a4cff; /* Purple border */
-      color: #e0e0e0;
-      padding: 0.75rem;
-      border-radius: 0.75rem; /* More rounded */
-      transition: border-color 0.2s ease-in-out;
+      background-color: #2c3258; /* Nền input hơi sáng */
+      border: 1px solid #6a4cff;
+      color: #ffffff;
+      border-radius: 0.75rem; 
     }
     textarea:focus, select:focus {
-      outline: none;
-      border-color: #a78bfa; /* Lighter purple on focus */
-      box-shadow: 0 0 0 3px rgba(167, 139, 250, 0.3);
+      border-color: #a78bfa; 
+      box-shadow: 0 0 0 3px rgba(167, 139, 250, 0.5); /* Tăng độ sáng đổ bóng */
     }
-    /* Placeholder color */
     textarea::placeholder {
-      color: #9ca3af;
+      color: #a1a6cc;
     }
 
     /* -------------------------------------- */
-    /* Buttons               */
+    /* Buttons - BOLD VÀ HIỆU ỨNG 3D MỎNG */
     /* -------------------------------------- */
     button {
-      padding: 0.75rem 1.5rem; /* Increased padding */
-      border-radius: 0.75rem; /* More rounded */
-      font-weight: 700; /* Bold */
-      transition: background-color 0.2s ease-in-out, transform 0.1s ease-in-out;
-      letter-spacing: 0.05em; /* Slightly spaced letters */
+      font-weight: 800; /* Siêu đậm */
+      text-transform: uppercase;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
     }
     #btnCreateImage {
       background-color: #34d399; /* Emerald green */
-      color: #1a1a2e;
+      color: #1a1e36;
     }
     #btnCreateImage:hover {
-      background-color: #10b981; /* Darker green */
-      transform: translateY(-2px);
+      background-color: #10b981;
     }
     #btnChat {
       background-color: #6a4cff; /* Vibrant purple */
       color: white;
     }
     #btnChat:hover {
-      background-color: #5d3dfa; /* Darker purple */
-      transform: translateY(-2px);
+      background-color: #5d3dfa;
     }
     #btnMath {
       background-color: #fbbf24; /* Amber yellow */
-      color: #1a1a2e;
+      color: #1a1e36;
     }
     #btnMath:hover {
-      background-color: #f59e0b; /* Darker amber */
-      transform: translateY(-2px);
-    }
-    button:disabled {
-      opacity: 0.6;
-      cursor: not-allowed;
-      transform: none;
+      background-color: #f59e0b;
     }
 
     /* -------------------------------------- */
-    /* Image Container          */
-    /* -------------------------------------- */
-    .generated-image-container {
-      position: relative;
-      text-align: center;
-      max-width: 550px;
-      margin: 0 auto;
-      background-color: #3e2b5e;
-      padding: 1rem;
-      border-radius: 1rem;
-      border: 1px solid #6a4cff;
-      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-    }
-    .generated-image-container img {
-      border-radius: 0.75rem;
-    }
-    .image-watermark-cover {
-      background: linear-gradient(90deg, #242640, #242640); /* Match main container */
-      opacity: 0.8; /* Slightly visible */
-    }
-
-    /* -------------------------------------- */
-    /* Chat Bubbles           */
+    /* Chat Bubbles - RÕ RÀNG VÀ SẮC NÉT */
     /* -------------------------------------- */
     .chat-history {
-      background-color: #1a1a2e; /* Darker background for chat history */
-      border-radius: 0.75rem;
-      padding: 0.5rem;
-      border: 1px solid rgba(110, 89, 230, 0.2);
-    }
-    .chat-message {
-      padding: 0.75rem 1.25rem; /* More padding */
-      border-radius: 1.25rem; /* More rounded */
-      margin-bottom: 0.75rem; /* More space */
-      max-width: 80%; /* Slightly smaller max width */
-      word-wrap: break-word; /* Ensure long words wrap */
-      line-height: 1.5; /* Better readability */
+      background-color: #0b0d19; /* Nền chat box tối hẳn */
+      border: 1px solid #4a4e8d;
     }
     .user-message {
-      background-color: #6a4cff; /* Vibrant purple */
+      background-color: #6a4cff; /* Tím nổi bật */
       color: white;
-      align-self: flex-end;
-      margin-left: auto;
-      border-bottom-right-radius: 0.5rem; /* Slightly less rounded on one corner */
+      border-radius: 1.25rem 1.25rem 0.5rem 1.25rem; /* Đổi kiểu bo góc */
     }
     .ai-message {
-      background-color: #3e2b5e; /* Darker purple for AI */
-      color: #e0e0e0;
-      align-self: flex-start;
-      margin-right: auto;
-      border-bottom-left-radius: 0.5rem; /* Slightly less rounded on one corner */
+      background-color: #2c3258; /* Xanh tím cho AI */
+      color: #ffffff;
+      border-radius: 1.25rem 1.25rem 1.25rem 0.5rem; /* Đổi kiểu bo góc */
     }
 
     /* -------------------------------------- */
-    /* Highlight              */
-    /* -------------------------------------- */
-    .highlight {
-      background-color: #fde047; /* Bright yellow */
-      color: #1a1a2e; /* Dark text for contrast */
-      padding: 2px 5px;
-      border-radius: 6px;
-      font-weight: 600;
-    }
-
-    /* -------------------------------------- */
-    /* Settings Button/Modal  */
+    /* Settings Button/Modal */
     /* -------------------------------------- */
     #settings-btn {
-      background: #3e2b5e; /* Match AI message/input */
-      color: #a78bfa; /* Light purple icon */
-      padding: 0.75rem 1rem; /* Bigger button */
-      border-radius: 0.75rem; /* More rounded */
-      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
-      transition: all 0.2s ease-in-out;
+      background: #2c3258;
+      color: #a78bfa; 
+      box-shadow: 0 4px 15px rgba(167, 139, 250, 0.2);
     }
     #settings-btn:hover {
-      background: #4b3270;
-      color: #e0e0e0;
-      transform: translateY(-2px);
+      background: #3e446d;
+      color: #ffffff;
     }
     #settings-modal {
-      background: #2f2c4a; /* Slightly lighter than main container */
+      background: #1a1e36;
       border: 1px solid #6a4cff;
-      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.6);
-      transform-origin: top right;
-      animation: fadeInScale 0.2s ease-out forwards;
-    }
-    @keyframes fadeInScale {
-      from { opacity: 0; transform: scale(0.9) translateY(-10px); }
-      to { opacity: 1; transform: scale(1) translateY(0); }
-    }
-    #settings-modal.hidden {
-      animation: fadeOutScale 0.2s ease-in forwards;
-    }
-    @keyframes fadeOutScale {
-      from { opacity: 1; transform: scale(1) translateY(0); }
-      to { opacity: 0; transform: scale(0.9) translateY(-10px); }
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.8);
     }
 
     /* MathJax specific styles */
-    .math-container .MJX-TEX {
-      color: #a78bfa !important; /* Math equations in a light purple */
-    }
     .math-container {
-      background-color: #1a1a2e; /* Dark background for math result */
-      padding: 1rem;
+      background-color: #0b0d19; 
+      border: 2px solid #a78bfa; /* Tăng độ dày viền */
       border-radius: 0.75rem;
-      border: 1px dashed rgba(167, 139, 250, 0.3); /* Dashed purple border */
-      margin-top: 1rem;
-      font-size: 1.1em;
+    }
+    /* Đảm bảo MathJax hiển thị màu trắng trong nền tối */
+    .math-container .MJX-TEX {
+      color: #ffffff !important; 
     }
   </style>
 </head>
 
 <body class="min-h-screen flex flex-col items-center p-5 relative">
-    <div id="settings-btn" class="absolute top-4 right-4 text-xl cursor-pointer">
-      <i class="fas fa-cog"></i>     </div>
+    <div id="settings-btn" class="absolute top-4 right-4 text-2xl cursor-pointer p-3 rounded-xl">
+      <i class="fas fa-cogs"></i>     </div>
 
-    <div id="settings-modal" class="absolute hidden top-16 right-4 p-5 rounded-lg w-72">
-      <h3 class="font-bold mb-4 text-xl text-center text-[#a78bfa]">AI Settings</h3>
+    <div id="settings-modal" class="absolute hidden top-20 right-4 p-5 rounded-lg w-72">
+      <h3 class="font-bold mb-4 text-xl text-center text-[#a78bfa]">CÀI ĐẶT AI</h3>
       <div>
-        <label for="language-select" class="block text-sm font-medium mb-2 text-gray-300">Ngôn ngữ Chat:</label>
-        <select id="language-select" class="w-full p-2 rounded-md bg-gray-700 text-white border border-gray-600 focus:ring-2 focus:ring-[#a78bfa]">
+        <label for="language-select" class="block text-sm font-medium mb-2 text-gray-300">NGÔN NGỮ CHAT</label>
+        <select id="language-select" class="w-full p-2 rounded-md focus:ring-2 focus:ring-[#a78bfa]">
           <option value="vi">Tiếng Việt</option>
           <option value="en">English (Tiếng Anh)</option>
           <option value="zh-CN">简体中文 (Tiếng Trung Giản thể)</option>
@@ -243,35 +167,35 @@
       </div>
     </div>
 
-  <div class="w-full max-w-3xl main-container rounded-2xl">
+  <div class="w-full max-w-3xl main-container">
     <div class="flex border-b border-gray-700">
-      <div class="tab-btn active" id="tab-image">🖼️ Tạo Ảnh</div>
-      <div class="tab-btn" id="tab-chat">💬 Chat</div>
-      <div class="tab-btn" id="tab-math">🧮 Giải Toán</div>
+      <div class="tab-btn active" id="tab-image">🖼️ TẠO ẢNH</div>
+      <div class="tab-btn" id="tab-chat">💬 CHAT</div>
+      <div class="tab-btn" id="tab-math">🧮 GIẢI TOÁN</div>
     </div>
 
     <div id="content-image" class="p-6">
       <textarea id="imagePrompt" rows="3" class="w-full mt-2"
         placeholder="Nhập mô tả ảnh bạn muốn tạo (ví dụ: 'một con mèo máy ngồi trên mặt trăng với mũ phi hành gia')..."></textarea>
-      <button id="btnCreateImage" class="w-full mt-4">Tạo Ảnh</button>
+      <button id="btnCreateImage" class="w-full mt-4">Tạo Ảnh AI</button>
       <div id="imageResult" class="mt-6 text-center text-gray-400"></div>
     </div>
 
     <div id="content-chat" class="p-6 hidden flex flex-col h-[500px]">
-      <div id="chatHistory" class="flex-grow overflow-y-auto mb-4 chat-history flex flex-col">
+      <div id="chatHistory" class="flex-grow overflow-y-auto mb-4 chat-history flex flex-col p-4">
               </div>
       <textarea id="chatPrompt" rows="2" class="w-full"
-        placeholder="Nhập tin nhắn của bạn..."></textarea>
-      <button id="btnChat" class="w-full mt-4">Gửi Chat</button>
+        placeholder="Bắt đầu cuộc trò chuyện mới..."></textarea>
+      <button id="btnChat" class="w-full mt-4">GỬI</button>
     </div>
 
     <div id="content-math" class="p-6 hidden">
       <textarea id="mathPrompt" rows="3" class="w-full"
-        placeholder="Nhập bài toán cần giải (ví dụ: 'Giải phương trình x^2 - 4x + 4 = 0')..."></textarea>
-      <button id="btnMath" class="w-full mt-4">Giải Toán</button>
+        placeholder="Nhập bài toán cần giải (ví dụ: 'Giải phương trình x^2 - 4x + 4 = 0' hoặc 'Tính đạo hàm của sin(x^2)')..."></textarea>
+      <button id="btnMath" class="w-full mt-4">GIẢI TOÁN</button>
       <div id="mathResult" class="mt-6 text-gray-300 math-container"></div>
       <p class="text-xs text-gray-500 mt-4 text-center">
-        *Lưu ý: Phần giải toán được tối ưu để trả lời ngắn gọn, tập trung vào kết quả và sử dụng LaTeX.*
+        *Phần giải toán tập trung vào kết quả chính và sử dụng công thức LaTeX.*
       </p>
     </div>
   </div>
@@ -391,7 +315,7 @@
       }
     });
 
-    // 💬 Chat (ĐÃ CẬP NHẬT GỬI NGÔN NGỮ)
+    // 💬 Chat
     document.getElementById("btnChat").addEventListener("click", async () => {
       const prompt = document.getElementById("chatPrompt").value.trim();
       const historyDiv = document.getElementById("chatHistory");
@@ -415,7 +339,6 @@
         const res = await fetch("/api/chat", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          // GỬI NGÔN NGỮ ĐÃ CHỌN LÊN SERVER
           body: JSON.stringify({ 
             message: prompt, 
             history: chatHistory,

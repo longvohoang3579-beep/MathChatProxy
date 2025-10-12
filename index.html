@@ -28,7 +28,9 @@ img.generated-image{border-radius:12px;max-width:100%;margin-top:1rem;}
 #settings-btn{position:absolute;top:1rem;right:1rem;font-size:1.5rem;cursor:pointer;color:#facc15;}
 #settings-modal{position:absolute;top:3rem;right:1rem;width:220px;background:#1a1c29;border:1px solid #facc15;border-radius:0.75rem;padding:1rem;display:none;}
 .upload-container {display:flex;gap:0.5rem;margin-top:0.5rem;}
-.upload-container button,input[type="file"]{flex:1;}
+.upload-btn {flex:1;background:#374151;border:none;color:white;font-size:1.25rem;border-radius:0.75rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.2s;}
+.upload-btn:hover {background:#4b5563;}
+.upload-input {display:none;}
 </style>
 </head>
 <body>
@@ -61,8 +63,9 @@ img.generated-image{border-radius:12px;max-width:100%;margin-top:1rem;}
     <div class="chat-box" id="chatBox"></div>
     <textarea id="chatInput" rows="2" placeholder="Nhập tin nhắn..."></textarea>
     <div class="upload-container">
-      <input type="file" id="chatFileInput" accept="image/*">
-      <button id="chatCameraBtn">📷 Camera</button>
+      <label class="upload-btn" for="chatFileInput">📁</label>
+      <input type="file" id="chatFileInput" accept="image/*" class="upload-input">
+      <button id="chatCameraBtn" class="upload-btn">📷</button>
     </div>
     <button id="btnChat" class="mt-2 w-full">Gửi</button>
   </div>
@@ -72,8 +75,9 @@ img.generated-image{border-radius:12px;max-width:100%;margin-top:1rem;}
     <div class="chat-box" id="mathBox"></div>
     <textarea id="mathPrompt" rows="2" placeholder="Nhập bài toán..."></textarea>
     <div class="upload-container">
-      <input type="file" id="mathFileInput" accept="image/*">
-      <button id="mathCameraBtn">📷 Camera</button>
+      <label class="upload-btn" for="mathFileInput">📁</label>
+      <input type="file" id="mathFileInput" accept="image/*" class="upload-input">
+      <button id="mathCameraBtn" class="upload-btn">📷</button>
     </div>
     <button id="btnMath" class="mt-2 w-full">Giải</button>
   </div>

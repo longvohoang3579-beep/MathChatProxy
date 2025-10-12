@@ -17,19 +17,28 @@ app.use(express.static("."));
 // ============================================================
 // 🧠 CẤU HÌNH GEMINI
 // ============================================================
-const GEMINI_API_KEY = process.env.GOOGLE_API_KEY;
-const GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent";
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY; // dùng đúng tên biến
+const GEMINI_API_URL =
+  "https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent";
+
+// ----- Cảnh báo nếu thiếu API key -----
+if (!GEMINI_API_KEY) {
+  console.warn(
+    "⚠️  WARNING: GEMINI_API_KEY chưa được thiết lập trong .env. " +
+      "Chat và giải toán sẽ không hoạt động!"
+  );
+}
 
 // ======== 🔹 Hàm gọi Gemini API ========
 async function callGeminiModel(prompt) {
-  if (!GEMINI_API_KEY) return "❌ Thiếu GOOGLE_API_KEY trong .env.";
+  if (!GEMINI_API_KEY) return "❌ Thiếu GEMINI_API_KEY trong .env.";
 
   try {
     const response = await fetch(`${GEMINI_API_URL}?key=${GEMINI_API_KEY}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        contents: [{ role: "user", parts: [{ text: prompt }] }]
+        contents: [{ role: "user", parts: [{ text: prompt }] }],
       }),
     });
 
@@ -112,4 +121,8 @@ app.post("/api/math", async (req, res) => {
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`✅ Server đang chạy tại http://localhost:${PORT}`);
+  if (!GEMINI_API_KEY)
+    console.warn(
+      "⚠️ GEMINI_API_KEY chưa được thiết lập. Chat và giải toán sẽ không hoạt động!"
+    );
 });

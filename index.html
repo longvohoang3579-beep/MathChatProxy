@@ -1,242 +1,234 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>AI Assistant Pro</title>
-
-<!-- Tailwind CSS -->
-<link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-<!-- MathJax -->
-<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
-<!-- Font Awesome -->
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-<!-- Google Fonts -->
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap" rel="stylesheet">
-
-<style>
-/* ---------- BODY ---------- */
-body {
-  background: linear-gradient(145deg,#0b0d19,#1a1e36);
-  font-family: 'Inter', sans-serif;
-  color: #fff;
-  margin: 0;
-  padding-bottom: 60px;
-}
-
-/* ---------- MAIN CONTAINER ---------- */
-.main-container {
-  max-width: 3xl;
-  margin: 2rem auto;
-  background: #1a1e36;
-  border-radius: 2rem;
-  box-shadow: 0 20px 50px rgba(0,0,0,0.8);
-  border: 1px solid #4a4e8d;
-  overflow: hidden;
-  position: relative;
-  z-index: 10;
-}
-
-/* ---------- TABS ---------- */
-.tab-btn {
-  flex: 1;
-  padding: 1rem;
-  text-align: center;
-  font-weight: 700;
-  color: #a1a6cc;
-  cursor: pointer;
-  transition: all 0.3s;
-  position: relative;
-}
-.tab-btn.active {
-  color: #fff;
-  background: rgba(106,76,255,0.15);
-}
-.tab-btn::after {
-  content: '';
-  position: absolute;
-  bottom: 0;
-  left: 50%;
-  width: 0;
-  height: 3px;
-  background: #6a4cff;
-  transition: all 0.3s ease;
-  border-radius: 2px;
-}
-.tab-btn.active::after { width: 100%; left: 0; }
-
-/* ---------- INPUT & TEXTAREA ---------- */
-textarea {
-  width: 100%;
-  border-radius: 0.75rem;
-  border: 1px solid #6a4cff;
-  background: #2c3258;
-  color: #fff;
-  padding: 0.75rem;
-  transition: all 0.3s;
-  resize: none;
-}
-textarea:focus {
-  outline: none;
-  border-color: #a78bfa;
-  box-shadow: 0 0 0 3px rgba(167,139,250,0.5);
-}
-
-/* ---------- BUTTONS ---------- */
-button {
-  font-weight: 800;
-  text-transform: uppercase;
-  transition: all 0.3s;
-  box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-  border-radius: 0.75rem;
-  cursor: pointer;
-}
-#btnCreateImage { background: #34d399; color: #1a1e36; }
-#btnCreateImage:hover { background: #10b981; }
-#btnChat { background: #6a4cff; color: #fff; }
-#btnChat:hover { background: #5d3dfa; }
-#btnMath { background: #fbbf24; color: #1a1e36; }
-#btnMath:hover { background: #f59e0b; }
-
-/* ---------- CHAT BUBBLES ---------- */
-.chat-history {
-  background: #0b0d19;
-  border: 1px solid #4a4e8d;
-  border-radius: 1.5rem;
-  padding: 1rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  overflow-y: auto;
-  flex-grow: 1;
-  min-height: 300px;
-}
-.user-message {
-  align-self: flex-end;
-  background: linear-gradient(135deg,#6a4cff,#8b6eff);
-  padding: 0.75rem 1rem;
-  border-radius: 1.5rem 1.5rem 0.5rem 1.5rem;
-  max-width: 80%;
-  word-break: break-word;
-  color: #fff;
-  box-shadow: 0 4px 15px rgba(106,76,255,0.4);
-}
-.ai-message {
-  align-self: flex-start;
-  background: linear-gradient(135deg,#2c3258,#3e446d);
-  padding: 0.75rem 1rem;
-  border-radius: 1.5rem 1.5rem 1.5rem 0.5rem;
-  max-width: 80%;
-  word-break: break-word;
-  color: #fff;
-  box-shadow: 0 4px 15px rgba(46,49,72,0.5);
-}
-
-/* ---------- HIGHLIGHT ---------- */
-mark.highlight {
-  background-color: #fde047;
-  color: #000;
-  font-weight: bold;
-  padding: 0 3px;
-  border-radius: 3px;
-}
-
-/* ---------- MATH ---------- */
-.math-container {
-  background: #0b0d19;
-  border: 2px solid #a78bfa;
-  border-radius: 0.75rem;
-  padding: 1rem;
-  min-height: 120px;
-  color: #fff;
-}
-
-/* ---------- IMAGE ---------- */
-.generated-image-container img {
-  border-radius: 1rem;
-  max-width: 100%;
-  box-shadow: 0 15px 40px rgba(0,0,0,0.7);
-  transition: transform 0.3s;
-}
-.generated-image-container img:hover { transform: scale(1.02); }
-
-/* ---------- SETTINGS ---------- */
-#settings-btn { position: absolute; top:1rem; right:1rem; font-size:1.5rem; cursor:pointer; color:#a78bfa; z-index:50; }
-#settings-modal { position:absolute; top:4rem; right:1rem; background:#1a1e36; border:1px solid #6a4cff; padding:1rem; border-radius:1rem; width:14rem; display:none; z-index:40; }
-#settings-modal.show { display:block; }
-</style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI Assistant Pro</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+  <style>
+    body {
+      background-color: #0f0f13;
+      color: #ffffff;
+      font-family: 'Segoe UI', sans-serif;
+      margin: 0;
+      padding: 0;
+    }
+    .container {
+      max-width: 900px;
+      margin: 2rem auto;
+      background: #1a1c29;
+      border-radius: 1.5rem;
+      padding: 1.5rem;
+      box-shadow: 0 15px 30px rgba(0,0,0,0.7);
+    }
+    .tabs {
+      display: flex;
+      border-bottom: 2px solid #333;
+      margin-bottom: 1rem;
+    }
+    .tab-btn {
+      flex: 1;
+      text-align: center;
+      padding: 1rem;
+      cursor: pointer;
+      color: #aaa;
+      font-weight: bold;
+      transition: all 0.2s;
+    }
+    .tab-btn.active {
+      color: #fff;
+      border-bottom: 3px solid #facc15; /* vàng nổi bật */
+    }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+    .chat-box {
+      background: #111827;
+      border-radius: 12px;
+      padding: 1rem;
+      height: 400px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+    }
+    .bubble {
+      max-width: 80%;
+      padding: 10px 14px;
+      border-radius: 12px;
+      margin-bottom: 10px;
+      line-height: 1.5;
+      word-wrap: break-word;
+      white-space: pre-wrap;
+    }
+    .user-bubble {
+      background: #2563eb;
+      align-self: flex-end;
+      color: white;
+      border-bottom-right-radius: 2px;
+    }
+    .ai-bubble {
+      background: #374151;
+      align-self: flex-start;
+      color: #e5e7eb;
+      border-bottom-left-radius: 2px;
+    }
+    mark.highlight {
+      background-color: #fde047;
+      color: black;
+      font-weight: bold;
+      padding: 0 3px;
+      border-radius: 3px;
+    }
+    textarea, input {
+      width: 100%;
+      padding: 0.75rem;
+      border-radius: 0.75rem;
+      background: #1e1e2a;
+      border: 1px solid #333;
+      color: white;
+      resize: none;
+      outline: none;
+    }
+    button {
+      padding: 0.75rem 1rem;
+      border-radius: 0.75rem;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    #btnCreateImage { background-color: #10b981; color: #111827; }
+    #btnCreateImage:hover { background-color: #059669; }
+    #btnChat { background-color: #6366f1; color: white; }
+    #btnChat:hover { background-color: #4f46e5; }
+    #btnMath { background-color: #f59e0b; color: #111827; }
+    #btnMath:hover { background-color: #d97706; }
+    img.generated-image { border-radius: 12px; max-width: 100%; margin-top: 1rem; }
+  </style>
 </head>
-<body class="flex flex-col items-center min-h-screen p-5 relative">
+<body>
+  <div class="container">
+    <div class="tabs">
+      <div class="tab-btn active" data-tab="image">🖼️ Tạo Ảnh</div>
+      <div class="tab-btn" data-tab="chat">💬 Chat</div>
+      <div class="tab-btn" data-tab="math">🧮 Giải Toán</div>
+    </div>
 
-<!-- Settings -->
-<div id="settings-btn"><i class="fas fa-cogs"></i></div>
-<div id="settings-modal">
-  <h3>CÀI ĐẶT AI</h3>
-  <label for="language-select" class="block text-sm font-medium mb-2 text-gray-300">Ngôn ngữ chat</label>
-  <select id="language-select" class="w-full p-2 rounded-md focus:ring-2 focus:ring-[#a78bfa]">
-    <option value="vi">Tiếng Việt</option>
-    <option value="en">English</option>
-    <option value="zh-CN">简体中文</option>
-  </select>
-</div>
+    <!-- Tạo Ảnh -->
+    <div class="tab-content active" id="image">
+      <div class="chat-box" id="imageBox"></div>
+      <textarea id="imagePrompt" rows="2" placeholder="Nhập mô tả ảnh..."></textarea>
+      <button id="btnCreateImage" class="mt-2 w-full">Tạo Ảnh</button>
+    </div>
 
-<!-- Main container -->
-<div class="main-container flex flex-col">
-  <!-- Tabs -->
-  <div class="flex">
-    <div class="tab-btn active" id="tab-image">🖼️ TẠO ẢNH</div>
-    <div class="tab-btn" id="tab-chat">💬 CHAT</div>
-    <div class="tab-btn" id="tab-math">🧮 GIẢI TOÁN</div>
+    <!-- Chat -->
+    <div class="tab-content" id="chat">
+      <div class="chat-box" id="chatBox"></div>
+      <textarea id="chatInput" rows="2" placeholder="Nhập tin nhắn..."></textarea>
+      <button id="btnChat" class="mt-2 w-full">Gửi</button>
+    </div>
+
+    <!-- Giải Toán -->
+    <div class="tab-content" id="math">
+      <div class="chat-box" id="mathBox"></div>
+      <textarea id="mathPrompt" rows="2" placeholder="Nhập bài toán..."></textarea>
+      <button id="btnMath" class="mt-2 w-full">Giải</button>
+    </div>
   </div>
 
-  <!-- IMAGE -->
-  <div id="content-image" class="p-6 flex flex-col gap-4">
-    <textarea id="imagePrompt" rows="3" placeholder="Nhập mô tả ảnh..."></textarea>
-    <button id="btnCreateImage">Tạo Ảnh AI</button>
-    <div id="imageResult" class="mt-4 text-center text-gray-400"></div>
-  </div>
+  <script>
+    // Tab chuyển đổi
+    const tabs = document.querySelectorAll(".tab-btn");
+    const contents = document.querySelectorAll(".tab-content");
+    tabs.forEach(tab => {
+      tab.addEventListener("click", () => {
+        tabs.forEach(t => t.classList.remove("active"));
+        contents.forEach(c => c.classList.remove("active"));
+        tab.classList.add("active");
+        document.getElementById(tab.dataset.tab).classList.add("active");
+      });
+    });
 
-  <!-- CHAT -->
-  <div id="content-chat" class="p-6 hidden flex flex-col h-[500px]">
-    <div id="chatHistory" class="chat-history"></div>
-    <textarea id="chatPrompt" rows="2" placeholder="Bắt đầu cuộc trò chuyện mới..."></textarea>
-    <button id="btnChat" class="mt-2">Gửi</button>
-  </div>
+    // Tạo bong bóng
+    function addBubble(boxId, text, sender){
+      const box = document.getElementById(boxId);
+      const div = document.createElement("div");
+      div.className = `bubble ${sender === 'user' ? 'user-bubble' : 'ai-bubble'}`;
+      div.innerHTML = text;
+      box.appendChild(div);
+      box.scrollTop = box.scrollHeight;
+    }
 
-  <!-- MATH -->
-  <div id="content-math" class="p-6 hidden flex flex-col gap-4">
-    <textarea id="mathPrompt" rows="3" placeholder="Nhập bài toán cần giải..."></textarea>
-    <button id="btnMath">Giải Toán</button>
-    <div id="mathResult" class="math-container mt-2"></div>
-  </div>
-</div>
+    function updateLastAIBubble(boxId, text){
+      const box = document.getElementById(boxId);
+      const bubbles = box.getElementsByClassName("ai-bubble");
+      if(bubbles.length>0){
+        bubbles[bubbles.length-1].innerHTML = text;
+      }
+      box.scrollTop = box.scrollHeight;
+    }
 
-<script>
-// Tab switch
-const tabs = document.querySelectorAll(".tab-btn");
-const contents = {
-  "tab-image": document.getElementById("content-image"),
-  "tab-chat": document.getElementById("content-chat"),
-  "tab-math": document.getElementById("content-math")
-};
-tabs.forEach(tab => {
-  tab.addEventListener("click", () => {
-    tabs.forEach(t=>t.classList.remove("active"));
-    Object.values(contents).forEach(c=>c.classList.add("hidden"));
-    tab.classList.add("active");
-    contents[tab.id].classList.remove("hidden");
-  });
-});
+    // Pollinations tạo ảnh
+    document.getElementById("btnCreateImage").addEventListener("click", async ()=>{
+      const prompt = document.getElementById("imagePrompt").value.trim();
+      if(!prompt) return;
+      addBubble("imageBox", prompt, "user");
+      addBubble("imageBox", "🧠 ĐANG TẠO ẢNH...", "ai");
 
-// Settings toggle
-const settingsBtn = document.getElementById("settings-btn");
-const settingsModal = document.getElementById("settings-modal");
-settingsBtn.addEventListener('click', ()=>settingsModal.classList.toggle('show'));
-document.addEventListener('click', (e)=>{ if(!settingsModal.contains(e.target)&&!settingsBtn.contains(e.target)) settingsModal.classList.remove('show'); });
+      try{
+        const res = await fetch("/api/pollinations-image", {
+          method:"POST",
+          headers: {"Content-Type":"application/json"},
+          body: JSON.stringify({prompt})
+        });
+        const data = await res.json();
+        updateLastAIBubble("imageBox", `<img src="${data.imageUrl}" class="generated-image">`);
+      }catch{
+        updateLastAIBubble("imageBox","❌ Lỗi kết nối server.");
+      }
+    });
 
-// Markdown helper
-function markdownToHtml(text){return text.replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>').replace(/\n/g,'<br>');}
+    // Chat
+    document.getElementById("btnChat").addEventListener("click", async ()=>{
+      const message = document.getElementById("chatInput").value.trim();
+      if(!message) return;
+      addBubble("chatBox", message, "user");
+      document.getElementById("chatInput").value = "";
+      addBubble("chatBox", "🧠 ĐANG TRẢ LỜI...", "ai");
 
-// Chat helper
-function appendMessage(sender,text){
-  const historyDiv=document.getElementById("chatHistory
+      try{
+        const res = await fetch("/api/chat", {
+          method:"POST",
+          headers: {"Content-Type":"application/json"},
+          body: JSON.stringify({message})
+        });
+        const data = await res.json();
+        updateLastAIBubble("chatBox", data.response);
+      }catch{
+        updateLastAIBubble("chatBox","❌ Lỗi kết nối server.");
+      }
+    });
+
+    // Giải Toán
+    document.getElementById("btnMath").addEventListener("click", async ()=>{
+      const question = document.getElementById("mathPrompt").value.trim();
+      if(!question) return;
+      addBubble("mathBox", question, "user");
+      document.getElementById("mathPrompt").value = "";
+      addBubble("mathBox", "🧠 ĐANG GIẢI TOÁN...", "ai");
+
+      try{
+        const res = await fetch("/api/math", {
+          method:"POST",
+          headers: {"Content-Type":"application/json"},
+          body: JSON.stringify({question})
+        });
+        const data = await res.json();
+        updateLastAIBubble("mathBox", data.response);
+        MathJax.typesetPromise();
+      }catch{
+        updateLastAIBubble("mathBox","❌ Lỗi kết nối server.");
+      }
+    });
+  </script>
+</body>
+</html>

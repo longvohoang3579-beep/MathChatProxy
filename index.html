@@ -1,214 +1,315 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Tạo Ảnh & Chat Gemini</title>
-  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet" />
-  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-  <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
-  <script id="MathJax-script" async
-    src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tạo Ảnh & Chat Gemini</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet" />
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 
-  <style>
-    body {
-      background-color: #0f0f0f;
-      color: white;
-      font-family: "Segoe UI", sans-serif;
-      margin: 0;
-      padding-bottom: 60px;
-    }
-    .tab-btn {
-      flex: 1;
-      padding: 0.75rem;
-      cursor: pointer;
-      text-align: center;
-      border-bottom: 3px solid transparent;
-    }
-    .tab-btn.active {
-      border-color: #22c55e;
-      color: #22c55e;
-    }
-    .chat-box {
-      background: #111827;
-      height: 400px;
-      overflow-y: auto;
-      border-radius: 8px;
-      padding: 1rem;
-      margin-top: 1rem;
-    }
-    .bubble {
-      max-width: 80%;
-      padding: 10px 14px;
-      border-radius: 12px;
-      margin-bottom: 10px;
-      white-space: pre-wrap;
-      line-height: 1.5;
-    }
-    .user-bubble {
-      background: #2563eb;
-      align-self: flex-end;
-      color: white;
-      border-bottom-right-radius: 2px;
-    }
-    .ai-bubble {
-      background: #374151;
-      align-self: flex-start;
-      color: #e5e7eb;
-      border-bottom-left-radius: 2px;
-    }
-    .chat-container {
-      display: flex;
-      flex-direction: column;
-    }
-    mark.highlight {
-      background-color: #fde047;
-      color: black;
-      font-weight: bold;
-      padding: 0 3px;
-      border-radius: 3px;
-    }
-  </style>
+  <style>
+    body {
+      background-color: #0f0f0f;
+      color: white;
+      font-family: "Segoe UI", sans-serif;
+      margin: 0;
+      padding-bottom: 60px;
+    }
+    .tab-btn {
+      flex: 1;
+      padding: 0.75rem;
+      cursor: pointer;
+      text-align: center;
+      border-bottom: 3px solid transparent;
+    }
+    .tab-btn.active {
+      border-color: #22c55e;
+      color: #22c55e;
+    }
+    .generated-image-container {
+      position: relative;
+      text-align: center;
+      max-width: 550px;
+      margin: 0 auto;
+    }
+    .image-watermark-cover {
+      position: absolute;
+      bottom: 0;
+      right: 0;
+      width: 200px;
+      height: 50px;
+      background: linear-gradient(90deg, #0f0f0f, #0f0f0f);
+    }
+    /* Thiết lập khung chat */
+    .chat-message {
+      padding: 0.5rem 1rem;
+      border-radius: 0.75rem;
+      margin-bottom: 0.5rem;
+      max-width: 85%;
+    }
+    .user-message {
+      background-color: #3b82f6; /* Blue */
+      align-self: flex-end;
+      margin-left: auto;
+    }
+    .ai-message {
+      background-color: #4b5563; /* Gray */
+      align-self: flex-start;
+      margin-right: auto;
+    }
+    /* Style cho highlight vàng */
+    .highlight {
+      background-color: #fcd34d; /* Yellow-400 */
+      color: #1f2937; /* Dark text */
+      padding: 2px 4px;
+      border-radius: 4px;
+    }
+    /* Nút Settings */
+    #settings-btn {
+      position: absolute;
+      top: 1rem;
+      right: 1rem;
+      background: #374151;
+      padding: 0.5rem;
+      border-radius: 9999px;
+      cursor: pointer;
+      z-index: 10;
+    }
+    #settings-modal {
+      top: 3.5rem;
+      right: 1rem;
+      background: #1f2937;
+      padding: 1rem;
+      border-radius: 0.5rem;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.5);
+      z-index: 20;
+    }
+  </style>
 </head>
 
-<body class="min-h-screen flex flex-col items-center p-5">
-  <div class="w-full max-w-3xl bg-gray-900 rounded-2xl shadow-lg">
-    <div class="flex border-b border-gray-700">
-      <div class="tab-btn active" id="tab-image">🖼️ Tạo Ảnh</div>
-      <div class="tab-btn" id="tab-chat">💬 Chat</div>
-      <div class="tab-btn" id="tab-math">🧮 Giải Toán</div>
-    </div>
+<body class="min-h-screen flex flex-col items-center p-5 relative">
+    <div id="settings-btn">⚙️</div>
 
-    <!-- 🖼️ TẠO ẢNH -->
-    <div id="content-image" class="p-5">
-      <div class="chat-box" id="imageBox"></div>
-      <div class="flex mt-3">
-        <input id="imagePrompt" type="text" placeholder="Nhập mô tả ảnh..."
-          class="flex-1 p-3 bg-gray-800 rounded-l-lg border border-gray-700 outline-none" />
-        <button id="btnCreateImage" class="bg-green-600 px-5 rounded-r-lg font-bold hover:bg-green-700">Tạo Ảnh</button>
-      </div>
-    </div>
+    <div id="settings-modal" class="absolute hidden">
+    <h3 class="font-bold mb-3 text-lg">Cài đặt AI Chat</h3>
+    <div>
+      <label for="language-select" class="block text-sm font-medium mb-1">Ngôn ngữ Chat:</label>
+      <select id="language-select" class="w-full p-2 rounded-md bg-gray-700 text-white border-gray-600">
+        <option value="vi">Tiếng Việt</option>
+        <option value="en">English (Tiếng Anh)</option>
+        <option value="zh-CN">简体中文 (Tiếng Trung Giản thể)</option>
+      </select>
+    </div>
+  </div>
 
-    <!-- 💬 CHAT -->
-    <div id="content-chat" class="p-5 hidden">
-      <div class="chat-box" id="chatBox"></div>
-      <div class="flex mt-3">
-        <input id="chatInput" type="text" placeholder="Nhập tin nhắn..."
-          class="flex-1 p-3 bg-gray-800 rounded-l-lg border border-gray-700 outline-none" />
-        <button id="btnChat" class="bg-blue-600 px-5 rounded-r-lg font-bold hover:bg-blue-700">Gửi</button>
-      </div>
-    </div>
+  <div class="w-full max-w-3xl bg-gray-900 rounded-2xl shadow-lg">
+    <div class="flex border-b border-gray-700">
+      <div class="tab-btn active" id="tab-image">🖼️ Tạo Ảnh</div>
+      <div class="tab-btn" id="tab-chat">💬 Chat</div>
+      <div class="tab-btn" id="tab-math">🧮 Giải Toán</div>
+    </div>
 
-    <!-- 🧮 GIẢI TOÁN -->
-    <div id="content-math" class="p-5 hidden">
-      <div class="chat-box" id="mathBox"></div>
-      <div class="flex mt-3">
-        <input id="mathPrompt" type="text" placeholder="Nhập bài toán..."
-          class="flex-1 p-3 bg-gray-800 rounded-l-lg border border-gray-700 outline-none" />
-        <button id="btnMath" class="bg-yellow-500 px-5 rounded-r-lg font-bold hover:bg-yellow-600">Giải</button>
-      </div>
-    </div>
-  </div>
+        <div id="content-image" class="p-5">
+      <textarea id="imagePrompt" rows="3" class="w-full p-3 bg-gray-800 rounded-lg border border-gray-700"
+        placeholder="Nhập mô tả ảnh bạn muốn tạo..."></textarea>
+      <button id="btnCreateImage" class="w-full mt-3 bg-green-600 py-2 rounded-lg font-bold hover:bg-green-700">Tạo Ảnh</button>
+      <div id="imageResult" class="mt-4 text-center"></div>
+    </div>
 
-  <script>
-    // ----- Tab chuyển đổi -----
-    const tabs = document.querySelectorAll(".tab-btn");
-    const contents = {
-      "tab-image": document.getElementById("content-image"),
-      "tab-chat": document.getElementById("content-chat"),
-      "tab-math": document.getElementById("content-math")
-    };
-    tabs.forEach(tab => {
-      tab.addEventListener("click", () => {
-        tabs.forEach(t => t.classList.remove("active"));
-        Object.values(contents).forEach(c => c.classList.add("hidden"));
-        tab.classList.add("active");
-        contents[tab.id].classList.remove("hidden");
-      });
-    });
+        <div id="content-chat" class="p-5 hidden flex flex-col h-96">
+      <div id="chatHistory" class="flex-grow overflow-y-auto mb-4 p-2 flex flex-col">
+              </div>
+      <textarea id="chatPrompt" rows="2" class="w-full p-3 bg-gray-800 rounded-lg border border-gray-700"
+        placeholder="Nhập nội dung chat..."></textarea>
+      <button id="btnChat" class="w-full mt-3 bg-blue-600 py-2 rounded-lg font-bold hover:bg-blue-700">Gửi Chat</button>
+    </div>
 
-    // ======= 🔸 Hàm tạo bong bóng chung =======
-    function addBubble(boxId, text, sender) {
-      const box = document.getElementById(boxId);
-      const div = document.createElement("div");
-      div.className = `bubble ${sender === "user" ? "user-bubble ml-auto" : "ai-bubble mr-auto"}`;
-      div.innerHTML = text;
-      box.appendChild(div);
-      box.scrollTop = box.scrollHeight;
-    }
+        <div id="content-math" class="p-5 hidden">
+      <textarea id="mathPrompt" rows="3" class="w-full p-3 bg-gray-800 rounded-lg border border-gray-700"
+        placeholder="Nhập bài toán cần giải..."></textarea>
+      <button id="btnMath" class="w-full mt-3 bg-yellow-500 py-2 rounded-lg font-bold hover:bg-yellow-600">Giải Toán</button>
+      <div id="mathResult" class="mt-4 text-gray-300 math-container"></div>
+      <p class="text-xs text-gray-500 mt-2">Lưu ý: Phần giải toán được thiết lập để trả lời ngắn gọn, tập trung vào kết quả và sử dụng LaTeX.</p>
+    </div>
+  </div>
 
-    function updateLastAIBubble(boxId, text) {
-      const box = document.getElementById(boxId);
-      const bubbles = box.getElementsByClassName("ai-bubble");
-      if (bubbles.length > 0) {
-        bubbles[bubbles.length - 1].innerHTML = text;
-        MathJax.typesetPromise && MathJax.typesetPromise();
-      }
-      box.scrollTop = box.scrollHeight;
-    }
+  <script>
+    // Biến toàn cục để lưu lịch sử chat
+    let chatHistory = [];
+    
+    // ----- Xử lý Settings Ngôn ngữ -----
+    const settingsBtn = document.getElementById("settings-btn");
+    const settingsModal = document.getElementById("settings-modal");
+    const langSelect = document.getElementById("language-select");
 
-    // 🖼️ Pollinations Chat Style
-    document.getElementById("btnCreateImage").addEventListener("click", async () => {
-      const prompt = document.getElementById("imagePrompt").value.trim();
-      if (!prompt) return;
-      addBubble("imageBox", prompt, "user");
-      addBubble("imageBox", "🧠 ĐANG TRẢ LỜI...", "ai");
+    // Tải ngôn ngữ đã lưu, mặc định là Tiếng Việt
+    let currentLang = localStorage.getItem('geminiChatLanguage') || 'vi';
+    langSelect.value = currentLang;
 
-      const res = await fetch("/api/pollinations-image", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt })
-      });
-      const data = await res.json();
-      updateLastAIBubble("imageBox", `
-        <div class="text-center">
-          <img src="${data.imageUrl}" class="rounded-lg w-full mt-2">
-        </div>`);
-    });
+    settingsBtn.addEventListener('click', () => {
+      settingsModal.classList.toggle('hidden');
+    });
 
-    // 💬 Chat
-    document.getElementById("btnChat").addEventListener("click", async () => {
-      const message = document.getElementById("chatInput").value.trim();
-      if (!message) return;
-      addBubble("chatBox", message, "user");
-      document.getElementById("chatInput").value = "";
-      addBubble("chatBox", "🧠 ĐANG TRẢ LỜI...", "ai");
+    langSelect.addEventListener('change', (e) => {
+      currentLang = e.target.value;
+      localStorage.setItem('geminiChatLanguage', currentLang);
+      // Khi đổi ngôn ngữ, xóa lịch sử chat để bắt đầu cuộc trò chuyện mới
+      chatHistory = [];
+      document.getElementById("chatHistory").innerHTML = '';
+      settingsModal.classList.add('hidden');
+      alert(`Đã chuyển ngôn ngữ sang: ${e.target.options[e.target.selectedIndex].text}.`);
+    });
 
-      try {
-        const res = await fetch("/api/chat", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ message })
-        });
-        const data = await res.json();
-        const html = marked.parse(data.response || "❌ Không có phản hồi từ Gemini.");
-        updateLastAIBubble("chatBox", html);
-      } catch {
-        updateLastAIBubble("chatBox", "❌ Lỗi kết nối đến server.");
-      }
-    });
+    // Hàm chuyển đổi Markdown cơ bản và thẻ <mark> sang HTML
+    function markdownToHtml(text) {
+      // 1. Chuyển đổi **in đậm**
+      let html = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+      // 2. Chuyển đổi xuống dòng
+      html = html.replace(/\n/g, '<br>');
+      return html;
+    }
 
-    // 🧮 Math (bong bóng + highlight)
-    document.getElementById("btnMath").addEventListener("click", async () => {
-      const question = document.getElementById("mathPrompt").value.trim();
-      if (!question) return;
-      addBubble("mathBox", question, "user");
-      document.getElementById("mathPrompt").value = "";
-      addBubble("mathBox", "🧠 ĐANG TRẢ LỜI...", "ai");
+    // Hàm hiển thị tin nhắn trong khung chat
+    function appendMessage(sender, text) {
+      const historyDiv = document.getElementById("chatHistory");
+      const msgDiv = document.createElement("div");
+      const htmlContent = markdownToHtml(text);
+      
+      msgDiv.classList.add("chat-message");
+      
+      if (sender === 'user') {
+        msgDiv.classList.add("user-message");
+        msgDiv.innerHTML = htmlContent;
+      } else {
+        msgDiv.classList.add("ai-message");
+        msgDiv.innerHTML = htmlContent;
+      }
+      
+      historyDiv.appendChild(msgDiv);
+      // Cuộn xuống dưới cùng
+      historyDiv.scrollTop = historyDiv.scrollHeight;
+    }
 
-      try {
-        const res = await fetch("/api/math", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ question })
-        });
-        const data = await res.json();
-        const html = marked.parse(data.response || "❌ Không có phản hồi từ Gemini.");
-        updateLastAIBubble("mathBox", html);
-      } catch {
-        updateLastAIBubble("mathBox", "❌ Lỗi kết nối đến server.");
-      }
-    });
-  </script>
+    // ----- Tab chuyển đổi (Giữ nguyên) -----
+    const tabs = document.querySelectorAll(".tab-btn");
+    const contents = {
+      "tab-image": document.getElementById("content-image"),
+      "tab-chat": document.getElementById("content-chat"),
+      "tab-math": document.getElementById("content-math")
+    };
+
+    tabs.forEach(tab => {
+      tab.addEventListener("click", () => {
+        tabs.forEach(t => t.classList.remove("active"));
+        Object.values(contents).forEach(c => c.classList.add("hidden"));
+        tab.classList.add("active");
+        contents[tab.id].classList.remove("hidden");
+      });
+    });
+
+    // 🖼️ Pollinations (Giữ nguyên)
+    document.getElementById("btnCreateImage").addEventListener("click", async () => {
+      const prompt = document.getElementById("imagePrompt").value.trim();
+      const resDiv = document.getElementById("imageResult");
+      if (!prompt) return alert("Nhập mô tả ảnh.");
+
+      resDiv.innerHTML = `<p class='text-gray-400 font-bold'>ĐANG TẠO ẢNH...</p>`; 
+      
+      const res = await fetch("/api/pollinations-image", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prompt })
+      });
+      const data = await res.json();
+      resDiv.innerHTML = `
+        <div class="generated-image-container">
+          <img src="${data.imageUrl}" class="rounded-lg w-full">
+          <div class="image-watermark-cover"></div>
+        </div>`;
+    });
+
+    // 💬 Chat (ĐÃ CẬP NHẬT GỬI NGÔN NGỮ)
+    document.getElementById("btnChat").addEventListener("click", async () => {
+      const prompt = document.getElementById("chatPrompt").value.trim();
+      const historyDiv = document.getElementById("chatHistory");
+      const btn = document.getElementById("btnChat");
+
+      if (!prompt) return;
+
+      appendMessage('user', prompt);
+      chatHistory.push({ role: "user", text: prompt });
+      document.getElementById("chatPrompt").value = '';
+
+      const statusDiv = document.createElement("div");
+      statusDiv.classList.add("ai-message", "text-gray-400", "font-bold");
+      statusDiv.id = "chatStatus";
+      statusDiv.textContent = "ĐANG TRẢ LỜI...";
+      historyDiv.appendChild(statusDiv);
+      historyDiv.scrollTop = historyDiv.scrollHeight;
+      btn.disabled = true;
+
+      try {
+        const res = await fetch("/api/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          // GỬI NGÔN NGỮ ĐÃ CHỌN LÊN SERVER
+          body: JSON.stringify({ 
+            message: prompt, 
+            history: chatHistory,
+            language: currentLang 
+          })
+        });
+        const data = await res.json();
+
+        statusDiv.remove();
+
+        const reply = data.response || "❌ Không có phản hồi từ Gemini.";
+        
+        appendMessage('assistant', reply);
+        chatHistory.push({ role: "assistant", text: reply }); 
+        
+      } catch (err) {
+        statusDiv.textContent = "❌ Lỗi kết nối đến server. (Kiểm tra terminal server)";
+        console.error(err);
+      } finally {
+        btn.disabled = false;
+      }
+    });
+
+    // 🧮 Math (Giữ nguyên)
+    document.getElementById("btnMath").addEventListener("click", async () => {
+      const question = document.getElementById("mathPrompt").value.trim();
+      const resDiv = document.getElementById("mathResult");
+      const btn = document.getElementById("btnMath");
+
+      if (!question) return alert("Nhập bài toán.");
+      
+      resDiv.innerHTML = `<p class='text-gray-400 font-bold'>ĐANG TRẢ LỜI...</p>`;
+      btn.disabled = true;
+
+      try {
+        const res = await fetch("/api/math", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ question })
+        });
+        const data = await res.json();
+        
+        const rawResponse = data.response || "❌ Không có phản hồi từ Gemini.";
+        
+        let htmlContent = markdownToHtml(rawResponse);
+
+        resDiv.innerHTML = htmlContent;
+        
+        MathJax.typesetPromise([resDiv]).catch((err) => console.error("MathJax Error:", err));
+
+      } catch (err) {
+        resDiv.textContent = "❌ Lỗi kết nối đến server.";
+        console.error(err);
+      } finally {
+        btn.disabled = false;
+      }
+    });
+  </script>
 </body>
 </html>

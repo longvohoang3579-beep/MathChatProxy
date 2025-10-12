@@ -75,7 +75,7 @@ async function callGeminiModel(contents) {
 }
 
 // ============================================================
-// 🖼️ API TẠO ẢNH (Pollinations - Giữ nguyên)
+// 🖼️ API TẠO ẢNH (Pollinations)
 // ============================================================
 app.post("/api/pollinations-image", async (req, res) => {
   const { prompt } = req.body;
@@ -92,16 +92,26 @@ app.post("/api/pollinations-image", async (req, res) => {
 });
 
 // ============================================================
-// 💬 CHAT TỔNG HỢP (Đã sửa lỗi và tối ưu hóa)
+// 💬 CHAT TỔNG HỢP (Hỗ trợ Chat Liên tục, Highlight VÀ Ngôn ngữ MỞ RỘNG)
 // ============================================================
 app.post("/api/chat", async (req, res) => {
-  const { message, history } = req.body; 
+  const { message, history, language } = req.body; 
   if (!message) return res.status(400).json({ response: "Thiếu nội dung chat." });
 
   // 1. Định nghĩa System Instruction
+  const languageMap = {
+    'vi': 'Tiếng Việt',
+    'en': 'English (Tiếng Anh)',
+    'zh-CN': '简体中文 (Tiếng Trung Giản thể)'
+  };
+  
+  const langName = languageMap[language] || languageMap['vi'];
+  
+  // 💡 YÊU CẦU TRẢ LỜI MỞ RỘNG VÀ CHI TIẾT
   const systemInstruction = `
-  Bạn là trợ lý AI thông minh, trả lời bằng tiếng Việt, thân thiện. 
-  Hãy trả lời **cực kỳ ngắn gọn**, chỉ tập trung vào **trọng tâm** của câu hỏi.
+  Bạn là trợ lý AI thông minh, thân thiện. Hãy trả lời bằng **${langName}**.
+  Hãy trả lời một cách **mở rộng, chi tiết và cung cấp thêm thông tin liên quan** thay vì chỉ trả lời ngắn gọn.
+  Cố gắng viết ít nhất 3-4 đoạn văn cho mỗi câu trả lời.
   Nếu có ý chính/kết quả, hãy bọc trong <mark class="highlight">...</mark> để tô màu vàng.
   `;
   
@@ -110,10 +120,8 @@ app.post("/api/chat", async (req, res) => {
   
   if (Array.isArray(history)) {
     history.forEach(item => {
-      // API Gemini sử dụng "model" thay vì "assistant" cho AI
       const role = item.role === "assistant" ? "model" : item.role;
       
-      // Thêm các tin nhắn cũ vào lịch sử
       contents.push({
         role: role,
         parts: [{ text: item.text }]
@@ -122,15 +130,13 @@ app.post("/api/chat", async (req, res) => {
   }
 
   // 3. Gắn System Instruction vào tin nhắn người dùng cuối cùng
-  // Tin nhắn mới nhất (message) đã được thêm vào cuối mảng 'history' ở client.
-  
   const lastMessageEntry = contents[contents.length - 1];
 
   if (lastMessageEntry && lastMessageEntry.role === "user") {
     // Thêm System Instruction vào tin nhắn cuối cùng của user
     lastMessageEntry.parts[0].text = systemInstruction + "\n\nTin nhắn: " + message;
   } else {
-    // Trường hợp dự phòng nếu mảng history rỗng hoặc sai cấu trúc
+    // Trường hợp dự phòng nếu mảng history rỗng
     contents = [{ 
       role: "user", 
       parts: [{ text: systemInstruction + "\n\nTin nhắn: " + message }]
@@ -148,21 +154,22 @@ app.post("/api/chat", async (req, res) => {
 });
 
 // ============================================================
-// 🧮 GIẢI TOÁN (ngắn gọn, LaTeX, highlight vàng - Giữ nguyên)
+// 🧮 GIẢI TOÁN (Ngắn gọn, LaTeX, Highlight - GIỮ NGUYÊN TRỌNG TÂM)
 // ============================================================
 app.post("/api/math", async (req, res) => {
   const { question } = req.body;
   if (!question) return res.status(400).json({ response: "Thiếu đề toán." });
 
+  // 💡 YÊU CẦU NGẮN GỌN VÀ CHỈ TẬP TRUNG VÀO TRỌNG TÂM
   const prompt = `
   Hãy giải bài toán sau **ngắn gọn nhất có thể**, bằng tiếng Việt dễ hiểu. 
-  - Chỉ hiển thị **bước chính** và **kết quả cuối cùng**.
+  - Chỉ hiển thị **bước chính** và **kết quả cuối cùng**. KHÔNG MỞ RỘNG.
   - Viết công thức bằng LaTeX (dấu $...$).
   - Tô màu vàng các kết quả và ý quan trọng bằng <mark class="highlight">...</mark>.
   Bài toán: ${question}
   `;
     
-  // Tạo cấu trúc contents cho prompt đơn (Toán không cần lịch sử)
+  // Tạo cấu trúc contents cho prompt đơn
   const contents = [{ role: "user", parts: [{ text: prompt }] }];
 
   const reply = await callGeminiModel(contents);

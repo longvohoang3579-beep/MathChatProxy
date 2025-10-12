@@ -3,12 +3,13 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Tạo Ảnh & Chatbot Toán Học</title>
+  <title>MathChat Proxy AI</title>
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 
   <style>
     body {
-      background-color: #0f0f0f;
+      background: #0f0f0f;
       color: white;
       font-family: "Segoe UI", sans-serif;
       margin: 0;
@@ -16,72 +17,38 @@
       overflow-x: hidden;
     }
 
-    /* ======= KHỐI TẠO ẢNH ======= */
-    #pollinations-section {
-      background: #181818;
-      border-radius: 16px;
-      padding: 1.5rem;
-      max-width: 700px;
-      margin: 2rem auto;
-      box-shadow: 0 0 12px rgba(0, 0, 0, 0.5);
-    }
-
-    .generated-image-container {
-      position: relative;
+    .tab-btn {
+      flex: 1;
+      padding: 0.75rem;
+      cursor: pointer;
       text-align: center;
-      max-width: 550px;
-      margin: 0 auto;
+      font-weight: 600;
+      background: #1a1a1a;
+      border-bottom: 3px solid transparent;
+      transition: all 0.3s ease;
     }
 
-    .generated-image {
-      width: 100%;
-      border-radius: 16px;
-      box-shadow: 0 0 10px rgba(0, 0, 0, 0.7);
-      opacity: 0;
-      transition: opacity 0.3s ease;
-    }
-
-    /* Che watermark hoàn toàn */
-    .image-watermark-cover {
-      position: absolute;
-      bottom: 0;
-      right: 0;
-      width: 180px; /* tăng thêm để che hết */
-      height: 40px;
-      background: linear-gradient(90deg, rgba(24,24,24,1), rgba(24,24,24,1));
-      border-radius: 10px 0 0 0;
-    }
-
-    /* ======= KHỐI CHATBOT ======= */
-    #chat-area, #math-area {
-      background: #181818;
-      border-radius: 16px;
-      padding: 1.5rem;
-      max-width: 700px;
-      margin: 2rem auto;
-      box-shadow: 0 0 12px rgba(0, 0, 0, 0.5);
-    }
-
-    #chatbox, #mathbox {
-      width: 100%;
-      min-height: 100px;
-      border-radius: 10px;
-      padding: 1rem;
+    .tab-btn.active {
+      color: #22c55e;
+      border-color: #22c55e;
       background: #222;
-      color: white;
-      border: 1px solid #333;
-      resize: none;
     }
 
-    button {
-      transition: all 0.2s ease;
+    .tab-content {
+      display: none;
+      padding: 1.5rem;
+      animation: fadeIn 0.4s ease;
     }
 
-    button:hover {
-      opacity: 0.9;
+    .tab-content.active {
+      display: block;
     }
 
-    /* ======= KHUNG CỐ ĐỊNH CUỐI ======= */
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
     #fixed-footer {
       position: fixed;
       bottom: 0;
@@ -96,81 +63,111 @@
       color: #aaa;
       z-index: 99;
     }
+
+    textarea {
+      width: 100%;
+      border-radius: 10px;
+      background: #222;
+      border: 1px solid #333;
+      color: white;
+      padding: 1rem;
+      resize: none;
+    }
+
+    button {
+      transition: all 0.2s ease;
+    }
   </style>
 </head>
 
 <body>
+  <div class="max-w-3xl mx-auto mt-8 bg-[#181818] rounded-2xl shadow-xl overflow-hidden">
+    <div class="flex">
+      <div class="tab-btn active" data-tab="chat">💬 Chat</div>
+      <div class="tab-btn" data-tab="math">🧮 Giải Toán</div>
+      <div class="tab-btn" data-tab="image">🎨 Tạo Ảnh</div>
+    </div>
 
-  <!-- ========== KHỐI 1: TẠO ẢNH ========== -->
-  <section id="pollinations-section">
-    <h2 class="text-lg font-bold text-center mb-4">🎨 Tạo Ảnh Tự Động</h2>
+    <div id="chat" class="tab-content active">
+      <textarea id="chatInput" rows="4" placeholder="Nhập nội dung trò chuyện..."></textarea>
+      <button id="chatBtn" class="w-full mt-3 bg-blue-600 py-2 rounded-lg font-semibold">Gửi Chat</button>
+      <div id="chatOutput" class="mt-4 text-gray-300"></div>
+    </div>
 
-    <textarea id="imagePromptInput" rows="3"
-      placeholder="Nhập mô tả ảnh bạn muốn tạo..."
-      class="w-full p-3 rounded-lg bg-gray-800 text-white border border-gray-700 focus:ring-2 focus:ring-green-500"></textarea>
+    <div id="math" class="tab-content">
+      <textarea id="mathInput" rows="4" placeholder="Nhập bài toán cần giải..."></textarea>
+      <button id="mathBtn" class="w-full mt-3 bg-yellow-500 text-black py-2 rounded-lg font-semibold">Giải Ngay</button>
+      <div id="mathOutput" class="mt-4 text-gray-300"></div>
+    </div>
 
-    <button id="generateImageBtn"
-      class="w-full mt-3 bg-green-600 hover:bg-green-700 text-white font-bold py-2 rounded-lg">
-      Tạo Ảnh
-    </button>
+    <div id="image" class="tab-content">
+      <textarea id="imagePromptInput" rows="3" placeholder="Nhập mô tả ảnh bạn muốn tạo..."></textarea>
+      <button id="generateImageBtn" class="w-full mt-3 bg-green-600 hover:bg-green-700 py-2 rounded-lg font-semibold">
+        Tạo Ảnh
+      </button>
+      <div id="imageResultContainer" class="mt-5 text-center"></div>
+    </div>
+  </div>
 
-    <div id="imageResultContainer" class="mt-5 text-center"></div>
-  </section>
-
-  <!-- ========== KHỐI 2: CHATBOT ĐA NĂNG ========== -->
-  <section id="chat-area">
-    <h2 class="text-lg font-bold text-center mb-4">💬 Chat Đa Năng</h2>
-    <textarea id="chatbox" placeholder="Nhập nội dung trò chuyện..."></textarea>
-    <button class="w-full mt-3 bg-blue-600 py-2 rounded-lg">Gửi Chat</button>
-  </section>
-
-  <!-- ========== KHỐI 3: GIẢI TOÁN ========== -->
-  <section id="math-area">
-    <h2 class="text-lg font-bold text-center mb-4">🧮 Giải Toán AI</h2>
-    <textarea id="mathbox" placeholder="Nhập bài toán cần giải..."></textarea>
-    <button class="w-full mt-3 bg-yellow-500 py-2 rounded-lg">Giải Ngay</button>
-  </section>
-
-  <!-- ========== CHÂN TRANG ========== -->
-  <div id="fixed-footer">💡 Khu vực Chatbot & Giải toán — luôn hiển thị rõ</div>
+  <div id="fixed-footer">🚀 MathChat Proxy by Gemini API</div>
 
   <script>
-    const generateImageBtn = document.getElementById("generateImageBtn");
-    const imagePromptInput = document.getElementById("imagePromptInput");
-    const imageResultContainer = document.getElementById("imageResultContainer");
+    // Tabs chuyển
+    const tabs = document.querySelectorAll(".tab-btn");
+    const contents = document.querySelectorAll(".tab-content");
+    tabs.forEach(btn => {
+      btn.addEventListener("click", () => {
+        tabs.forEach(b => b.classList.remove("active"));
+        contents.forEach(c => c.classList.remove("active"));
+        btn.classList.add("active");
+        document.getElementById(btn.dataset.tab).classList.add("active");
+      });
+    });
 
-    async function generateImage() {
-      const prompt = imagePromptInput.value.trim();
-      if (!prompt) return alert("⚠️ Vui lòng nhập mô tả ảnh.");
+    // Chat
+    document.getElementById("chatBtn").addEventListener("click", async () => {
+      const input = document.getElementById("chatInput").value.trim();
+      if (!input) return alert("Vui lòng nhập nội dung chat.");
+      const output = document.getElementById("chatOutput");
+      output.innerHTML = "⏳ Đang trả lời...";
+      const res = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: input }),
+      });
+      const data = await res.json();
+      output.innerHTML = marked.parse(data.reply);
+    });
 
-      generateImageBtn.disabled = true;
-      generateImageBtn.textContent = "⏳ Đang tạo ảnh...";
-      imageResultContainer.innerHTML = `<div class="text-gray-400">Đang tạo ảnh...</div>`;
+    // Math
+    document.getElementById("mathBtn").addEventListener("click", async () => {
+      const input = document.getElementById("mathInput").value.trim();
+      if (!input) return alert("Nhập bài toán.");
+      const output = document.getElementById("mathOutput");
+      output.innerHTML = "⏳ Đang giải...";
+      const res = await fetch("/api/math", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ question: input }),
+      });
+      const data = await res.json();
+      output.innerHTML = marked.parse(data.reply);
+    });
 
-      try {
-        const res = await fetch("/api/pollinations-image", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ prompt }),
-        });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.message);
-
-        imageResultContainer.innerHTML = `
-          <div class="generated-image-container">
-            <img src="${data.imageUrl}" alt="Kết quả ảnh" class="generated-image" onload="this.style.opacity=1">
-            <div class="image-watermark-cover"></div>
-          </div>
-        `;
-      } catch (err) {
-        imageResultContainer.innerHTML = `<p class="text-red-400">❌ Lỗi: ${err.message}</p>`;
-      }
-
-      generateImageBtn.disabled = false;
-      generateImageBtn.textContent = "Tạo Ảnh";
-    }
-
-    generateImageBtn.addEventListener("click", generateImage);
+    // Image
+    document.getElementById("generateImageBtn").addEventListener("click", async () => {
+      const prompt = document.getElementById("imagePromptInput").value.trim();
+      if (!prompt) return alert("Nhập mô tả ảnh.");
+      const output = document.getElementById("imageResultContainer");
+      output.innerHTML = "⏳ Đang tạo ảnh...";
+      const res = await fetch("/api/pollinations-image", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prompt }),
+      });
+      const data = await res.json();
+      output.innerHTML = `<img src="${data.imageUrl}" class="rounded-xl mt-4 mx-auto" style="max-width:90%">`;
+    });
   </script>
 </body>
 </html>

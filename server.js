@@ -34,6 +34,11 @@ app.post("/api/gemini", async (req, res) => {
 
   try {
     const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) {
+      console.error("Thiếu GEMINI_API_KEY trong file .env");
+      return res.status(500).json({ text: "❌ Lỗi cấu hình phía server." });
+    }
+
     const response = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${apiKey}`,
       {
@@ -44,22 +49,29 @@ app.post("/api/gemini", async (req, res) => {
     );
 
     const data = await response.json();
-    const text =
-      data.candidates?.[0]?.content?.parts?.[0]?.text ||
-      "❌ Không có phản hồi từ Gemini.";
 
+    // GHI LẠI TOÀN BỘ PHẢN HỒI TỪ GOOGLE ĐỂ DEBUG
+    console.log("Phản hồi từ Gemini API:", JSON.stringify(data, null, 2));
+
+    // Kiểm tra xem có lỗi từ API không
+    if (data.error) {
+      return res.status(500).json({ text: `❌ Lỗi từ Google: ${data.error.message}` });
+    }
+
+    // Kiểm tra xem nội dung có bị chặn vì lý do an toàn không
+    if (!data.candidates || data.candidates.length === 0) {
+      const blockReason = data.promptFeedback?.blockReason;
+      if (blockReason) {
+        return res.json({ text: `❌ Nội dung bị chặn vì: ${blockReason}` });
+      }
+      return res.json({ text: "❌ Không có phản hồi từ Gemini." });
+    }
+
+    const text = data.candidates[0]?.content?.parts[0]?.text || "❓ Không tìm thấy nội dung trả lời.";
     res.json({ text });
+
   } catch (err) {
-    console.error("Gemini error:", err);
-    res.status(500).json({ text: "❌ Lỗi khi gọi Gemini API." });
+    console.error("Lỗi hệ thống khi gọi Gemini:", err);
+    res.status(500).json({ text: "❌ Lỗi hệ thống khi gọi Gemini API." });
   }
 });
-
-// Trang chính
-app.get("/", (req, res) => {
-  res.sendFile(path.join(__dirname, "index.html"));
-});
-
-// Khởi động server
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`🚀 Server chạy tại http://localhost:${PORT}`));

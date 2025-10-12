@@ -18,7 +18,6 @@ app.use(express.static("."));
 // 🧠 CẤU HÌNH GEMINI 2.5 FLASH
 // ============================================================
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-// 💡 Đã đổi sang model ổn định và tương thích nhất: gemini-2.5-flash
 const GEMINI_MODEL = "gemini-2.5-flash"; 
 const GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1/models/${GEMINI_MODEL}:generateContent`;
 
@@ -31,10 +30,11 @@ if (!GEMINI_API_KEY) {
 
 // ======== 🔹 Hàm gọi Gemini API ========
 /**
+ * Hàm gọi chung API Gemini.
  * @param {Array} contents Mảng lịch sử chat hoặc prompt đơn.
  * @returns {Promise<string>} Phản hồi từ model hoặc thông báo lỗi.
  */
-async function callGeminiModel(contents) {
+async function callGeminiModel(contents) { 
   if (!GEMINI_API_KEY) return "❌ Thiếu GEMINI_API_KEY trong .env.";
 
   try {
@@ -69,7 +69,8 @@ async function callGeminiModel(contents) {
 
   } catch (error) {
     console.error("🔥 Lỗi khi gọi Gemini:", error);
-    return "❌ Lỗi khi kết nối đến Google Gemini.";
+    // Lỗi kết nối đến server sẽ bị bắt ở đây.
+    return "❌ Lỗi khi kết nối đến Google Gemini. (Kiểm tra server/mạng)";
   }
 }
 
@@ -91,46 +92,63 @@ app.post("/api/pollinations-image", async (req, res) => {
 });
 
 // ============================================================
-// 💬 CHAT TỔNG HỢP (Hỗ trợ Chat Liên tục & Highlight)
+// 💬 CHAT TỔNG HỢP (Đã sửa lỗi và tối ưu hóa)
 // ============================================================
 app.post("/api/chat", async (req, res) => {
-  const { message, history } = req.body; // Nhận cả tin nhắn mới và lịch sử
+  const { message, history } = req.body; 
   if (!message) return res.status(400).json({ response: "Thiếu nội dung chat." });
 
-  // 1. Định nghĩa System Instruction (đảm bảo rút gọn và highlight)
+  // 1. Định nghĩa System Instruction
   const systemInstruction = `
   Bạn là trợ lý AI thông minh, trả lời bằng tiếng Việt, thân thiện. 
   Hãy trả lời **cực kỳ ngắn gọn**, chỉ tập trung vào **trọng tâm** của câu hỏi.
   Nếu có ý chính/kết quả, hãy bọc trong <mark class="highlight">...</mark> để tô màu vàng.
   `;
   
-  // 2. Tạo mảng contents
+  // 2. Xử lý lịch sử chat: Đảm bảo chuyển đổi đúng định dạng
   let contents = [];
   
-  // 3. Thêm lịch sử chat từ client (chuyển đổi role: 'assistant' -> 'model')
-  history.forEach(item => {
-    contents.push({
-      role: item.role === "user" ? "user" : "model",
-      parts: [{ text: item.text }]
+  if (Array.isArray(history)) {
+    history.forEach(item => {
+      // API Gemini sử dụng "model" thay vì "assistant" cho AI
+      const role = item.role === "assistant" ? "model" : item.role;
+      
+      // Thêm các tin nhắn cũ vào lịch sử
+      contents.push({
+        role: role,
+        parts: [{ text: item.text }]
+      });
     });
-  });
+  }
 
-  // 4. Gắn System Instruction vào tin nhắn người dùng cuối cùng (tin nhắn mới nhất)
-  // Tin nhắn mới nhất luôn là phần tử cuối cùng trong mảng history
-  const lastUserIndex = contents.length - 1;
-  if (contents[lastUserIndex] && contents[lastUserIndex].role === "user") {
-    contents[lastUserIndex].parts[0].text = systemInstruction + "\n\nTin nhắn: " + message;
+  // 3. Gắn System Instruction vào tin nhắn người dùng cuối cùng
+  // Tin nhắn mới nhất (message) đã được thêm vào cuối mảng 'history' ở client.
+  
+  const lastMessageEntry = contents[contents.length - 1];
+
+  if (lastMessageEntry && lastMessageEntry.role === "user") {
+    // Thêm System Instruction vào tin nhắn cuối cùng của user
+    lastMessageEntry.parts[0].text = systemInstruction + "\n\nTin nhắn: " + message;
   } else {
-     // Trường hợp không nhận được lịch sử, vẫn phải tạo cấu trúc contents hợp lệ
-     contents.push({ role: "user", parts: [{ text: systemInstruction + "\n\nTin nhắn: " + message }] });
-  }
+    // Trường hợp dự phòng nếu mảng history rỗng hoặc sai cấu trúc
+    contents = [{ 
+      role: "user", 
+      parts: [{ text: systemInstruction + "\n\nTin nhắn: " + message }]
+    }];
+  }
 
-  const reply = await callGeminiModel(contents);
-  res.json({ response: reply });
+
+  try {
+    const reply = await callGeminiModel(contents);
+    res.json({ response: reply });
+  } catch (error) {
+    console.error("Lỗi xử lý chat:", error);
+    res.status(500).json({ response: "❌ Lỗi xử lý dữ liệu chat trên server." });
+  }
 });
 
 // ============================================================
-// 🧮 GIẢI TOÁN (ngắn gọn, LaTeX, highlight vàng)
+// 🧮 GIẢI TOÁN (ngắn gọn, LaTeX, highlight vàng - Giữ nguyên)
 // ============================================================
 app.post("/api/math", async (req, res) => {
   const { question } = req.body;
@@ -144,7 +162,7 @@ app.post("/api/math", async (req, res) => {
   Bài toán: ${question}
   `;
     
-  // Tạo cấu trúc contents cho prompt đơn
+  // Tạo cấu trúc contents cho prompt đơn (Toán không cần lịch sử)
   const contents = [{ role: "user", parts: [{ text: prompt }] }];
 
   const reply = await callGeminiModel(contents);

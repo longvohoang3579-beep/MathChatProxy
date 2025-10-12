@@ -3,132 +3,146 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>🧠 Trợ Lý AI Đa Năng</title>
-  <script src="https://cdn.tailwindcss.com"></script>
+  <title>AI Chatbot & Pollinations Image</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
   <style>
-    body { font-family: 'Segoe UI', sans-serif; background: #121212; color: #e4e6eb; }
-    .chat-container { background-color: #1e1e1e; }
-    .bubble { padding: 10px 14px; border-radius: 18px; margin: 8px 0; max-width: 90%; word-wrap: break-word; }
-    .user { background: #1e90ff; color: white; align-self: flex-end; }
-    .ai { background: #3a3b3c; align-self: flex-start; }
-    .highlight { background: #ffc400; color: #18191a; padding: 2px 4px; border-radius: 4px; }
+    body {
+      background-color: #0f0f0f;
+      color: white;
+      font-family: 'Segoe UI', sans-serif;
+      overflow-x: hidden;
+      margin: 0;
+      padding-bottom: 60px;
+    }
+
+    /* ========== PHẦN TẠO ẢNH ========== */
+    .generated-image-container {
+      max-width: 550px;
+      margin: 0 auto;
+      text-align: center;
+    }
+
+    .generated-image {
+      width: 100%;
+      max-height: 400px;
+      object-fit: cover;
+      border-radius: 16px;
+      display: block;
+      margin: 0 auto;
+      box-shadow: 0 0 12px rgba(0, 0, 0, 0.6);
+      transition: opacity 0.4s ease;
+    }
+
+    /* Che watermark Pollinations */
+    .image-watermark-cover {
+      position: absolute;
+      bottom: 0;
+      right: 0;
+      width: 130px;
+      height: 32px;
+      background: linear-gradient(90deg, rgba(24,24,24,0.9), rgba(24,24,24,1));
+      border-radius: 12px 0 0 0;
+    }
+
+    #pollinations-section {
+      overflow: hidden;
+      background: #181818;
+      border-radius: 16px;
+      padding: 1.5rem;
+      max-width: 700px;
+      margin: 2rem auto;
+      box-shadow: 0 0 12px rgba(0,0,0,0.5);
+    }
+
+    /* Khung chat phía dưới (mô phỏng) */
+    #chat-area {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 50px;
+      background: #202020;
+      border-top: 1px solid #333;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      color: #aaa;
+    }
   </style>
 </head>
-<body class="flex items-center justify-center h-screen">
-  <div class="w-full max-w-lg bg-[#242526] rounded-lg shadow-2xl flex flex-col overflow-hidden">
-    <header class="bg-gradient-to-r from-gray-800 to-black text-white p-4 text-center">
-      <h1 class="text-xl font-extrabold">🧠 Trợ Lý AI Đa Năng</h1>
-    </header>
+<body>
 
-    <nav class="flex justify-around bg-gray-900 p-2">
-      <button id="tab-chat" onclick="switchView('chat')" class="tab-button active text-white font-semibold">💬 Chat</button>
-      <button id="tab-image" onclick="switchView('image')" class="tab-button text-white font-semibold">🎨 Tạo Ảnh</button>
-      <button id="tab-math" onclick="switchView('math')" class="tab-button text-white font-semibold">🧮 Giải Toán</button>
-    </nav>
+  <!-- 🎨 Phần tạo ảnh -->
+  <section id="pollinations-section">
+    <h2 class="text-lg font-bold text-center mb-4">🎨 Tạo Ảnh với Pollinations</h2>
+    
+    <textarea 
+      id="imagePromptInput" 
+      placeholder="Nhập mô tả ảnh bạn muốn tạo..." 
+      class="w-full p-3 rounded-lg bg-gray-800 text-white border border-gray-600 focus:outline-none focus:ring-2 focus:ring-green-500" 
+      rows="3"></textarea>
 
-    <div class="flex-grow relative">
-      <!-- Chat -->
-      <div id="chat-view" class="flex flex-col h-full">
-        <main id="general-chat-box" class="overflow-y-auto p-4 flex flex-col flex-grow chat-container">
-          <div class="bubble ai">Xin chào! Bạn muốn nói chuyện về gì hôm nay?</div>
-        </main>
-        <footer class="p-3 bg-[#242526]">
-          <div class="flex space-x-2">
-            <input type="text" id="general-chat-input" placeholder="Nhập tin nhắn..." class="flex-grow rounded-full px-4 py-2 bg-gray-700 text-white" onkeypress="if(event.key==='Enter') sendGeneralChatMessage()">
-            <button onclick="sendGeneralChatMessage()" class="bg-blue-600 px-4 py-2 rounded-full text-white">Gửi</button>
-          </div>
-        </footer>
-      </div>
+    <button 
+      id="generateImageBtn" 
+      class="w-full mt-3 bg-green-600 hover:bg-green-700 text-white font-bold py-2 rounded-lg transition">
+      Tạo ảnh
+    </button>
 
-      <!-- Image -->
-      <div id="image-view" class="p-4 hidden">
-        <h2 class="text-lg font-bold text-center mb-4">🎨 Tạo Ảnh với Pollinations</h2>
-        <textarea id="image-prompt" rows="3" placeholder="Ví dụ: chú mèo mướp đội mũ phi hành gia" class="w-full rounded-lg px-3 py-2 bg-gray-700 text-white mb-3"></textarea>
-        <button onclick="generatePollinationsImage()" id="generate-image-btn" class="w-full bg-green-600 hover:bg-green-500 text-white py-3 rounded-lg font-semibold">Tạo ảnh</button>
-        <div id="image-result-container" class="mt-4 text-center"></div>
-      </div>
+    <div id="imageResultContainer" class="mt-5 text-center"></div>
+  </section>
 
-      <!-- Math -->
-      <div id="math-view" class="p-4 hidden">
-        <main id="math-chat-box" class="overflow-y-auto p-4 flex flex-col flex-grow chat-container">
-          <div class="bubble ai">Gửi cho tôi bài toán bằng chữ hoặc hình ảnh nhé.</div>
-        </main>
-        <footer class="p-3 bg-[#242526]">
-          <div class="flex space-x-2">
-            <input type="text" id="math-text-input" placeholder="Nhập bài toán..." class="flex-grow rounded-full px-4 py-2 bg-gray-700 text-white" onkeypress="if(event.key==='Enter') sendMathProblem()">
-            <button onclick="sendMathProblem()" class="bg-blue-600 px-4 py-2 rounded-full text-white">Gửi</button>
-          </div>
-        </footer>
-      </div>
-    </div>
-  </div>
+  <!-- Khung chat demo -->
+  <div id="chat-area">💬 Khu vực Chatbot (3 ô chuyển chat vẫn hiển thị bình thường)</div>
 
   <script>
-    // Tab chuyển đổi
-    const views = { chat: document.getElementById('chat-view'), image: document.getElementById('image-view'), math: document.getElementById('math-view') };
-    function switchView(v) {
-      Object.values(views).forEach(x => x.classList.add('hidden'));
-      views[v].classList.remove('hidden');
-    }
+    const API_POLLINATIONS_IMAGE_URL = "/api/pollinations-image";
+    const generateImageBtn = document.getElementById("generateImageBtn");
+    const imagePromptInput = document.getElementById("imagePromptInput");
+    const imageResultContainer = document.getElementById("imageResultContainer");
 
-    // API URL
-    const API_CHAT = "/api/general-chat";
-    const API_IMAGE = "/api/pollinations-image";
-    const API_MATH = "/api/ask";
-
-    // Hàm định dạng chat
-    function addMessage(box, content, role="ai") {
-      const div = document.createElement("div");
-      div.className = `bubble ${role}`;
-      div.innerHTML = content;
-      box.appendChild(div);
-      box.scrollTop = box.scrollHeight;
-    }
-
-    async function sendGeneralChatMessage() {
-      const input = document.getElementById('general-chat-input');
-      const text = input.value.trim();
-      if (!text) return;
-      addMessage(document.getElementById('general-chat-box'), text, 'user');
-      input.value = "";
-      const res = await fetch(API_CHAT, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ prompt: text }) });
-      const data = await res.json();
-      addMessage(document.getElementById('general-chat-box'), data.response);
-    }
-
-    // === Pollinations Image ===
     async function generatePollinationsImage() {
-      const prompt = document.getElementById("image-prompt").value.trim();
-      const btn = document.getElementById("generate-image-btn");
-      const resultBox = document.getElementById("image-result-container");
-      if (!prompt) return alert("Vui lòng nhập mô tả ảnh!");
-      btn.disabled = true; btn.textContent = "Đang tạo ảnh...";
-      resultBox.innerHTML = `<p class='text-gray-400'>Đang tải ảnh...</p>`;
+      const prompt = imagePromptInput.value.trim();
+      if (!prompt) {
+        alert("Vui lòng nhập nội dung ảnh muốn tạo.");
+        return;
+      }
+
+      generateImageBtn.disabled = true;
+      generateImageBtn.textContent = "⏳ Đang tạo ảnh...";
+      imageResultContainer.innerHTML = `<div class="text-gray-400">Đang tạo ảnh, vui lòng chờ...</div>`;
+
       try {
-        const res = await fetch(API_IMAGE, {
+        const response = await fetch(API_POLLINATIONS_IMAGE_URL, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ prompt })
         });
-        const data = await res.json();
-        resultBox.innerHTML = `<p class='text-sm text-gray-400 mb-2'>"${prompt}"</p><img src="${data.imageUrl}" class="rounded-lg mx-auto" alt="AI generated image">`;
-      } catch (err) {
-        resultBox.innerHTML = `<p class='text-red-400'>Lỗi: ${err.message}</p>`;
+
+        if (!response.ok) {
+          const err = await response.json();
+          throw new Error(err.message || "Lỗi khi tạo ảnh.");
+        }
+
+        const data = await response.json();
+
+        imageResultContainer.innerHTML = `
+          <div class="generated-image-container">
+            <p class="text-sm text-gray-300 mb-2">"${prompt}"</p>
+            <div style="position: relative; display: inline-block;">
+              <img src="${data.imageUrl}" class="generated-image" alt="AI generated image" onload="this.style.opacity='1'">
+              <div class="image-watermark-cover"></div>
+            </div>
+          </div>
+        `;
+      } catch (error) {
+        imageResultContainer.innerHTML = `<div class="text-red-400">❌ Lỗi: ${error.message}</div>`;
       } finally {
-        btn.disabled = false; btn.textContent = "Tạo ảnh";
+        generateImageBtn.disabled = false;
+        generateImageBtn.textContent = "Tạo ảnh";
       }
     }
 
-    // === Math ===
-    async function sendMathProblem() {
-      const text = document.getElementById('math-text-input').value.trim();
-      const box = document.getElementById('math-chat-box');
-      if (!text) return;
-      addMessage(box, text, 'user');
-      const res = await fetch(API_MATH, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ question: text }) });
-      const data = await res.json();
-      addMessage(box, data.response);
-    }
+    generateImageBtn.addEventListener("click", generatePollinationsImage);
   </script>
 </body>
 </html>

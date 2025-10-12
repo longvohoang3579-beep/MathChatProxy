@@ -29,20 +29,6 @@
       border-color: #22c55e;
       color: #22c55e;
     }
-    .generated-image-container {
-      position: relative;
-      text-align: center;
-      max-width: 550px;
-      margin: 0 auto;
-    }
-    .image-watermark-cover {
-      position: absolute;
-      bottom: 0;
-      right: 0;
-      width: 200px;
-      height: 50px;
-      background: linear-gradient(90deg, #0f0f0f, #0f0f0f);
-    }
     .chat-box {
       background: #111827;
       height: 400px;
@@ -75,6 +61,13 @@
       display: flex;
       flex-direction: column;
     }
+    mark.highlight {
+      background-color: #fde047;
+      color: black;
+      font-weight: bold;
+      padding: 0 3px;
+      border-radius: 3px;
+    }
   </style>
 </head>
 
@@ -88,11 +81,12 @@
 
     <!-- 🖼️ TẠO ẢNH -->
     <div id="content-image" class="p-5">
-      <textarea id="imagePrompt" rows="3" class="w-full p-3 bg-gray-800 rounded-lg border border-gray-700"
-        placeholder="Nhập mô tả ảnh bạn muốn tạo..."></textarea>
-      <button id="btnCreateImage"
-        class="w-full mt-3 bg-green-600 py-2 rounded-lg font-bold hover:bg-green-700">Tạo Ảnh</button>
-      <div id="imageResult" class="mt-4 text-center"></div>
+      <div class="chat-box" id="imageBox"></div>
+      <div class="flex mt-3">
+        <input id="imagePrompt" type="text" placeholder="Nhập mô tả ảnh..."
+          class="flex-1 p-3 bg-gray-800 rounded-l-lg border border-gray-700 outline-none" />
+        <button id="btnCreateImage" class="bg-green-600 px-5 rounded-r-lg font-bold hover:bg-green-700">Tạo Ảnh</button>
+      </div>
     </div>
 
     <!-- 💬 CHAT -->
@@ -107,11 +101,12 @@
 
     <!-- 🧮 GIẢI TOÁN -->
     <div id="content-math" class="p-5 hidden">
-      <textarea id="mathPrompt" rows="3" class="w-full p-3 bg-gray-800 rounded-lg border border-gray-700"
-        placeholder="Nhập bài toán cần giải..."></textarea>
-      <button id="btnMath"
-        class="w-full mt-3 bg-yellow-500 py-2 rounded-lg font-bold hover:bg-yellow-600">Giải Toán</button>
-      <div id="mathResult" class="mt-4 text-gray-300 whitespace-pre-line"></div>
+      <div class="chat-box" id="mathBox"></div>
+      <div class="flex mt-3">
+        <input id="mathPrompt" type="text" placeholder="Nhập bài toán..."
+          class="flex-1 p-3 bg-gray-800 rounded-l-lg border border-gray-700 outline-none" />
+        <button id="btnMath" class="bg-yellow-500 px-5 rounded-r-lg font-bold hover:bg-yellow-600">Giải</button>
+      </div>
     </div>
   </div>
 
@@ -132,37 +127,52 @@
       });
     });
 
-    // 🖼️ Pollinations (OK)
+    // ======= 🔸 Hàm tạo bong bóng chung =======
+    function addBubble(boxId, text, sender) {
+      const box = document.getElementById(boxId);
+      const div = document.createElement("div");
+      div.className = `bubble ${sender === "user" ? "user-bubble ml-auto" : "ai-bubble mr-auto"}`;
+      div.innerHTML = text;
+      box.appendChild(div);
+      box.scrollTop = box.scrollHeight;
+    }
+
+    function updateLastAIBubble(boxId, text) {
+      const box = document.getElementById(boxId);
+      const bubbles = box.getElementsByClassName("ai-bubble");
+      if (bubbles.length > 0) {
+        bubbles[bubbles.length - 1].innerHTML = text;
+        MathJax.typesetPromise && MathJax.typesetPromise();
+      }
+      box.scrollTop = box.scrollHeight;
+    }
+
+    // 🖼️ Pollinations Chat Style
     document.getElementById("btnCreateImage").addEventListener("click", async () => {
       const prompt = document.getElementById("imagePrompt").value.trim();
-      const resDiv = document.getElementById("imageResult");
-      if (!prompt) return alert("Nhập mô tả ảnh.");
+      if (!prompt) return;
+      addBubble("imageBox", prompt, "user");
+      addBubble("imageBox", "🧠 ĐANG TRẢ LỜI...", "ai");
 
-      resDiv.innerHTML = `<p class='text-gray-400'>Đang tạo ảnh...</p>`;
       const res = await fetch("/api/pollinations-image", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ prompt })
       });
       const data = await res.json();
-      resDiv.innerHTML = `
-        <div class="generated-image-container">
-          <img src="${data.imageUrl}" class="rounded-lg w-full">
-          <div class="image-watermark-cover"></div>
-        </div>`;
+      updateLastAIBubble("imageBox", `
+        <div class="text-center">
+          <img src="${data.imageUrl}" class="rounded-lg w-full mt-2">
+        </div>`);
     });
 
-    // 💬 Chat liên tục
-    const chatBox = document.getElementById("chatBox");
-    const chatInput = document.getElementById("chatInput");
-    const btnChat = document.getElementById("btnChat");
-
-    btnChat.addEventListener("click", async () => {
-      const message = chatInput.value.trim();
+    // 💬 Chat
+    document.getElementById("btnChat").addEventListener("click", async () => {
+      const message = document.getElementById("chatInput").value.trim();
       if (!message) return;
-      addBubble(message, "user");
-      chatInput.value = "";
-      addBubble("🧠 ĐANG TRẢ LỜI...", "ai");
+      addBubble("chatBox", message, "user");
+      document.getElementById("chatInput").value = "";
+      addBubble("chatBox", "🧠 ĐANG TRẢ LỜI...", "ai");
 
       try {
         const res = await fetch("/api/chat", {
@@ -171,36 +181,20 @@
           body: JSON.stringify({ message })
         });
         const data = await res.json();
-        updateLastAIBubble(marked.parse(data.response || "❌ Không có phản hồi từ Gemini."));
-      } catch (err) {
-        updateLastAIBubble("❌ Lỗi kết nối đến server.");
-        console.error(err);
+        const html = marked.parse(data.response || "❌ Không có phản hồi từ Gemini.");
+        updateLastAIBubble("chatBox", html);
+      } catch {
+        updateLastAIBubble("chatBox", "❌ Lỗi kết nối đến server.");
       }
     });
 
-    function addBubble(text, sender) {
-      const div = document.createElement("div");
-      div.className = `bubble ${sender === "user" ? "user-bubble self-end ml-auto" : "ai-bubble self-start mr-auto"}`;
-      div.innerHTML = text;
-      chatBox.appendChild(div);
-      chatBox.scrollTop = chatBox.scrollHeight;
-    }
-
-    function updateLastAIBubble(text) {
-      const bubbles = chatBox.getElementsByClassName("ai-bubble");
-      if (bubbles.length > 0) {
-        bubbles[bubbles.length - 1].innerHTML = text;
-        MathJax.typesetPromise && MathJax.typesetPromise(); // render toán nếu có
-      }
-      chatBox.scrollTop = chatBox.scrollHeight;
-    }
-
-    // 🧮 Math
+    // 🧮 Math (bong bóng + highlight)
     document.getElementById("btnMath").addEventListener("click", async () => {
       const question = document.getElementById("mathPrompt").value.trim();
-      const resDiv = document.getElementById("mathResult");
-      if (!question) return alert("Nhập bài toán.");
-      resDiv.textContent = "🧠 ĐANG TRẢ LỜI...";
+      if (!question) return;
+      addBubble("mathBox", question, "user");
+      document.getElementById("mathPrompt").value = "";
+      addBubble("mathBox", "🧠 ĐANG TRẢ LỜI...", "ai");
 
       try {
         const res = await fetch("/api/math", {
@@ -209,11 +203,10 @@
           body: JSON.stringify({ question })
         });
         const data = await res.json();
-        resDiv.innerHTML = marked.parse(data.response || "❌ Không có phản hồi từ Gemini.");
-        MathJax.typesetPromise && MathJax.typesetPromise(); // render công thức LaTeX
-      } catch (err) {
-        resDiv.textContent = "❌ Lỗi kết nối đến server.";
-        console.error(err);
+        const html = marked.parse(data.response || "❌ Không có phản hồi từ Gemini.");
+        updateLastAIBubble("mathBox", html);
+      } catch {
+        updateLastAIBubble("mathBox", "❌ Lỗi kết nối đến server.");
       }
     });
   </script>

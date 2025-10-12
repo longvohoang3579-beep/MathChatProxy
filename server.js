@@ -1,105 +1,113 @@
+// ============================================================
+// 🤖 MATH CHAT PROXY SERVER (Gemini + Pollinations)
+// ============================================================
+
 import express from "express";
 import bodyParser from "body-parser";
-import dotenv from "dotenv";
 import fetch from "node-fetch";
+import dotenv from "dotenv";
 
-// Cấu hình môi trường (đọc .env)
 dotenv.config();
-
 const app = express();
-const PORT = process.env.PORT || 3000;
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-// Sử dụng model mới nhất và ổn định
-const GEMINI_MODEL = "gemini-2.5-flash"; 
-
-// Middleware
 app.use(bodyParser.json());
-// Phục vụ các file tĩnh (HTML, CSS, JS) từ thư mục gốc
-app.use(express.static("."));
+app.use(express.static("public"));
 
-// =============================================================
-// 🖼️ API TẠO ẢNH (Pollinations - Giữ nguyên)
-// =============================================================
-app.post("/api/pollinations-image", async (req, res) => {
-    const { prompt } = req.body;
-    if (!prompt) return res.status(400).json({ message: "Vui lòng nhập mô tả ảnh." });
+// ============================================================
+// 🧠 CẤU HÌNH GEMINI
+// ============================================================
+const GEMINI_API_KEY = process.env.GOOGLE_API_KEY;
+const GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent";
 
-    try {
-        const safePrompt = encodeURIComponent(prompt);
-        // Endpoint Pollinations
-        const imageUrl = `https://image.pollinations.ai/prompt/${safePrompt}?nologo=true&width=1024&height=1024`;
-        res.json({ imageUrl });
-    } catch (error) {
-        console.error("Lỗi Pollinations:", error);
-        res.status(500).json({ message: "Không thể tạo ảnh." });
-    }
-});
-
-// =============================================================
-// 💬 API CHAT & TOÁN - Sử dụng Gemini v2.5 Flash
-// =============================================================
-
-/**
- * Hàm gọi chung đến Gemini API để lấy phản hồi văn bản.
- */
+// ======== 🔹 Hàm gọi Gemini API ========
 async function callGeminiModel(prompt) {
-    const endpoint = `https://generativelanguage.googleapis.com/v1/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`;
-    
-    try {
-        const response = await fetch(endpoint, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                contents: [{ role: "user", parts: [{ text: prompt }] }]
-            })
-        });
+  if (!GEMINI_API_KEY) return "❌ Thiếu GOOGLE_API_KEY trong .env.";
 
-        const data = await response.json();
+  try {
+    const response = await fetch(`${GEMINI_API_URL}?key=${GEMINI_API_KEY}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        contents: [{ role: "user", parts: [{ text: prompt }] }]
+      }),
+    });
 
-        if (data.error) {
-            console.error("⚠️ Lỗi Gemini API:", data.error);
-            return `❌ Lỗi từ Gemini API: ${data.error.message}.`;
-        }
+    const data = await response.json();
 
-        if (data.candidates?.[0]?.content?.parts?.[0]?.text) {
-            return data.candidates[0].content.parts[0].text;
-        } else {
-            console.log("Phản hồi từ Gemini (debug):", JSON.stringify(data, null, 2));
-            return "❌ Không có phản hồi hợp lệ từ Gemini. Nội dung có thể bị chặn.";
-        }
-    } catch (err) {
-        console.error("❌ Lỗi kết nối đến Gemini:", err);
-        return "❌ Không thể kết nối đến Gemini.";
+    if (!data.candidates || !data.candidates[0].content.parts[0].text) {
+      console.error("❌ Lỗi từ Google Gemini:", data);
+      return "❌ Không có phản hồi hợp lệ từ Gemini.";
     }
+
+    return data.candidates[0].content.parts[0].text;
+  } catch (error) {
+    console.error("🔥 Lỗi khi gọi Gemini:", error);
+    return "❌ Lỗi khi kết nối đến Google Gemini.";
+  }
 }
 
-// 💬 Chat API (ĐÃ CẬP NHẬT)
+// ============================================================
+// 🖼️ API TẠO ẢNH (Pollinations - giữ nguyên như yêu cầu)
+// ============================================================
+app.post("/api/pollinations-image", async (req, res) => {
+  const { prompt } = req.body;
+  if (!prompt) {
+    return res.status(400).json({ message: "Vui lòng nhập mô tả ảnh." });
+  }
+
+  try {
+    const safePrompt = encodeURIComponent(prompt);
+    const imageUrl = `https://image.pollinations.ai/prompt/${safePrompt}?nologo=true&width=1024&height=1024`;
+    res.json({ imageUrl });
+  } catch (error) {
+    console.error("Lỗi Pollinations:", error);
+    res.status(500).json({ message: "Không thể tạo ảnh." });
+  }
+});
+
+// ============================================================
+// 💬 CHAT TỔNG HỢP
+// ============================================================
 app.post("/api/chat", async (req, res) => {
-    const { message } = req.body;
-    if (!message) return res.status(400).json({ response: "Thiếu nội dung chat." });
-    
-    // 💡 Yêu cầu rút gọn và highlight ý chính
-    const prompt = `Hãy trả lời tin nhắn sau một cách ngắn gọn, không quá 3 đoạn văn. Sử dụng Markdown để **in đậm** (highlight) những ý chính quan trọng nhất. Tin nhắn: ${message}`;
-    
-    const reply = await callGeminiModel(prompt);
-    res.json({ response: reply });
+  const { message } = req.body;
+  if (!message) {
+    return res.status(400).json({ response: "Thiếu nội dung chat." });
+  }
+
+  const prompt = `
+  Bạn là trợ lý AI thông minh, trả lời bằng tiếng Việt, thân thiện, ngắn gọn. 
+  Nếu có ý chính, hãy bọc trong <mark class="highlight">...</mark> để tô màu vàng.
+  ${message}
+  `;
+
+  const reply = await callGeminiModel(prompt);
+  res.json({ response: reply });
 });
 
-// 🧮 Giải toán API (ĐÃ CẬP NHẬT)
+// ============================================================
+// 🧮 GIẢI TOÁN (ngắn gọn, có công thức & highlight)
+// ============================================================
 app.post("/api/math", async (req, res) => {
-    const { question } = req.body;
-    if (!question) return res.status(400).json({ response: "Thiếu đề toán." });
-    
-    // 💡 Yêu cầu dùng LaTeX, rút gọn và highlight ý chính
-    const prompt = `Hãy giải chi tiết bài toán sau bằng tiếng Việt. **Sử dụng ký hiệu LaTeX** (bên trong cặp dấu $) cho tất cả các biểu thức toán học. Trình bày các **bước giải chính thật ngắn gọn** và dùng **in đậm** để làm nổi bật các công thức hoặc kết quả quan trọng. Bài toán: ${question}`;
-    
-    const reply = await callGeminiModel(prompt);
-    res.json({ response: reply });
+  const { question } = req.body;
+  if (!question) {
+    return res.status(400).json({ response: "Thiếu đề toán." });
+  }
+
+  const prompt = `
+  Hãy giải **ngắn gọn và dễ hiểu** bài toán sau bằng tiếng Việt. 
+  - Chỉ hiển thị bước chính và kết quả cuối.
+  - Viết công thức bằng LaTeX (dấu $...$).
+  - Dùng Markdown + <mark class="highlight">...</mark> để tô màu vàng các ý chính hoặc kết quả.
+  Bài toán: ${question}
+  `;
+
+  const reply = await callGeminiModel(prompt);
+  res.json({ response: reply });
 });
 
-// =============================================================
-// 🚀 Khởi động Server
-// =============================================================
+// ============================================================
+// 🚀 KHỞI ĐỘNG SERVER
+// ============================================================
+const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-    console.log(`🚀 Server đang chạy tại http://localhost:${PORT} (Sử dụng model: ${GEMINI_MODEL})`);
+  console.log(`✅ Server đang chạy tại http://localhost:${PORT}`);
 });

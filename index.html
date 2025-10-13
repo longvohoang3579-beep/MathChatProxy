@@ -1,59 +1,143 @@
-<!-- Tạo Video -->
-<div class="tab-content" id="video">
-  <div class="chat-box" id="videoBox"></div>
-  <div class="pending-preview" id="videoPreview"></div>
-  <div class="input-row">
-    <label class="icon-btn" for="videoFileInput" title="Tải ảnh">📁</label>
-    <input type="file" id="videoFileInput" accept="image/*" hidden />
-    <textarea id="videoPrompt" rows="1" placeholder="(Tùy chọn) mô tả chi tiết thêm cho video..."></textarea>
-    <button id="btnVideo" class="send-btn" title="Tạo Video">
-      <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="white" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-          d="M5 12l14 7-7-7 7-7-14 7z" />
-      </svg>
-    </button>
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pollinations + Math + Chat + Video</title>
+  <style>
+    body { font-family: Arial; background: #111; color: #fff; display: flex; flex-direction: column; align-items: center; }
+    .tabs { display: flex; margin-top: 10px; }
+    .tab-btn { padding: 10px 20px; background: #333; margin: 5px; cursor: pointer; border-radius: 10px; }
+    .tab-btn.active { background: #00aaff; }
+    .tab-content { display: none; width: 90%; max-width: 600px; background: #222; border-radius: 15px; padding: 10px; margin-top: 10px; }
+    .tab-content.active { display: block; }
+    .chat-box { height: 300px; overflow-y: auto; background: #000; border-radius: 10px; padding: 10px; }
+    .bubble { margin: 5px 0; padding: 8px 12px; border-radius: 10px; max-width: 80%; }
+    .bubble.user { background: #0078ff; align-self: flex-end; }
+    .bubble.ai { background: #444; }
+    .input-row { display: flex; margin-top: 10px; }
+    textarea { flex: 1; border-radius: 8px; border: none; padding: 8px; }
+    .send-btn { background: #00aaff; border: none; border-radius: 8px; cursor: pointer; padding: 8px 12px; color: #fff; }
+    .generated-image { max-width: 100%; border-radius: 10px; margin-top: 10px; }
+  </style>
+</head>
+<body>
+  <h2>🧠 AI All-in-One</h2>
+
+  <div class="tabs">
+    <div class="tab-btn active" data-tab="image">🖼️ Tạo Ảnh</div>
+    <div class="tab-btn" data-tab="chat">💬 Chat</div>
+    <div class="tab-btn" data-tab="math">🧮 Giải Toán</div>
+    <div class="tab-btn" data-tab="video">🎞️ Tạo Video</div>
   </div>
-</div>
 
-<script>
-// =========================== VIDEO ==============================
-let videoPendingFiles = [];
-document.getElementById("videoFileInput").addEventListener("change", e => {
-  videoPendingFiles = [...e.target.files];
-  renderPreview("videoPreview", videoPendingFiles);
-});
+  <!-- Tạo Ảnh -->
+  <div class="tab-content active" id="image">
+    <div class="chat-box" id="imageBox"></div>
+    <div class="input-row">
+      <textarea id="imagePrompt" placeholder="Nhập mô tả ảnh..."></textarea>
+      <button class="send-btn" id="btnImage">Gửi</button>
+    </div>
+  </div>
 
-document.getElementById("btnVideo").addEventListener("click", async () => {
-  const prompt = document.getElementById("videoPrompt").value.trim();
-  if (!videoPendingFiles.length) {
-    addBubble("videoBox", "❌ Vui lòng chọn 1 ảnh trước.", "ai");
-    return;
-  }
+  <!-- Chat -->
+  <div class="tab-content" id="chat">
+    <div class="chat-box" id="chatBox"></div>
+    <div class="input-row">
+      <textarea id="chatInput" placeholder="Nhập tin nhắn..."></textarea>
+      <button class="send-btn" id="btnChat">Gửi</button>
+    </div>
+  </div>
 
-  addBubbleWithFiles("videoBox", prompt || "(Tạo video từ ảnh...)", videoPendingFiles, "user");
-  document.getElementById("videoPrompt").value = "";
-  document.getElementById("videoPreview").innerHTML = "";
-  addBubble("videoBox", "🎬 Đang tạo video từ ảnh...", "ai");
+  <!-- Giải Toán -->
+  <div class="tab-content" id="math">
+    <div class="chat-box" id="mathBox"></div>
+    <div class="input-row">
+      <textarea id="mathInput" placeholder="Nhập bài toán..."></textarea>
+      <button class="send-btn" id="btnMath">Gửi</button>
+    </div>
+  </div>
 
-  const file = videoPendingFiles[0];
-  const base64 = await toBase64(file);
-  videoPendingFiles = [];
+  <!-- Tạo Video -->
+  <div class="tab-content" id="video">
+    <div class="chat-box" id="videoBox"></div>
+    <div class="input-row">
+      <textarea id="videoPrompt" placeholder="Nhập mô tả video..."></textarea>
+      <button class="send-btn" id="btnVideo">Gửi</button>
+    </div>
+  </div>
 
-  try {
-    const res = await fetch("/api/pollinations-video", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ imageBase64: base64, prompt })
+  <script>
+    // ==== Tab chuyển đổi ====
+    const tabs = document.querySelectorAll(".tab-btn");
+    const contents = document.querySelectorAll(".tab-content");
+    tabs.forEach(btn => {
+      btn.addEventListener("click", () => {
+        tabs.forEach(b => b.classList.remove("active"));
+        contents.forEach(c => c.classList.remove("active"));
+        btn.classList.add("active");
+        document.getElementById(btn.dataset.tab).classList.add("active");
+      });
     });
-    const data = await res.json();
-    if (data.videoUrl) {
-      updateLastAIBubble("videoBox", `<img src="${data.videoUrl}" class="generated-image">`);
-    } else {
-      updateLastAIBubble("videoBox", "❌ Không thể tạo video.");
+
+    function addBubble(boxId, text, who = "ai") {
+      const box = document.getElementById(boxId);
+      const bubble = document.createElement("div");
+      bubble.className = `bubble ${who}`;
+      bubble.innerHTML = text;
+      box.appendChild(bubble);
+      box.scrollTop = box.scrollHeight;
     }
-  } catch (e) {
-    console.error(e);
-    updateLastAIBubble("videoBox", "❌ Lỗi kết nối server.");
-  }
-});
-</script>
+
+    // 🖼️ Tạo Ảnh
+    document.getElementById("btnImage").onclick = async () => {
+      const prompt = document.getElementById("imagePrompt").value;
+      addBubble("imageBox", prompt, "user");
+      const res = await fetch("/api/pollinations", {
+        method: "POST", headers: {"Content-Type":"application/json"},
+        body: JSON.stringify({ prompt })
+      });
+      const data = await res.json();
+      addBubble("imageBox", `<img src="${data.imageUrl}" class="generated-image"/>`);
+    };
+
+    // 💬 Chat
+    document.getElementById("btnChat").onclick = async () => {
+      const msg = document.getElementById("chatInput").value;
+      addBubble("chatBox", msg, "user");
+      const res = await fetch("/api/chat", {
+        method: "POST", headers: {"Content-Type":"application/json"},
+        body: JSON.stringify({ message: msg })
+      });
+      const data = await res.json();
+      addBubble("chatBox", data.reply);
+    };
+
+    // 🧮 Giải Toán
+    document.getElementById("btnMath").onclick = async () => {
+      const q = document.getElementById("mathInput").value;
+      addBubble("mathBox", q, "user");
+      const res = await fetch("/api/math", {
+        method: "POST", headers: {"Content-Type":"application/json"},
+        body: JSON.stringify({ question: q })
+      });
+      const data = await res.json();
+      addBubble("mathBox", data.answer);
+    };
+
+    // 🎞️ Tạo Video
+    document.getElementById("btnVideo").onclick = async () => {
+      const prompt = document.getElementById("videoPrompt").value;
+      addBubble("videoBox", prompt, "user");
+      addBubble("videoBox", "🎬 Đang tạo video, vui lòng chờ...", "ai");
+      const res = await fetch("/api/pollinations-video", {
+        method: "POST", headers: {"Content-Type":"application/json"},
+        body: JSON.stringify({ prompt })
+      });
+      const data = await res.json();
+      document.querySelector("#videoBox .bubble.ai:last-child").innerHTML =
+        data.videoUrl ? `<video src="${data.videoUrl}" controls autoplay loop class="generated-image"></video>` : "❌ Không thể tạo video.";
+    };
+  </script>
+</body>
+</html>

@@ -1,139 +1,110 @@
-// ============================================================
-// 🤖 AI PROXY SERVER (Gemini 2.5 Flash + Pollinations + Video)
-// ============================================================
-
 import express from "express";
 import bodyParser from "body-parser";
 import fetch from "node-fetch";
-import dotenv from "dotenv";
 import fs from "fs";
+import { exec } from "child_process";
 import path from "path";
-import { fileURLToPath } from "url";
-import sharp from "sharp";
-import GIFEncoder from "gifencoder";
-import { createCanvas, loadImage } from "canvas";
 
-// ------------------------------------------------------------
-dotenv.config();
 const app = express();
-app.use(bodyParser.json({ limit: "50mb" }));
+const PORT = process.env.PORT || 3000;
+
+// 🧱 Cấu hình
+app.use(bodyParser.json({ limit: "20mb" }));
 app.use(express.static("."));
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-// ============================================================
-// 🧠 CẤU HÌNH GEMINI (giữ nguyên phần cũ)
-// ============================================================
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-const GEMINI_MODEL = "gemini-2.5-flash";
-const GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1/models/${GEMINI_MODEL}:generateContent`;
-
-async function callGeminiModel(contents) {
-  if (!GEMINI_API_KEY) return "❌ Thiếu GEMINI_API_KEY trong .env.";
+// 🧩 API Dịch sang tiếng Anh (Pollinations hỗ trợ tốt hơn)
+async function translateToEnglish(text) {
+  if (!text) return "";
   try {
-    for (let i = 0; i < 3; i++) {
-      const response = await fetch(`${GEMINI_API_URL}?key=${GEMINI_API_KEY}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ contents }),
-      });
-      if (response.ok) {
-        const data = await response.json();
-        if (data.candidates?.[0]?.content?.parts?.[0]?.text) {
-          return data.candidates[0].content.parts[0].text;
-        }
-        return "❌ Không có phản hồi hợp lệ từ Gemini.";
-      }
-      if (response.status === 429 || response.status >= 500) {
-        await new Promise(r => setTimeout(r, Math.pow(2, i) * 1000));
-        continue;
-      }
-      return `❌ Lỗi HTTP ${response.status}`;
-    }
-  } catch (err) {
-    console.error(err);
-    return "❌ Lỗi kết nối Gemini";
+    const res = await fetch("https://api.mymemory.translated.net/get?q=" + encodeURIComponent(text) + "&langpair=vi|en");
+    const data = await res.json();
+    return data.responseData.translatedText || text;
+  } catch {
+    return text;
   }
 }
 
-// ============================================================
-// 🖼️ API TẠO ẢNH POLLINATIONS (GIỮ NGUYÊN)
-// ============================================================
-app.post("/api/pollinations-image", async (req, res) => {
+// ===========================================
+// 🖼️ API TẠO ẢNH (Pollinations)
+// ===========================================
+app.post("/api/pollinations", async (req, res) => {
   const { prompt } = req.body;
-  if (!prompt) return res.status(400).json({ message: "Thiếu mô tả ảnh" });
+  if (!prompt) return res.status(400).json({ message: "Vui lòng nhập mô tả." });
+  const translatedPrompt = await translateToEnglish(prompt);
+  const safePrompt = encodeURIComponent(translatedPrompt);
+  const imageUrl = `https://image.pollinations.ai/prompt/${safePrompt}?nologo=true&width=512&height=512`;
+  res.json({ imageUrl });
+});
+
+// ===========================================
+// 🧮 API GIẢI TOÁN
+// ===========================================
+app.post("/api/math", async (req, res) => {
+  const { question } = req.body;
+  if (!question) return res.status(400).json({ answer: "Không có câu hỏi." });
   try {
-    const safe = encodeURIComponent(prompt);
-    const imageUrl = `https://image.pollinations.ai/prompt/${safe}?nologo=true&width=1024&height=1024`;
-    res.json({ imageUrl });
+    const result = eval(question.replace("^", "**"));
+    res.json({ answer: `Kết quả: ${result}` });
   } catch {
-    res.status(500).json({ message: "Lỗi Pollinations" });
+    res.json({ answer: "Không hiểu đề bài. Hãy nhập lại bằng ký hiệu toán học chuẩn." });
   }
 });
 
-// ============================================================
-// 🎬 API TẠO VIDEO TỪ ẢNH (NEW)
-// ============================================================
+// ===========================================
+// 💬 API CHAT
+// ===========================================
+app.post("/api/chat", async (req, res) => {
+  const { message } = req.body;
+  if (!message) return res.status(400).json({ reply: "Không có tin nhắn." });
+  res.json({ reply: "🤖 AI: " + message.split(" ").reverse().join(" ") });
+});
+
+// ===========================================
+// 🎞️ API TẠO VIDEO TỪ ẢNH HOẶC PROMPT
+// ===========================================
 app.post("/api/pollinations-video", async (req, res) => {
+  const { prompt } = req.body;
+  if (!prompt) return res.status(400).json({ message: "Vui lòng nhập mô tả." });
+
   try {
-    const { imageBase64 } = req.body;
-    if (!imageBase64) return res.status(400).json({ message: "Thiếu ảnh đầu vào" });
+    const translatedPrompt = await translateToEnglish(prompt);
+    const tempDir = "./temp_frames";
+    if (!fs.existsSync(tempDir)) fs.mkdirSync(tempDir);
 
-    // Lưu ảnh gốc tạm thời
-    const inputPath = path.join(__dirname, "input.png");
-    const buffer = Buffer.from(imageBase64.split(",")[1], "base64");
-    fs.writeFileSync(inputPath, buffer);
-
-    // Tạo 5 biến thể Pollinations
-    const variations = [];
-    for (let i = 0; i < 5; i++) {
-      const prompt = encodeURIComponent(`slightly different version ${i} of the image`);
-      const pollUrl = `https://image.pollinations.ai/prompt/${prompt}?nologo=true&width=512&height=512`;
-      const resp = await fetch(pollUrl);
-      const arrBuf = await resp.arrayBuffer();
-      const outPath = path.join(__dirname, `frame_${i}.png`);
-      fs.writeFileSync(outPath, Buffer.from(arrBuf));
-      variations.push(outPath);
+    const frameUrls = [];
+    for (let i = 0; i < 20; i++) {
+      const safePrompt = encodeURIComponent(`${translatedPrompt} frame ${i + 1}`);
+      frameUrls.push(`https://image.pollinations.ai/prompt/${safePrompt}?nologo=true&width=512&height=512`);
     }
 
-    // Gộp thành GIF động
-    const encoder = new GIFEncoder(512, 512);
-    const gifPath = path.join(__dirname, "output.gif");
-    const gifStream = fs.createWriteStream(gifPath);
-    encoder.createReadStream().pipe(gifStream);
-    encoder.start();
-    encoder.setRepeat(0);
-    encoder.setDelay(200);
-    encoder.setQuality(10);
-
-    const canvas = createCanvas(512, 512);
-    const ctx = canvas.getContext("2d");
-
-    for (const frame of variations) {
-      const img = await loadImage(frame);
-      ctx.drawImage(img, 0, 0, 512, 512);
-      encoder.addFrame(ctx);
-    }
-    encoder.finish();
-
-    gifStream.on("finish", () => {
-      const base64 = fs.readFileSync(gifPath, { encoding: "base64" });
-      res.json({ videoUrl: `data:image/gif;base64,${base64}` });
-
-      // Xóa file tạm
-      [inputPath, ...variations, gifPath].forEach(f => fs.existsSync(f) && fs.unlinkSync(f));
+    // tải ảnh
+    const downloads = frameUrls.map(async (url, i) => {
+      const imgRes = await fetch(url);
+      const buf = Buffer.from(await imgRes.arrayBuffer());
+      fs.writeFileSync(path.join(tempDir, `frame_${i}.jpg`), buf);
     });
+    await Promise.all(downloads);
+
+    // ghép video
+    const outputVideo = path.join(tempDir, "output.mp4");
+    await new Promise((resolve, reject) => {
+      exec(
+        `ffmpeg -y -framerate 10 -pattern_type glob -i '${tempDir}/frame_*.jpg' -c:v libx264 -pix_fmt yuv420p ${outputVideo}`,
+        (err) => (err ? reject(err) : resolve())
+      );
+    });
+
+    const videoBase64 = fs.readFileSync(outputVideo).toString("base64");
+    fs.rmSync(tempDir, { recursive: true, force: true });
+
+    res.json({ videoUrl: `data:video/mp4;base64,${videoBase64}` });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: "❌ Lỗi khi tạo video từ ảnh." });
+    console.error("❌ Lỗi:", err);
+    res.status(500).json({ message: "Không thể tạo video." });
   }
 });
 
-// ============================================================
+// ===========================================
 // 🚀 KHỞI ĐỘNG SERVER
-// ============================================================
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () =>
-  console.log(`✅ Server chạy tại http://localhost:${PORT}`)
-);
+// ===========================================
+app.listen(PORT, () => console.log(`✅ Server chạy tại http://localhost:${PORT}`));

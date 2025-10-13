@@ -26,7 +26,7 @@ button{padding:0.75rem 1rem;border-radius:0.75rem;font-weight:bold;cursor:pointe
 #btnMath{background:#f59e0b;color:#111827;}#btnMath:hover{background:#d97706;}
 img.generated-image{border-radius:12px;max-width:100%;margin-top:1rem;}
 #settings-btn{position:absolute;top:1rem;right:1rem;font-size:1.5rem;cursor:pointer;color:#facc15;}
-#settings-modal{position:absolute;top:3rem;right:1rem;width:200px;background:#1a1c29;border:1px solid #facc15;border-radius:0.75rem;padding:1rem;display:none;}
+#settings-modal{position:absolute;top:3rem;right:1rem;width:200px;background:#1a1c29;border:1px solid #facc15;border-radius:0.75rem;padding:1rem;display:none;z-index:10;}
 .pending-preview{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px;}
 .pending-preview img{width:60px;height:60px;object-fit:cover;border-radius:8px;border:2px solid #475569;}
 .input-row{display:flex;align-items:center;gap:6px;margin-top:8px;}
@@ -35,73 +35,72 @@ img.generated-image{border-radius:12px;max-width:100%;margin-top:1rem;}
 .icon-btn svg{width:22px;height:22px;color:#facc15;}
 .send-btn{background:#6366f1;padding:10px;border-radius:50%;display:flex;align-items:center;justify-content:center;}
 .send-btn:hover{background:#4f46e5;}
-.send-btn svg{width:22px;height:22px;transform:rotate(0deg);} /* ✅ xoay ra phải */
+.send-btn svg{width:22px;height:22px;transform:rotate(0deg);}
 </style>
 </head>
 <body>
 <div class="container relative">
-  <div id="settings-btn">⚙️</div>
-  <div id="settings-modal">
-    <label class="block mb-2">Ngôn ngữ chat:</label>
-    <select id="language-select" class="w-full p-2 rounded bg-gray-800 text-white">
-      <option value="vi">Tiếng Việt</option>
-      <option value="en">English</option>
-      <option value="zh-CN">简体中文</option>
-    </select>
-  </div>
+  <div id="settings-btn">⚙️</div>
+  <div id="settings-modal">
+    <label class="block mb-2">Ngôn ngữ chat:</label>
+    <select id="language-select" class="w-full p-2 rounded bg-gray-800 text-white">
+      <option value="vi">Tiếng Việt</option>
+      <option value="en">English</option>
+      <option value="zh-CN">简体中文</option>
+    </select>
+  </div>
 
-  <div class="tabs">
-    <div class="tab-btn active" data-tab="image">🖼️ Tạo Ảnh</div>
-    <div class="tab-btn" data-tab="chat">💬 Chat</div>
-    <div class="tab-btn" data-tab="math">🧮 Giải Toán</div>
-  </div>
+  <div class="tabs">
+    <div class="tab-btn active" data-tab="image">🖼️ Tạo Ảnh</div>
+    <div class="tab-btn" data-tab="chat">💬 Chat</div>
+    <div class="tab-btn" data-tab="math">🧮 Giải Toán</div>
+  </div>
 
-  <!-- Tạo Ảnh -->
-  <div class="tab-content active" id="image">
-    <div class="chat-box" id="imageBox"></div>
-    <textarea id="imagePrompt" rows="2" placeholder="Nhập mô tả ảnh..."></textarea>
-    <button id="btnCreateImage" class="mt-2 w-full">Tạo Ảnh</button>
-  </div>
+  <!-- Tạo Ảnh -->
+  <div class="tab-content active" id="image">
+    <div class="chat-box" id="imageBox"></div>
+    <textarea id="imagePrompt" rows="2" placeholder="Nhập mô tả ảnh..."></textarea>
+    <button id="btnCreateImage" class="mt-2 w-full">Tạo Ảnh</button>
+  </div>
 
-  <!-- Chat -->
-  <div class="tab-content" id="chat">
-    <div class="chat-box" id="chatBox"></div>
-    <div class="pending-preview" id="chatPreview"></div>
-    <div class="input-row">
-      <label class="icon-btn" for="chatFileInput" title="Tải ảnh hoặc file">📁</label>
-      <input type="file" id="chatFileInput" accept="image/*,.pdf,.txt,.docx" hidden />
-      <label class="icon-btn" id="chatCameraBtn" title="Chụp ảnh">📷</label>
-      <textarea id="chatInput" rows="1" placeholder="Nhập tin nhắn..."></textarea>
-      <button id="btnChat" class="send-btn" title="Gửi">
-        <!-- ✅ ICON XOAY RA NGOÀI (qua phải) -->
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="white" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12l14 7-7-7 7-7-14 7z"/>
-        </svg>
-      </button>
-    </div>
-  </div>
+  <!-- Chat -->
+  <div class="tab-content" id="chat">
+    <div class="chat-box" id="chatBox"></div>
+    <div class="pending-preview" id="chatPreview"></div>
+    <div class="input-row">
+      <label class="icon-btn" for="chatFileInput" title="Tải ảnh hoặc file">📁</label>
+      <input type="file" id="chatFileInput" accept="image/*,.pdf,.txt,.docx" hidden />
+      <label class="icon-btn" id="chatCameraBtn" title="Chụp ảnh">📷</label>
+      <textarea id="chatInput" rows="1" placeholder="Nhập tin nhắn..."></textarea>
+      <button id="btnChat" class="send-btn" title="Gửi">
+        <!-- ICON XOAY RA NGOÀI (qua phải) -->
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="white" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12l14 7-7-7 7-7-14 7z"/>
+        </svg>
+      </button>
+    </div>
+  </div>
 
-  <!-- Giải Toán -->
-  <div class="tab-content" id="math">
-    <div class="chat-box" id="mathBox"></div>
-    <div class="pending-preview" id="mathPreview"></div>
-    <div class="input-row">
-      <label class="icon-btn" for="mathFileInput" title="Tải ảnh hoặc file">📁</label>
-      <input type="file" id="mathFileInput" accept="image/*,.pdf,.txt,.docx" hidden />
-      <label class="icon-btn" id="mathCameraBtn" title="Chụp ảnh">📷</label>
-      <textarea id="mathPrompt" rows="1" placeholder="Nhập bài toán..."></textarea>
-      <button id="btnMath" class="send-btn" title="Giải">
-        <!-- ✅ ICON XOAY RA NGOÀI (qua phải) -->
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="white" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12l14 7-7-7 7-7-14 7z"/>
-        </svg>
-      </button>
-    </div>
-  </div>
+  <!-- Giải Toán -->
+  <div class="tab-content" id="math">
+    <div class="chat-box" id="mathBox"></div>
+    <div class="pending-preview" id="mathPreview"></div>
+    <div class="input-row">
+      <label class="icon-btn" for="mathFileInput" title="Tải ảnh hoặc file">📁</label>
+      <input type="file" id="mathFileInput" accept="image/*,.pdf,.txt,.docx" hidden />
+      <label class="icon-btn" id="mathCameraBtn" title="Chụp ảnh">📷</label>
+      <textarea id="mathPrompt" rows="1" placeholder="Nhập bài toán..."></textarea>
+      <button id="btnMath" class="send-btn" title="Giải">
+        <!-- ICON XOAY RA NGOÀI (qua phải) -->
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="white" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12l14 7-7-7 7-7-14 7z"/>
+        </svg>
+      </button>
+    </div>
+  </div>
 </div>
 
 <script>
-// ✅ Toàn bộ JavaScript giữ nguyên 100%
 const tabs=document.querySelectorAll(".tab-btn");
 const contents=document.querySelectorAll(".tab-content");
 tabs.forEach(tab=>{tab.addEventListener("click",()=>{tabs.forEach(t=>t.classList.remove("active"));contents.forEach(c=>c.classList.remove("active"));tab.classList.add("active");document.getElementById(tab.dataset.tab).classList.add("active");});});
@@ -109,42 +108,42 @@ tabs.forEach(tab=>{tab.addEventListener("click",()=>{tabs.forEach(t=>t.classList
 function addBubble(boxId,text,sender){const box=document.getElementById(boxId);const div=document.createElement("div");div.className=`bubble ${sender==='user'?'user-bubble':'ai-bubble'}`;div.innerHTML=text;box.appendChild(div);box.scrollTop=box.scrollHeight;}
 function updateLastAIBubble(boxId,text){const box=document.getElementById(boxId);const bubbles=box.getElementsByClassName("ai-bubble");if(bubbles.length>0){bubbles[bubbles.length-1].innerHTML=text;}box.scrollTop=box.scrollHeight;}
 function addBubbleWithFiles(boxId,text,files=[],sender='user'){
-  const box=document.getElementById(boxId);
-  const div=document.createElement("div");
-  div.className=`bubble ${sender==='user'?'user-bubble':'ai-bubble'}`;
-  files.forEach(f=>{
-    if(f.type.startsWith("image/")){
-      const img=document.createElement("img");
-      img.src=URL.createObjectURL(f);
-      img.style="max-width:120px;border-radius:6px;display:block;margin-bottom:6px;";
-      div.appendChild(img);
-    }else{
-      const a=document.createElement("a");
-      a.href=URL.createObjectURL(f);
-      a.textContent=f.name;
-      a.target="_blank";
-      a.className="underline text-yellow-300 block mb-1";
-      div.appendChild(a);
-    }
-  });
-  div.append(text);
-  box.appendChild(div);
-  box.scrollTop=box.scrollHeight;
+  const box=document.getElementById(boxId);
+  const div=document.createElement("div");
+  div.className=`bubble ${sender==='user'?'user-bubble':'ai-bubble'}`;
+  files.forEach(f=>{
+    if(f.type.startsWith("image/")){
+      const img=document.createElement("img");
+      img.src=URL.createObjectURL(f);
+      img.style="max-width:120px;border-radius:6px;display:block;margin-bottom:6px;";
+      div.appendChild(img);
+    }else{
+      const a=document.createElement("a");
+      a.href=URL.createObjectURL(f);
+      a.textContent=f.name;
+      a.target="_blank";
+      a.className="underline text-yellow-300 block mb-1";
+      div.appendChild(a);
+    }
+  });
+  div.append(text);
+  box.appendChild(div);
+  box.scrollTop=box.scrollHeight;
 }
 function renderPreview(id,files){
-  const container=document.getElementById(id);
-  container.innerHTML="";
-  files.forEach(f=>{
-    if(f.type.startsWith("image/")){
-      const img=document.createElement("img");
-      img.src=URL.createObjectURL(f);
-      container.appendChild(img);
-    }else{
-      const span=document.createElement("span");
-      span.textContent=f.name;
-      container.appendChild(span);
-    }
-  });
+  const container=document.getElementById(id);
+  container.innerHTML="";
+  files.forEach(f=>{
+    if(f.type.startsWith("image/")){
+      const img=document.createElement("img");
+      img.src=URL.createObjectURL(f);
+      container.appendChild(img);
+    }else{
+      const span=document.createElement("span");
+      span.textContent=f.name;
+      container.appendChild(span);
+    }
+  });
 }
 
 let chatHistory=[];let currentLang=localStorage.getItem("geminiChatLanguage")||"vi";
@@ -152,82 +151,98 @@ document.getElementById("language-select").value=currentLang;
 const settingsBtn=document.getElementById("settings-btn");const settingsModal=document.getElementById("settings-modal");
 settingsBtn.addEventListener("click",()=>{settingsModal.style.display=settingsModal.style.display==="none"?"block":"none";});
 document.addEventListener("click",(e)=>{if(!settingsModal.contains(e.target)&&!settingsBtn.contains(e.target)){settingsModal.style.display="none";}});
-document.getElementById("language-select").addEventListener("change",(e)=>{currentLang=e.target.value;localStorage.setItem("geminiChatLanguage",currentLang);chatHistory=[];document.getElementById("chatBox").innerHTML="";alert(`Đã chuyển ngôn ngữ sang ${e.target.options[e.target.selectedIndex].text}. Vui lòng bắt đầu chat mới.`);});
+
+document.getElementById("language-select").addEventListener("change",(e)=>{
+    currentLang=e.target.value;
+    localStorage.setItem("geminiChatLanguage",currentLang);
+    chatHistory=[];
+    document.getElementById("chatBox").innerHTML="";
+    addBubble("chatBox", `Đã chuyển ngôn ngữ sang <mark class="highlight">${e.target.options[e.target.selectedIndex].text}</mark>. Vui lòng bắt đầu chat mới.`, "ai");
+});
 
 let chatPendingFiles=[], mathPendingFiles=[];
 document.getElementById("chatFileInput").addEventListener("change",e=>{chatPendingFiles=[...e.target.files];renderPreview("chatPreview",chatPendingFiles);});
 document.getElementById("mathFileInput").addEventListener("change",e=>{mathPendingFiles=[...e.target.files];renderPreview("mathPreview",mathPendingFiles);});
-document.getElementById("chatCameraBtn").addEventListener("click",()=>alert("📷 Camera đang được phát triển"));
-document.getElementById("mathCameraBtn").addEventListener("click",()=>alert("📷 Camera đang được phát triển"));
+
+document.getElementById("chatCameraBtn").addEventListener("click",()=>addBubble("chatBox", "📷 Tính năng Camera đang được phát triển.", "ai"));
+document.getElementById("mathCameraBtn").addEventListener("click",()=>addBubble("mathBox", "📷 Tính năng Camera đang được phát triển.", "ai"));
 
 document.getElementById("btnChat").addEventListener("click",async()=>{
-  const message=document.getElementById("chatInput").value.trim();
-  if(!message&&!chatPendingFiles.length)return;
-  addBubbleWithFiles("chatBox",message,chatPendingFiles,"user");
-  chatHistory.push({role:"user",text:message});
-  document.getElementById("chatInput").value="";
-  document.getElementById("chatPreview").innerHTML="";
-  addBubble("chatBox","🧠 ĐANG TRẢ LỜI...","ai");
+  const message=document.getElementById("chatInput").value.trim();
+  if(!message&&!chatPendingFiles.length)return;
+  addBubbleWithFiles("chatBox",message,chatPendingFiles,"user");
+  chatHistory.push({role:"user",text:message});
+  
+    // Xóa nội dung input và preview sau khi gửi
+  document.getElementById("chatInput").value="";
+  document.getElementById("chatPreview").innerHTML="";
+  addBubble("chatBox","🧠 ĐANG TRẢ LỜI...","ai");
 
-  let imageBase64=null;
-  if(chatPendingFiles.length>0&&chatPendingFiles[0].type.startsWith("image/")){
-    const file=chatPendingFiles[0];
-    imageBase64=await toBase64(file);
-  }
-  chatPendingFiles=[];
+  let imageBase64=null;
+  if(chatPendingFiles.length>0&&chatPendingFiles[0].type.startsWith("image/")){
+    const file=chatPendingFiles[0];
+    imageBase64=await toBase64(file);
+  }
+  chatPendingFiles=[];
 
-  try{
-    const res=await fetch("/api/chat",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({message,history:chatHistory,language:currentLang,image:imageBase64})});
-    const data=await res.json();
-    updateLastAIBubble("chatBox",data.response);
-    chatHistory.push({role:"assistant",text:data.response});
-  }catch{updateLastAIBubble("chatBox","❌ Lỗi kết nối server.");}
+  try{
+    const res=await fetch("/api/chat",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({message,history:chatHistory,language:currentLang,image:imageBase64})});
+    const data=await res.json();
+    updateLastAIBubble("chatBox",data.response);
+    chatHistory.push({role:"assistant",text:data.response});
+  }catch{updateLastAIBubble("chatBox","❌ Lỗi kết nối server.");}
 });
 
 document.getElementById("btnMath").addEventListener("click",async()=>{
-  const question=document.getElementById("mathPrompt").value.trim();
-  if(!question&&!mathPendingFiles.length)return;
-  addBubbleWithFiles("mathBox",question,mathPendingFiles,"user");
-  document.getElementById("mathPrompt").value="";
-  document.getElementById("mathPreview").innerHTML="";
-  addBubble("mathBox","🧠 ĐANG GIẢI TOÁN...","ai");
+  const question=document.getElementById("mathPrompt").value.trim();
+  if(!question&&!mathPendingFiles.length)return;
+  addBubbleWithFiles("mathBox",question,mathPendingFiles,"user");
+  
+    // Xóa nội dung input và preview sau khi gửi
+  document.getElementById("mathPrompt").value="";
+  document.getElementById("mathPreview").innerHTML="";
+  addBubble("mathBox","🧠 ĐANG GIẢI TOÁN...","ai");
 
-  let imageBase64=null;
-  if(mathPendingFiles.length>0&&mathPendingFiles[0].type.startsWith("image/")){
-    const file=mathPendingFiles[0];
-    imageBase64=await toBase64(file);
-  }
-  mathPendingFiles=[];
+  let imageBase64=null;
+  if(mathPendingFiles.length>0&&mathPendingFiles[0].type.startsWith("image/")){
+    const file=mathPendingFiles[0];
+    imageBase64=await toBase64(file);
+  }
+  mathPendingFiles=[];
 
-  try{
-    const res=await fetch("/api/math",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({question,image:imageBase64})});
-    const data=await res.json();
-    updateLastAIBubble("mathBox",data.response);
-    MathJax.typesetPromise();
-  }catch{updateLastAIBubble("mathBox","❌ Lỗi kết nối server.");}
+  try{
+    const res=await fetch("/api/math",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({question,image:imageBase64})});
+    const data=await res.json();
+    updateLastAIBubble("mathBox",data.response);
+    MathJax.typesetPromise();
+  }catch{updateLastAIBubble("mathBox","❌ Lỗi kết nối server.");}
 });
 
 function toBase64(file){
-  return new Promise((resolve,reject)=>{
-    const reader=new FileReader();
-    reader.onload=()=>resolve(reader.result);
-    reader.onerror=e=>reject(e);
-    reader.readAsDataURL(file);
-  });
+  return new Promise((resolve,reject)=>{
+    const reader=new FileReader();
+    reader.onload=()=>resolve(reader.result);
+    reader.onerror=e=>reject(e);
+    reader.readAsDataURL(file);
+  });
 }
 
 document.getElementById("btnCreateImage").addEventListener("click",async()=>{
-  const prompt=document.getElementById("imagePrompt").value.trim();
-  if(!prompt)return;
-  addBubble("imageBox",prompt,"user");
-  addBubble("imageBox","🧠 ĐANG TẠO ẢNH...","ai");
-  try{
-    const res=await fetch("/api/pollinations-image",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({prompt})});
-    const data=await res.json();
-    updateLastAIBubble("imageBox",`<img src="${data.imageUrl}" class="generated-image">`);
-  }catch{
-    updateLastAIBubble("imageBox","❌ Lỗi kết nối server.");
-  }
+  const prompt=document.getElementById("imagePrompt").value.trim();
+  if(!prompt)return;
+  addBubble("imageBox",prompt,"user");
+  
+    // Xóa nội dung input sau khi gửi
+    document.getElementById("imagePrompt").value = ""; 
+
+  addBubble("imageBox","🧠 ĐANG TẠO ẢNH...","ai");
+  try{
+    const res=await fetch("/api/pollinations-image",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({prompt})});
+    const data=await res.json();
+    updateLastAIBubble("imageBox",`<img src="${data.imageUrl}" class="generated-image">`);
+  }catch{
+    updateLastAIBubble("imageBox","❌ Lỗi kết nối server.");
+  }
 });
 </script>
 </body>

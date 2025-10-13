@@ -76,12 +76,12 @@ async function callGeminiModel(contents) {
     }
     return "❌ Đã thử lại nhưng vẫn lỗi khi gọi Gemini.";
   } catch (error) {
-    console.error("🔥 Lỗi khi gọi Gemini:", error);
+    console.error("� Lỗi khi gọi Gemini:", error);
     return "❌ Lỗi khi kết nối đến Google Gemini. (Kiểm tra server/mạng)";
   }
 }
 
-// ======== 🔹 Hàm xây dựng nội dung đa phương thức (Ảnh và Text) ========
+// ======== 🔹 Hàm xây dựng nội dung đa phương tiện (Ảnh và Text) ========
 /**
  * Xây dựng mảng parts cho yêu cầu Gemini, bao gồm text (với systemInstruction) và ảnh Base64.
  */
@@ -111,16 +111,42 @@ function buildContentParts(text, image, systemInstruction) {
   return userParts;
 }
 
+// ======== 🔹 Hàm dịch văn bản sang tiếng Anh (sử dụng Gemini) ========
+async function translateToEnglish(text) {
+  if (!GEMINI_API_KEY) {
+    console.warn("⚠️ Không thể dịch prompt: GEMINI_API_KEY chưa được thiết lập.");
+    return text; // Trả về text gốc nếu không có API key
+  }
+
+  const promptTranslate = `Dịch văn bản sau sang tiếng Anh, chỉ trả về văn bản đã dịch. KHÔNG THÊM BẤT KỲ LỜI NÓI ĐẦU HAY LỜI KẾT NÀO.
+Văn bản: "${text}"`;
+  
+  try {
+    const contents = [{ role: "user", parts: [{ text: promptTranslate }] }];
+    const response = await callGeminiModel(contents);
+    
+    // Xóa bất kỳ ký tự thừa nào (như dấu nháy kép, khoảng trắng)
+    return response.replace(/^"|"$/g, '').trim(); 
+  } catch (error) {
+    console.error("❌ Lỗi khi dịch prompt sang tiếng Anh:", error);
+    return text; // Trả về text gốc nếu có lỗi dịch
+  }
+}
+
 
 // ============================================================
 // 🖼️ API TẠO ẢNH (Pollinations)
 // ============================================================
 app.post("/api/pollinations-image", async (req, res) => {
-  const { prompt } = req.body;
+  let { prompt } = req.body; // Sử dụng 'let' để có thể thay đổi prompt
   if (!prompt) return res.status(400).json({ message: "Vui lòng nhập mô tả ảnh." });
 
   try {
-    const safePrompt = encodeURIComponent(prompt);
+    // Dịch prompt sang tiếng Anh trước khi gửi đến Pollinations
+    const translatedPrompt = await translateToEnglish(prompt);
+    console.log(`Dịch prompt từ "${prompt}" sang: "${translatedPrompt}"`);
+
+    const safePrompt = encodeURIComponent(translatedPrompt);
     // Pollinations API: Tạo ảnh dựa trên prompt, không logo, kích thước 1024x1024
     const imageUrl = `https://image.pollinations.ai/prompt/${safePrompt}?nologo=true&width=1024&height=1024`;
     res.json({ imageUrl });
@@ -229,3 +255,4 @@ const server = app.listen(PORT, () => {
 // ** Sửa lỗi: Tăng thời gian chờ (timeout) cho server **
 // Đã tăng lên 5 phút (300,000ms) để xử lý payload ảnh lớn, giải quyết lỗi "Lỗi kết nối server" trước đó.
 server.timeout = 300000;
+�

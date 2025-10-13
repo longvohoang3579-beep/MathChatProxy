@@ -142,6 +142,40 @@ app.post("/api/pollinations-image", async (req, res) => {
   }
 });
 
+
+// ======== Hàm tải 1 khung hình với Retry (Tối đa 3 lần) ========
+async function fetchFrameWithRetry(url, index, maxRetries = 3) {
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        try {
+            const r = await fetch(url);
+            if (r.ok) {
+                // Lấy ArrayBuffer, chuyển sang Buffer (Node.js)
+                const buffer = Buffer.from(await r.arrayBuffer());
+                // Chuyển Buffer sang Base64 Data URL (Mime type JPEG)
+                return `data:image/jpeg;base64,${buffer.toString("base64")}`;
+            }
+            // Nếu response không OK (e.g., 404, 500)
+            if (attempt < maxRetries) {
+                console.warn(`⚠️ Cảnh báo: Khung hình ${index} lỗi (HTTP ${r.status}). Thử lại lần ${attempt}/${maxRetries}.`);
+                // Thử lại sau 1-3 giây
+                await new Promise(resolve => setTimeout(resolve, 1000 + (500 * attempt))); 
+            } else {
+                console.error(`❌ Lỗi tải khung hình ${index} sau ${maxRetries} lần thử (HTTP ${r.status}). Bỏ qua khung hình này.`);
+            }
+        } catch (e) {
+            // Lỗi mạng/kết nối
+            if (attempt < maxRetries) {
+                console.warn(`⚠️ Cảnh báo: Khung hình ${index} lỗi mạng. Thử lại lần ${attempt}/${maxRetries}. Chi tiết: ${e.message}`);
+                // Thử lại sau 1-3 giây
+                await new Promise(resolve => setTimeout(resolve, 1000 + (500 * attempt)));
+            } else {
+                console.error(`❌ Lỗi tải khung hình ${index} sau ${maxRetries} lần thử: ${e.message}. Bỏ qua khung hình này.`);
+            }
+        }
+    }
+    return null; // Thất bại sau tất cả các lần thử
+}
+
 // ============================================================
 // 🖼️/🎞️ API TẠO KHUNG HÌNH (Pollinations -> 12 frames Base64)
 // Giảm số khung hình từ 20 xuống 12 để giảm thời gian render GIF trên client.
@@ -162,26 +196,8 @@ app.post("/api/pollinations-frames", async (req, res) => {
       const variation = `${translatedPrompt}, motion frame ${i + 1} of ${framesCount}, cinematic, high detail`;
       const url = `https://image.pollinations.ai/prompt/${encodeURIComponent(variation)}?nologo=true&width=512&height=512`;
       
-      downloadPromises.push(
-        (async () => {
-            try {
-                const r = await fetch(url);
-                if (!r.ok) {
-                    console.warn(`⚠️ Cảnh báo: Khung hình thứ ${i+1} lỗi (HTTP ${r.status}). Bỏ qua.`);
-                    return null; 
-                }
-                
-                // Lấy ArrayBuffer, chuyển sang Buffer (Node.js)
-                const buffer = Buffer.from(await r.arrayBuffer());
-                
-                // Chuyển Buffer sang Base64 Data URL (Mime type JPEG)
-                return `data:image/jpeg;base64,${buffer.toString("base64")}`;
-            } catch (e) {
-                console.error(`❌ Lỗi tải hoặc chuyển đổi khung hình ${i+1}:`, e.message);
-                return null; // Trả về null nếu có lỗi mạng hoặc lỗi buffer
-            }
-        })()
-      );
+      // SỬ DỤNG HÀM THỬ LẠI MỚI Ở ĐÂY
+      downloadPromises.push(fetchFrameWithRetry(url, i + 1));
     }
 
     // 3. Chờ tất cả frame tải xong

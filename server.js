@@ -163,14 +163,23 @@ app.post("/api/pollinations-frames", async (req, res) => {
       
       downloadPromises.push(
         (async () => {
-          const r = await fetch(url);
-          if (!r.ok) throw new Error(`Fetch frame failed: ${r.status}`);
-          
-          // Lấy ArrayBuffer, chuyển sang Buffer (Node.js)
-          const buffer = Buffer.from(await r.arrayBuffer());
-          
-          // Chuyển Buffer sang Base64 Data URL (Mime type JPEG)
-          return `data:image/jpeg;base64,${buffer.toString("base64")}`;
+            try {
+                const r = await fetch(url);
+                if (!r.ok) {
+                    // Log cảnh báo và trả về null để Promise.all không bị dừng
+                    console.warn(`⚠️ Cảnh báo: Khung hình thứ ${i+1} lỗi (HTTP ${r.status}). Bỏ qua.`);
+                    return null; 
+                }
+                
+                // Lấy ArrayBuffer, chuyển sang Buffer (Node.js)
+                const buffer = Buffer.from(await r.arrayBuffer());
+                
+                // Chuyển Buffer sang Base64 Data URL (Mime type JPEG)
+                return `data:image/jpeg;base64,${buffer.toString("base64")}`;
+            } catch (e) {
+                console.error(`❌ Lỗi tải hoặc chuyển đổi khung hình ${i+1}:`, e.message);
+                return null; // Trả về null nếu có lỗi mạng hoặc lỗi buffer
+            }
         })()
       );
     }
@@ -179,18 +188,20 @@ app.post("/api/pollinations-frames", async (req, res) => {
     const frames = await Promise.all(downloadPromises);
     
     // 4. Lọc bỏ frames lỗi (chỉ trả về frames hợp lệ)
-    const validFrames = frames.filter(f => f.startsWith('data:image'));
+    const validFrames = frames.filter(f => f && typeof f === 'string' && f.startsWith('data:image'));
     
     if (validFrames.length === 0) {
-        return res.status(500).json({ message: "Không thể tải bất kỳ khung hình nào từ Pollinations." });
+        // Nếu không có khung hình nào hợp lệ, trả lỗi chi tiết hơn
+        return res.status(500).json({ message: "Không thể tải bất kỳ khung hình nào từ Pollinations. Vui lòng thử lại với prompt khác." });
     }
     
     // 5. Trả về mảng Base64 Data URL
     res.json({ frames: validFrames });
 
   } catch (error) {
-    console.error("❌ Lỗi tạo khung hình Base64:", error);
-    res.status(500).json({ message: "Không thể tạo khung hình Base64." });
+    console.error("❌ Lỗi xử lý chung tạo khung hình Base64:", error);
+    // Cải thiện thông báo lỗi chung
+    res.status(500).json({ message: "❌ Lỗi xử lý chung trên Server. (Vui lòng kiểm tra console server để biết chi tiết)" });
   }
 });
 

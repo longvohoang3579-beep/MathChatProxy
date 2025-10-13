@@ -143,8 +143,8 @@ app.post("/api/pollinations-image", async (req, res) => {
 });
 
 // ============================================================
-// 🖼️/🎞️ API TẠO KHUNG HÌNH (Pollinations -> 20 frames Base64)
-// Endpoint mới, KHÔNG dùng FFmpeg.
+// 🖼️/🎞️ API TẠO KHUNG HÌNH (Pollinations -> 12 frames Base64)
+// Giảm số khung hình từ 20 xuống 12 để giảm thời gian render GIF trên client.
 // ============================================================
 app.post("/api/pollinations-frames", async (req, res) => {
   const { prompt } = req.body;
@@ -153,9 +153,10 @@ app.post("/api/pollinations-frames", async (req, res) => {
   try {
     // 1. Dịch prompt
     const translatedPrompt = await translateToEnglish(prompt);
-    const framesCount = 20;
+    const framesCount = 12; // GIẢM TỪ 20 XUỐNG 12
+    console.log(`Bắt đầu tải ${framesCount} khung hình cho prompt: ${translatedPrompt}`);
 
-    // 2. Tạo 20 promises để fetch và convert Base64
+    // 2. Tạo 12 promises để fetch và convert Base64
     const downloadPromises = [];
     for (let i = 0; i < framesCount; i++) {
       const variation = `${translatedPrompt}, motion frame ${i + 1} of ${framesCount}, cinematic, high detail`;
@@ -166,7 +167,6 @@ app.post("/api/pollinations-frames", async (req, res) => {
             try {
                 const r = await fetch(url);
                 if (!r.ok) {
-                    // Log cảnh báo và trả về null để Promise.all không bị dừng
                     console.warn(`⚠️ Cảnh báo: Khung hình thứ ${i+1} lỗi (HTTP ${r.status}). Bỏ qua.`);
                     return null; 
                 }
@@ -190,11 +190,12 @@ app.post("/api/pollinations-frames", async (req, res) => {
     // 4. Lọc bỏ frames lỗi (chỉ trả về frames hợp lệ)
     const validFrames = frames.filter(f => f && typeof f === 'string' && f.startsWith('data:image'));
     
-    if (validFrames.length === 0) {
-        // Nếu không có khung hình nào hợp lệ, trả lỗi chi tiết hơn
-        return res.status(500).json({ message: "Không thể tải bất kỳ khung hình nào từ Pollinations. Vui lòng thử lại với prompt khác." });
+    if (validFrames.length < 10) { // Đặt ngưỡng tối thiểu (ví dụ: cần ít nhất 10/12 frames)
+        console.error(`❌ Chỉ tải được ${validFrames.length}/${framesCount} khung hình.`);
+        return res.status(500).json({ message: "❌ Không thể tải đủ khung hình để tạo chuyển động mượt mà. Vui lòng thử lại." });
     }
     
+    console.log(`✅ Đã tải thành công ${validFrames.length} khung hình.`);
     // 5. Trả về mảng Base64 Data URL
     res.json({ frames: validFrames });
 

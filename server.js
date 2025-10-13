@@ -7,10 +7,10 @@ import bodyParser from "body-parser";
 import fetch from "node-fetch";
 import dotenv from "dotenv";
 
+// Tải biến môi trường từ file .env
 dotenv.config();
 const app = express();
-// Tăng giới hạn payload lên 50MB để chứa ảnh Base64. Đây là thay đổi quan trọng
-// để tránh lỗi ngắt kết nối khi gửi ảnh dung lượng lớn.
+// Tăng giới hạn payload lên 50MB để chứa ảnh Base64
 app.use(bodyParser.json({ limit: "50mb" }));
 
 // 🧩 Phục vụ file tĩnh (index.html cùng thư mục)
@@ -19,7 +19,6 @@ app.use(express.static("."));
 // ============================================================
 // 🧠 CẤU HÌNH GEMINI 2.5 FLASH
 // ============================================================
-// Lưu ý: Cần sử dụng model hỗ trợ Vision (ví dụ: gemini-2.5-flash)
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 const GEMINI_MODEL = "gemini-2.5-flash"; // Hỗ trợ đa phương thức
 const GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1/models/${GEMINI_MODEL}:generateContent`;
@@ -76,7 +75,7 @@ async function callGeminiModel(contents) {
     }
     return "❌ Đã thử lại nhưng vẫn lỗi khi gọi Gemini.";
   } catch (error) {
-    console.error("� Lỗi khi gọi Gemini:", error);
+    console.error("🔥 Lỗi khi gọi Gemini:", error);
     return "❌ Lỗi khi kết nối đến Google Gemini. (Kiểm tra server/mạng)";
   }
 }
@@ -112,20 +111,33 @@ function buildContentParts(text, image, systemInstruction) {
 }
 
 // ======== 🔹 Hàm dịch văn bản sang tiếng Anh (sử dụng Gemini) ========
+/**
+ * Dịch văn bản đầu vào sang tiếng Anh bằng Gemini API.
+ * @param {string} text Văn bản cần dịch.
+ * @returns {Promise<string>} Văn bản đã dịch hoặc văn bản gốc nếu lỗi.
+ */
 async function translateToEnglish(text) {
   if (!GEMINI_API_KEY) {
     console.warn("⚠️ Không thể dịch prompt: GEMINI_API_KEY chưa được thiết lập.");
     return text; // Trả về text gốc nếu không có API key
   }
 
+  // Yêu cầu Gemini chỉ trả về văn bản đã dịch, không thêm lời nói đầu/kết
   const promptTranslate = `Dịch văn bản sau sang tiếng Anh, chỉ trả về văn bản đã dịch. KHÔNG THÊM BẤT KỲ LỜI NÓI ĐẦU HAY LỜI KẾT NÀO.
 Văn bản: "${text}"`;
   
   try {
     const contents = [{ role: "user", parts: [{ text: promptTranslate }] }];
+    
+    // Sử dụng hàm gọi model chung, không cần xử lý lại retry/error
     const response = await callGeminiModel(contents);
     
     // Xóa bất kỳ ký tự thừa nào (như dấu nháy kép, khoảng trắng)
+    // Nếu response có thông báo lỗi (ví dụ: "❌ Thiếu GEMINI_API_KEY..."), ta trả về prompt gốc
+    if (response.startsWith("❌")) {
+      return text;
+    }
+    
     return response.replace(/^"|"$/g, '').trim(); 
   } catch (error) {
     console.error("❌ Lỗi khi dịch prompt sang tiếng Anh:", error);
@@ -135,19 +147,19 @@ Văn bản: "${text}"`;
 
 
 // ============================================================
-// 🖼️ API TẠO ẢNH (Pollinations)
+// 🖼️ API TẠO ẢNH (Pollinations - Có dịch đa ngôn ngữ)
 // ============================================================
 app.post("/api/pollinations-image", async (req, res) => {
-  let { prompt } = req.body; // Sử dụng 'let' để có thể thay đổi prompt
+  let { prompt } = req.body;
   if (!prompt) return res.status(400).json({ message: "Vui lòng nhập mô tả ảnh." });
 
   try {
-    // Dịch prompt sang tiếng Anh trước khi gửi đến Pollinations
+    // BƯỚC MỚI: Dịch prompt sang tiếng Anh trước
     const translatedPrompt = await translateToEnglish(prompt);
     console.log(`Dịch prompt từ "${prompt}" sang: "${translatedPrompt}"`);
 
     const safePrompt = encodeURIComponent(translatedPrompt);
-    // Pollinations API: Tạo ảnh dựa trên prompt, không logo, kích thước 1024x1024
+    // Pollinations API: Tạo ảnh dựa trên prompt tiếng Anh đã dịch
     const imageUrl = `https://image.pollinations.ai/prompt/${safePrompt}?nologo=true&width=1024&height=1024`;
     res.json({ imageUrl });
   } catch (error) {
@@ -172,7 +184,6 @@ app.post("/api/chat", async (req, res) => {
   
   const langName = languageMap[language] || languageMap['vi'];
   
-  // Sửa đổi theo yêu cầu: Trả lời ngắn gọn, trọng tâm, không lan man.
   const systemInstruction = `
 Bạn là trợ lý AI thông minh, thân thiện. Hãy trả lời bằng **${langName}**.
 - Trả lời **NGẮN GỌN, TRỌNG TÂM**, chỉ tập trung vào câu hỏi của người dùng.
@@ -252,7 +263,5 @@ const server = app.listen(PORT, () => {
     );
 });
 
-// ** Sửa lỗi: Tăng thời gian chờ (timeout) cho server **
-// Đã tăng lên 5 phút (300,000ms) để xử lý payload ảnh lớn, giải quyết lỗi "Lỗi kết nối server" trước đó.
+// ** Tăng thời gian chờ (timeout) cho server **
 server.timeout = 300000;
-�

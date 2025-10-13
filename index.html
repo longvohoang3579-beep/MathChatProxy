@@ -26,7 +26,7 @@ button{padding:0.75rem 1rem;border-radius:0.75rem;font-weight:bold;cursor:pointe
 #btnMath{background:#f59e0b;color:#111827;}#btnMath:hover{background:#d97706;}
 img.generated-image{border-radius:12px;max-width:100%;margin-top:1rem;}
 #settings-btn{position:absolute;top:1rem;right:1rem;font-size:1.5rem;cursor:pointer;color:#facc15;}
-#settings-modal{position:absolute;top:3rem;right:1rem;width:200px;background:#1a1c29;border:1px solid #facc15;border-radius:0.75rem;padding:1rem;display:none;z-index:10;}
+#settings-modal{position:absolute;top:3rem;right:1rem;width:200px;background:#1a1c29;border:1px solid #facc15;border-radius:0.75rem;padding:1rem;display:none;}
 .pending-preview{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px;}
 .pending-preview img{width:60px;height:60px;object-fit:cover;border-radius:8px;border:2px solid #475569;}
 .input-row{display:flex;align-items:center;gap:6px;margin-top:8px;}
@@ -35,7 +35,7 @@ img.generated-image{border-radius:12px;max-width:100%;margin-top:1rem;}
 .icon-btn svg{width:22px;height:22px;color:#facc15;}
 .send-btn{background:#6366f1;padding:10px;border-radius:50%;display:flex;align-items:center;justify-content:center;}
 .send-btn:hover{background:#4f46e5;}
-.send-btn svg{width:22px;height:22px;transform:rotate(0deg);}
+.send-btn svg{width:22px;height:22px;transform:rotate(0deg);} /* ✅ xoay ra phải */
 </style>
 </head>
 <body>
@@ -73,7 +73,7 @@ img.generated-image{border-radius:12px;max-width:100%;margin-top:1rem;}
       <label class="icon-btn" id="chatCameraBtn" title="Chụp ảnh">📷</label>
       <textarea id="chatInput" rows="1" placeholder="Nhập tin nhắn..."></textarea>
       <button id="btnChat" class="send-btn" title="Gửi">
-        <!-- ICON XOAY RA NGOÀI (qua phải) -->
+        <!-- ✅ ICON XOAY RA NGOÀI (qua phải) -->
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="white" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12l14 7-7-7 7-7-14 7z"/>
         </svg>
@@ -91,7 +91,7 @@ img.generated-image{border-radius:12px;max-width:100%;margin-top:1rem;}
       <label class="icon-btn" id="mathCameraBtn" title="Chụp ảnh">📷</label>
       <textarea id="mathPrompt" rows="1" placeholder="Nhập bài toán..."></textarea>
       <button id="btnMath" class="send-btn" title="Giải">
-        <!-- ICON XOAY RA NGOÀI (qua phải) -->
+        <!-- ✅ ICON XOAY RA NGOÀI (qua phải) -->
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="white" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12l14 7-7-7 7-7-14 7z"/>
         </svg>
@@ -152,6 +152,7 @@ const settingsBtn=document.getElementById("settings-btn");const settingsModal=do
 settingsBtn.addEventListener("click",()=>{settingsModal.style.display=settingsModal.style.display==="none"?"block":"none";});
 document.addEventListener("click",(e)=>{if(!settingsModal.contains(e.target)&&!settingsBtn.contains(e.target)){settingsModal.style.display="none";}});
 
+// Sửa: Thay alert() bằng addBubble() cho việc thông báo đổi ngôn ngữ (Giữ nguyên sửa đổi này vì alert() không hoạt động)
 document.getElementById("language-select").addEventListener("change",(e)=>{
     currentLang=e.target.value;
     localStorage.setItem("geminiChatLanguage",currentLang);
@@ -164,8 +165,9 @@ let chatPendingFiles=[], mathPendingFiles=[];
 document.getElementById("chatFileInput").addEventListener("change",e=>{chatPendingFiles=[...e.target.files];renderPreview("chatPreview",chatPendingFiles);});
 document.getElementById("mathFileInput").addEventListener("change",e=>{mathPendingFiles=[...e.target.files];renderPreview("mathPreview",mathPendingFiles);});
 
-document.getElementById("chatCameraBtn").addEventListener("click",()=>addBubble("chatBox", "📷 Tính năng Camera đang được phát triển.", "ai"));
-document.getElementById("mathCameraBtn").addEventListener("click",()=>addBubble("mathBox", "📷 Tính năng Camera đang được phát triển.", "ai"));
+// Sửa: Thay alert() bằng addBubble() cho việc thông báo tính năng camera (Giữ nguyên sửa đổi này vì alert() không hoạt động)
+document.getElementById("chatCameraBtn").addEventListener("click",()=>addBubble("chatBox", "📷 Camera đang được phát triển", "ai"));
+document.getElementById("mathCameraBtn").addEventListener("click",()=>addBubble("mathBox", "📷 Camera đang được phát triển", "ai"));
 
 document.getElementById("btnChat").addEventListener("click",async()=>{
   const message=document.getElementById("chatInput").value.trim();
@@ -173,7 +175,7 @@ document.getElementById("btnChat").addEventListener("click",async()=>{
   addBubbleWithFiles("chatBox",message,chatPendingFiles,"user");
   chatHistory.push({role:"user",text:message});
   
-    // Xóa nội dung input và preview sau khi gửi
+    // ✅ THAY ĐỔI: Xóa nội dung input và preview sau khi gửi
   document.getElementById("chatInput").value="";
   document.getElementById("chatPreview").innerHTML="";
   addBubble("chatBox","🧠 ĐANG TRẢ LỜI...","ai");
@@ -198,7 +200,7 @@ document.getElementById("btnMath").addEventListener("click",async()=>{
   if(!question&&!mathPendingFiles.length)return;
   addBubbleWithFiles("mathBox",question,mathPendingFiles,"user");
   
-    // Xóa nội dung input và preview sau khi gửi
+    // ✅ THAY ĐỔI: Xóa nội dung input và preview sau khi gửi
   document.getElementById("mathPrompt").value="";
   document.getElementById("mathPreview").innerHTML="";
   addBubble("mathBox","🧠 ĐANG GIẢI TOÁN...","ai");
@@ -231,8 +233,8 @@ document.getElementById("btnCreateImage").addEventListener("click",async()=>{
   const prompt=document.getElementById("imagePrompt").value.trim();
   if(!prompt)return;
   addBubble("imageBox",prompt,"user");
-  
-    // Xóa nội dung input sau khi gửi
+
+    // ✅ THAY ĐỔI: Xóa nội dung input sau khi gửi
     document.getElementById("imagePrompt").value = ""; 
 
   addBubble("imageBox","🧠 ĐANG TẠO ẢNH...","ai");

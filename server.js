@@ -190,7 +190,7 @@ app.post("/api/pollinations-frames", async (req, res) => {
     // 4. Lọc bỏ frames lỗi (chỉ trả về frames hợp lệ)
     const validFrames = frames.filter(f => f && typeof f === 'string' && f.startsWith('data:image'));
     
-    if (validFrames.length < 10) { // Đặt ngưỡng tối thiểu (ví dụ: cần ít nhất 10/12 frames)
+    if (validFrames.length < 8) { // Đặt ngưỡng tối thiểu (GIẢM TỪ 10 XUỐNG 8)
         console.error(`❌ Chỉ tải được ${validFrames.length}/${framesCount} khung hình.`);
         return res.status(500).json({ message: "❌ Không thể tải đủ khung hình để tạo chuyển động mượt mà. Vui lòng thử lại." });
     }

@@ -1,107 +1,65 @@
 import express from "express";
 import bodyParser from "body-parser";
-import fetch from "node-fetch";
-import fs from "fs";
+import dotenv from "dotenv";
 import path from "path";
-import ffmpeg from "fluent-ffmpeg";
-import ffmpegPath from "ffmpeg-static";
+import { fileURLToPath } from "url";
+
+dotenv.config();
 
 const app = express();
+const port = process.env.PORT || 3000;
+
+// Cần dòng này để lấy đường dẫn thật của thư mục hiện tại
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Middleware
 app.use(bodyParser.json());
-app.use(express.static("public"));
+app.use(express.static(__dirname)); // Cho phép đọc file tĩnh như index.html, CSS, JS, ảnh
 
-ffmpeg.setFfmpegPath(ffmpegPath);
-const PORT = process.env.PORT || 3000;
-
-// =======================
-// 🧠 Chat (mẫu offline đơn giản)
-// =======================
-app.post("/api/chat", (req, res) => {
-  const { message } = req.body;
-  const reply =
-    message.includes("AI") || message.includes("ứng dụng")
-      ? "🌟 <mark>Một số ứng dụng AI nổi bật là ChatGPT, Midjourney, Pollinations và Leonardo AI.</mark>"
-      : "💬 <mark>Tôi đã nhận được câu hỏi của bạn, vui lòng nói rõ hơn nhé!</mark>";
-  res.json({ reply });
+// 🟢 Khi truy cập "/", gửi file index.html
+app.get("/", (req, res) => {
+  res.sendFile(path.join(__dirname, "index.html"));
 });
 
-// =======================
-// 📐 Giải toán (logic đơn giản không AI)
-// =======================
-app.post("/api/math", (req, res) => {
-  const { problem } = req.body;
+// 🧠 Chat API
+app.post("/api/chat", async (req, res) => {
   try {
-    // Thử tính toán đơn giản
-    let result = eval(problem);
-    res.json({
-      result: `✅ <mark>Kết quả: ${result}</mark>`,
-      explanation: `📘 Giải thích: Đây là phép tính cơ bản của biểu thức "${problem}".`,
-    });
-  } catch {
-    res.json({
-      result: "⚠️ Không hiểu đề bài. Hãy nhập lại bằng ký hiệu toán học chuẩn.",
-    });
-  }
-});
-
-// =======================
-// 🎨 Tạo ảnh qua Pollinations
-// =======================
-app.post("/api/image", async (req, res) => {
-  const { prompt } = req.body;
-  try {
-    const imageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}`;
-    res.json({ imageUrl });
-  } catch (err) {
-    console.error(err);
-    res.json({ error: "⚠️ Không thể tạo ảnh." });
-  }
-});
-
-// =======================
-// 🎬 Tạo video từ ảnh Pollinations
-// =======================
-app.post("/api/video", async (req, res) => {
-  const { prompt } = req.body;
-  const framesDir = path.join("frames");
-
-  try {
-    if (!fs.existsSync(framesDir)) fs.mkdirSync(framesDir);
-
-    const frameCount = 5;
-    const imagePaths = [];
-
-    // Tạo 5 ảnh
-    for (let i = 1; i <= frameCount; i++) {
-      const imgUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt + " khung " + i)}`;
-      const response = await fetch(imgUrl);
-      const buffer = Buffer.from(await response.arrayBuffer());
-      const filePath = path.join(framesDir, `frame${i}.png`);
-      fs.writeFileSync(filePath, buffer);
-      imagePaths.push(filePath);
-    }
-
-    // Ghép ảnh thành video
-    const outputVideo = path.join("public", "video.mp4");
-    await new Promise((resolve, reject) => {
-      ffmpeg()
-        .input(path.join(framesDir, "frame%d.png"))
-        .inputFPS(1)
-        .outputOptions(["-vf scale=640:-1", "-pix_fmt yuv420p"])
-        .on("end", resolve)
-        .on("error", reject)
-        .save(outputVideo);
-    });
-
-    // Xóa ảnh sau khi ghép
-    fs.rmSync(framesDir, { recursive: true, force: true });
-
-    res.json({ videoUrl: "/video.mp4" });
+    const { message } = req.body;
+    // 👉 Ví dụ phản hồi tạm (bạn thay bằng Gemini sau)
+    res.json({ response: `Bot nhận được: ${message}` });
   } catch (error) {
-    console.error("❌ Lỗi tạo video:", error);
-    res.json({ error: "❌ Không thể tạo video." });
+    res.status(500).json({ error: error.message });
   }
 });
 
-// =======================
-app.listen(PORT, () => console.log(`🚀 Server đang chạy tại cổng ${PORT}`));
+// 🧮 Math API
+app.post("/api/math", async (req, res) => {
+  try {
+    const { question } = req.body;
+    res.json({ response: `Đáp án của "${question}" là 42 (ví dụ).` });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// 🖼️ Pollinations Image
+app.post("/api/pollinations-image", async (req, res) => {
+  const { prompt } = req.body;
+  const imageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}`;
+  res.json({ imageUrl });
+});
+
+// 🎞️ Pollinations Video (mẫu giả lập, chưa cần ffmpeg)
+app.post("/api/pollinations-video", async (req, res) => {
+  try {
+    res.json({ videoUrl: "https://sample-videos.com/video123/mp4/720/big_buck_bunny_720p_1mb.mp4" });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// 🚀 Khởi động server
+app.listen(port, () => {
+  console.log(`✅ Server đang chạy tại: http://localhost:${port}`);
+});

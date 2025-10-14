@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="vi">
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>MathChatProxy</title>
+  <title>AI Portal</title>
   <style>
     body {
       margin: 0;
@@ -12,7 +12,7 @@
       overflow: hidden;
     }
 
-    /* Intro */
+    /* INTRO SCREEN */
     #intro-screen {
       position: fixed;
       top: 0; left: 0;
@@ -24,7 +24,7 @@
       align-items: center;
       flex-direction: column;
       animation: bgMove 6s infinite alternate ease-in-out;
-      z-index: 10000;
+      z-index: 9999;
     }
 
     @keyframes bgMove {
@@ -45,33 +45,6 @@
       to { opacity: 1; transform: translateY(0); }
     }
 
-    .hidden {
-      display: none !important;
-    }
-
-    /* Giao diện chính */
-    #main-container {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
-      height: 100vh;
-      background: #0e0e0e;
-      position: relative;
-      z-index: 1;
-      pointer-events: auto;
-    }
-
-    .chat-frame {
-      width: 48%;
-      height: 48%;
-      margin: 1%;
-      border: 2px solid #333;
-      border-radius: 12px;
-      box-shadow: 0 0 12px rgba(0,255,255,0.2);
-      pointer-events: auto;
-    }
-
-    /* Nút "Bỏ qua intro" */
     #skip-btn {
       margin-top: 20px;
       background: #00ffff33;
@@ -86,50 +59,73 @@
     #skip-btn:hover {
       background: #00ffff66;
     }
+
+    /* MAIN INTERFACE */
+    #main-container {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      background: #0e0e0e;
+      position: relative;
+      z-index: 1;
+    }
+
+    .chat-frame {
+      width: 48%;
+      height: 48%;
+      margin: 1%;
+      border: 2px solid #333;
+      border-radius: 12px;
+      box-shadow: 0 0 12px rgba(0,255,255,0.2);
+      pointer-events: auto;
+    }
+
+    .hidden {
+      display: none !important;
+    }
   </style>
 </head>
 <body>
-  <!-- Màn hình Intro -->
+  <!-- INTRO -->
   <div id="intro-screen">
-    <div class="intro-overlay"></div>
-    <h1 class="intro-text">✨ Chào mừng bạn đến với Trí Tuệ Huyền Bí ✨</h1>
-    <button id="skip-btn">Bỏ qua intro</button>
+    <h1 class="intro-text">✨ Welcome to the Mysterious Intelligence Portal ✨</h1>
+    <button id="skip-btn">Skip Intro</button>
   </div>
 
-  <!-- Giao diện chính -->
+  <!-- MAIN -->
   <div id="main-container" class="hidden">
-    <!-- 4 khung chat -->
-    <iframe src="chat.html" class="chat-frame" allow="microphone; camera"></iframe>
-    <iframe src="math.html" class="chat-frame"></iframe>
-    <iframe src="image.html" class="chat-frame"></iframe>
-    <iframe src="video.html" class="chat-frame"></iframe>
+    <iframe src="./chat.html" class="chat-frame"></iframe>
+    <iframe src="./math.html" class="chat-frame"></iframe>
+    <iframe src="./image.html" class="chat-frame"></iframe>
+    <iframe src="./video.html" class="chat-frame"></iframe>
   </div>
 
   <script>
-    // Phát giọng nam AI
-    function playWelcomeVoice() {
-      const utterance = new SpeechSynthesisUtterance(
-        "Chào mừng bạn đến với không gian trí tuệ huyền bí. Hãy bắt đầu khám phá!"
+    function playEnglishVoice() {
+      const utter = new SpeechSynthesisUtterance(
+        "Welcome to the Mysterious Intelligence Portal. Let's begin your journey."
       );
-      utterance.lang = "vi-VN";
-      utterance.pitch = 1;
-      utterance.rate = 1;
-      utterance.volume = 1;
-      utterance.voice = speechSynthesis.getVoices().find(v => v.name.toLowerCase().includes("nam")) || null;
-      speechSynthesis.speak(utterance);
+      utter.lang = "en-US";
+      utter.pitch = 1;
+      utter.rate = 1;
+      utter.volume = 1;
+      const voices = speechSynthesis.getVoices();
+      const maleVoice = voices.find(v => /male|en-us/i.test(v.name)) || voices[0];
+      utter.voice = maleVoice;
+      speechSynthesis.speak(utter);
     }
 
-    // Khi tải xong trang
     window.addEventListener("load", () => {
-      playWelcomeVoice();
+      // fix getVoices() delay on Chrome
+      setTimeout(() => playEnglishVoice(), 500);
 
-      // Sau 6 giây chuyển sang giao diện chính
       const timer = setTimeout(() => {
         document.getElementById("intro-screen").classList.add("hidden");
         document.getElementById("main-container").classList.remove("hidden");
       }, 6000);
 
-      // Nút bỏ qua intro
       document.getElementById("skip-btn").addEventListener("click", () => {
         clearTimeout(timer);
         document.getElementById("intro-screen").classList.add("hidden");

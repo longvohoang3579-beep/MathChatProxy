@@ -16,25 +16,47 @@ body {
 #intro-screen {
   position: fixed;
   top:0; left:0; width:100%; height:100vh;
-  background:black;
+  background: radial-gradient(circle at center, #1a1c29 0%, #0a0a0a 80%);
+  overflow:hidden;
   display:flex; align-items:center; justify-content:center;
   flex-direction:column; z-index:1000;
-  transition:opacity 1.5s ease;
+  transition:opacity 1.8s ease;
 }
-#intro-video {
-  position:absolute; top:0; left:0;
-  width:100%; height:100%; object-fit:cover; opacity:0.4;
+#intro-bg {
+  position:absolute; top:0; left:0; width:100%; height:100%;
+  background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.07) 0%, transparent 60%),
+              radial-gradient(circle at 70% 70%, rgba(255,255,255,0.05) 0%, transparent 60%),
+              radial-gradient(circle at 50% 100%, rgba(122, 255, 255, 0.08) 0%, transparent 70%);
+  animation: glowMove 10s ease-in-out infinite alternate;
+  filter: blur(50px);
+}
+@keyframes glowMove {
+  0% { transform: scale(1) translate(0, 0); }
+  100% { transform: scale(1.2) translate(20px, -20px); }
 }
 #intro-text {
   position:relative;
   color:#facc15;
-  font-size:2rem; font-weight:bold;
-  text-shadow:0 0 15px rgba(255,255,150,0.8);
-  animation:fadeIn 2s ease-in-out;
+  font-size:2.3rem; font-weight:bold;
+  text-shadow:0 0 20px rgba(255, 255, 150, 0.8), 0 0 40px rgba(255,255,255,0.4);
+  animation: floatText 3s ease-in-out infinite alternate;
+}
+@keyframes floatText {
+  0% { transform: translateY(0); opacity:1; }
+  100% { transform: translateY(-10px); opacity:0.95; }
+}
+#intro-subtext {
+  color:#e0e7ff;
+  margin-top:1rem;
+  font-size:1.1rem;
+  opacity:0.85;
+  text-shadow:0 0 10px rgba(255,255,255,0.3);
+  animation: fadeIn 3s ease-in-out 1.5s forwards;
+  opacity:0;
 }
 @keyframes fadeIn {
-  from {opacity:0; transform:scale(0.9);}
-  to {opacity:1; transform:scale(1);}
+  from { opacity:0; }
+  to { opacity:1; }
 }
 
 /* ---------- Main Container ---------- */
@@ -75,10 +97,9 @@ img.generated-image{border-radius:12px;max-width:100%;margin-top:1rem;}
 <body>
 <!-- INTRO -->
 <div id="intro-screen">
-  <video id="intro-video" autoplay muted playsinline>
-    <source src="https://cdn.pixabay.com/video/2022/10/25/136179-767617881_tiny.mp4" type="video/mp4" />
-  </video>
-  <div id="intro-text">✨ Welcome to <mark class="highlight">AI Assistant Pro</mark> ✨</div>
+  <div id="intro-bg"></div>
+  <div id="intro-text">🌌 Welcome to <mark class="highlight">AI Assistant Pro</mark> 🌌</div>
+  <div id="intro-subtext">Unleash the magic of creativity and intelligence.</div>
 </div>
 
 <!-- MAIN -->
@@ -156,18 +177,10 @@ img.generated-image{border-radius:12px;max-width:100%;margin-top:1rem;}
 </div>
 
 <script>
+// Hiệu ứng mở đầu
 function playIntro() {
   const intro = document.getElementById("intro-screen");
   const mainApp = document.getElementById("mainApp");
-
-  // Giọng nói nam huyền bí
-  const speak = new SpeechSynthesisUtterance("Welcome to AI Assistant Pro. Discover the power within you.");
-  speak.lang = "en-US";
-  speak.rate = 0.95;
-  speak.pitch = 0.8;
-  const voice = speechSynthesis.getVoices().find(v => v.lang.startsWith("en") && v.name.toLowerCase().includes("male"));
-  if (voice) speak.voice = voice;
-  speechSynthesis.speak(speak);
 
   // Sau 6s ẩn intro và hiện app
   setTimeout(() => {
@@ -176,16 +189,10 @@ function playIntro() {
       intro.style.display = "none";
       mainApp.style.display = "block";
       document.body.style.overflow = "auto";
-    }, 1500);
+    }, 1800);
   }, 6000);
 }
-
-// Giọng nói có thể chưa sẵn => đợi load voice xong
-if (speechSynthesis.getVoices().length === 0) {
-  speechSynthesis.onvoiceschanged = playIntro;
-} else {
-  playIntro();
-}
+playIntro();
 
 /* Tabs */
 const tabs=document.querySelectorAll(".tab-btn");

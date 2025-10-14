@@ -8,57 +8,57 @@
 <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 <style>
 body {
-  background-color:#0f0f13; color:#fff; font-family:'Segoe UI',sans-serif;
-  margin:0; padding:0; overflow:hidden;
+  background-color:#0f0f13; color:#fff; font-family:'Segoe UI',sans-serif;
+  margin:0; padding:0; overflow:hidden;
 }
-
+ 
 /* ---------- Intro ---------- */
 #intro-screen {
-  position: fixed;
-  top:0; left:0; width:100%; height:100vh;
-  background: radial-gradient(circle at center, #1a1c29 0%, #0a0a0a 80%);
-  overflow:hidden;
-  display:flex; align-items:center; justify-content:center;
-  flex-direction:column; z-index:1000;
-  transition:opacity 1.8s ease;
+  position: fixed;
+  top:0; left:0; width:100%; height:100vh;
+  background: radial-gradient(circle at center, #1a1c29 0%, #0a0a0a 80%);
+  overflow:hidden;
+  display:flex; align-items:center; justify-content:center;
+  flex-direction:column; z-index:1000;
+  transition:opacity 1.8s ease;
 }
 #intro-bg {
-  position:absolute; top:0; left:0; width:100%; height:100%;
-  background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.07) 0%, transparent 60%),
-              radial-gradient(circle at 70% 70%, rgba(255,255,255,0.05) 0%, transparent 60%),
-              radial-gradient(circle at 50% 100%, rgba(122, 255, 255, 0.08) 0%, transparent 70%);
-  animation: glowMove 10s ease-in-out infinite alternate;
-  filter: blur(50px);
+  position:absolute; top:0; left:0; width:100%; height:100%;
+  background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.07) 0%, transparent 60%),
+              radial-gradient(circle at 70% 70%, rgba(255,255,255,0.05) 0%, transparent 60%),
+              radial-gradient(circle at 50% 100%, rgba(122, 255, 255, 0.08) 0%, transparent 70%);
+  animation: glowMove 10s ease-in-out infinite alternate;
+  filter: blur(50px);
 }
 @keyframes glowMove {
-  0% { transform: scale(1) translate(0, 0); }
-  100% { transform: scale(1.2) translate(20px, -20px); }
+  0% { transform: scale(1) translate(0, 0); }
+  100% { transform: scale(1.2) translate(20px, -20px); }
 }
 #intro-text {
-  position:relative;
-  color:#facc15;
-  font-size:2.3rem; font-weight:bold;
-  text-shadow:0 0 20px rgba(255, 255, 150, 0.8), 0 0 40px rgba(255,255,255,0.4);
-  animation: floatText 3s ease-in-out infinite alternate;
+  position:relative;
+  color:#facc15;
+  font-size:2.3rem; font-weight:bold;
+  text-shadow:0 0 20px rgba(255, 255, 150, 0.8), 0 0 40px rgba(255,255,255,0.4);
+  animation: floatText 3s ease-in-out infinite alternate;
 }
 @keyframes floatText {
-  0% { transform: translateY(0); opacity:1; }
-  100% { transform: translateY(-10px); opacity:0.95; }
+  0% { transform: translateY(0); opacity:1; }
+  100% { transform: translateY(-10px); opacity:0.95; }
 }
 #intro-subtext {
-  color:#e0e7ff;
-  margin-top:1rem;
-  font-size:1.1rem;
-  opacity:0.85;
-  text-shadow:0 0 10px rgba(255,255,255,0.3);
-  animation: fadeIn 3s ease-in-out 1.5s forwards;
-  opacity:0;
+  color:#e0e7ff;
+  margin-top:1rem;
+  font-size:1.1rem;
+  opacity:0.85;
+  text-shadow:0 0 10px rgba(255,255,255,0.3);
+  animation: fadeIn 3s ease-in-out 1.5s forwards;
+  opacity:0;
 }
 @keyframes fadeIn {
-  from { opacity:0; }
-  to { opacity:1; }
+  from { opacity:0; }
+  to { opacity:1; }
 }
-
+ 
 /* ---------- Main Container ---------- */
 .container {max-width:900px;margin:2rem auto;background:#1a1c29;border-radius:1.5rem;padding:1.5rem;box-shadow:0 15px 30px rgba(0,0,0,0.7);display:none;}
 .tabs {display:flex;border-bottom:2px solid #333;margin-bottom:1rem;}
@@ -93,97 +93,96 @@ img.generated-image{border-radius:12px;max-width:100%;margin-top:1rem;}
 <script src="https://unpkg.com/gif.js@0.2.0/dist/gif.js"></script>
 <script src="https://unpkg.com/gif.js@0.2.0/dist/gif.worker.js"></script>
 </head>
-
+ 
 <body>
 <div id="intro-screen">
-  <div id="intro-bg"></div>
-  <div id="intro-text">🌌 Welcome to <mark class="highlight">AI Assistant Pro</mark> 🌌</div>
-  <div id="intro-subtext">Unleash the magic of creativity and intelligence.</div>
+  <div id="intro-bg"></div>
+  <div id="intro-text">🌌 Welcome to <mark class="highlight">AI Assistant Pro</mark> 🌌</div>
+  <div id="intro-subtext">Unleash the magic of creativity and intelligence.</div>
 </div>
-
+ 
 <div class="container relative" id="mainApp">
-  <div id="settings-btn">⚙️</div>
-  <div id="settings-modal">
-    <label class="block mb-2">Ngôn ngữ chat:</label>
-    <select id="language-select" class="w-full p-2 rounded bg-gray-800 text-white">
-      <option value="vi">Tiếng Việt</option>
-      <option value="en">English</option>
-      <option value="zh-CN">简体中文</option>
-    </select>
-  </div>
-
-  <div class="tabs">
-    <div class="tab-btn active" data-tab="image">🖼️ Tạo Ảnh</div>
-    <div class="tab-btn" data-tab="chat">💬 Chat</div>
-    <div class="tab-btn" data-tab="math">🧮 Giải Toán</div>
-    <div class="tab-btn" data-tab="video">🎞️ Tạo Video</div>
-  </div>
-
-  <div class="tab-content active" id="image">
-    <div class="chat-box" id="imageBox"></div>
-    <textarea id="imagePrompt" rows="2" placeholder="Nhập mô tả ảnh..."></textarea>
-    <button id="btnCreateImage" class="mt-2 w-full">Tạo Ảnh</button>
-  </div>
-
-  <div class="tab-content" id="chat">
-    <div class="chat-box" id="chatBox"></div>
-    <div class="pending-preview" id="chatPreview"></div>
-    <div class="input-row">
-      <label class="icon-btn" for="chatFileInput" title="Tải ảnh hoặc file">📁</label>
-      <input type="file" id="chatFileInput" accept="image/*,.pdf,.txt,.docx" hidden />
-      <label class="icon-btn" id="chatCameraBtn" title="Chụp ảnh">📷</label>
-      <textarea id="chatInput" rows="1" placeholder="Nhập tin nhắn..."></textarea>
-      <button id="btnChat" class="send-btn" title="Gửi">
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="white" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12l14 7-7-7 7-7-14 7z"/>
-        </svg>
-      </button>
-    </div>
-  </div>
-
-  <div class="tab-content" id="math">
-    <div class="chat-box" id="mathBox"></div>
-    <div class="pending-preview" id="mathPreview"></div>
-    <div class="input-row">
-      <label class="icon-btn" for="mathFileInput" title="Tải ảnh hoặc file">📁</label>
-      <input type="file" id="mathFileInput" accept="image/*,.pdf,.txt,.docx" hidden />
-      <label class="icon-btn" id="mathCameraBtn" title="Chụp ảnh">📷</label>
-      <textarea id="mathPrompt" rows="1" placeholder="Nhập bài toán..."></textarea>
-      <button id="btnMath" class="send-btn" title="Giải">
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="white" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12l14 7-7-7 7-7-14 7z"/>
-        </svg>
-      </button>
-    </div>
-  </div>
-
-  <div class="tab-content" id="video">
-    <div class="chat-box" id="videoBox"></div>
-    <div class="pending-preview" id="videoPreview"></div>
-    <div class="input-row">
-      <label class="icon-btn" for="videoFileInput" title="Tải ảnh hoặc file">📁</label>
-      <input type="file" id="videoFileInput" accept="image/*" hidden />
-      <label class="icon-btn" id="videoCameraBtn" title="Chụp ảnh">📷</label>
-      <textarea id="videoPrompt" rows="1" placeholder="Nhập mô tả video..."></textarea>
-      <button id="btnVideo" class="send-btn" title="Tạo Video">
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="white" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12l14 7-7-7 7-7-14 7z"/>
-        </svg>
-      </button>
-    </div>
-  </div>
+  <div id="settings-btn">⚙️</div>
+  <div id="settings-modal">
+    <label class="block mb-2">Ngôn ngữ chat:</label>
+    <select id="language-select" class="w-full p-2 rounded bg-gray-800 text-white">
+      <option value="vi">Tiếng Việt</option>
+      <option value="en">English</option>
+      <option value="zh-CN">简体中文</option>
+    </select>
+  </div>
+ 
+  <div class="tabs">
+    <div class="tab-btn active" data-tab="image">🖼️ Tạo Ảnh</div>
+    <div class="tab-btn" data-tab="chat">💬 Chat</div>
+    <div class="tab-btn" data-tab="math">🧮 Giải Toán</div>
+    <div class="tab-btn" data-tab="video">🎞️ Tạo Video</div>
+  </div>
+ 
+  <div class="tab-content active" id="image">
+    <div class="chat-box" id="imageBox"></div>
+    <textarea id="imagePrompt" rows="2" placeholder="Nhập mô tả ảnh..."></textarea>
+    <button id="btnCreateImage" class="mt-2 w-full">Tạo Ảnh</button>
+  </div>
+ 
+  <div class="tab-content" id="chat">
+    <div class="chat-box" id="chatBox"></div>
+    <div class="pending-preview" id="chatPreview"></div>
+    <div class="input-row">
+      <label class="icon-btn" for="chatFileInput" title="Tải ảnh hoặc file">📁</label>
+      <input type="file" id="chatFileInput" accept="image/*,.pdf,.txt,.docx" hidden />
+      <label class="icon-btn" id="chatCameraBtn" title="Chụp ảnh">📷</label>
+      <textarea id="chatInput" rows="1" placeholder="Nhập tin nhắn..."></textarea>
+      <button id="btnChat" class="send-btn" title="Gửi">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="white" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12l14 7-7-7 7-7-14 7z"/>
+        </svg>
+      </button>
+    </div>
+  </div>
+ 
+  <div class="tab-content" id="math">
+    <div class="chat-box" id="mathBox"></div>
+    <div class="pending-preview" id="mathPreview"></div>
+    <div class="input-row">
+      <label class="icon-btn" for="mathFileInput" title="Tải ảnh hoặc file">📁</label>
+      <input type="file" id="mathFileInput" accept="image/*,.pdf,.txt,.docx" hidden />
+      <label class="icon-btn" id="mathCameraBtn" title="Chụp ảnh">📷</label>
+      <textarea id="mathPrompt" rows="1" placeholder="Nhập bài toán..."></textarea>
+      <button id="btnMath" class="send-btn" title="Giải">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="white" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12l14 7-7-7 7-7-14 7z"/>
+        </svg>
+      </button>
+    </div>
+  </div>
+ 
+  <div class="tab-content" id="video">
+    <div class="chat-box" id="videoBox"></div>
+    <div class="pending-preview" id="videoPreview"></div>
+    <div class="input-row">
+      <label class="icon-btn" for="videoFileInput" title="Tải ảnh hoặc file">📁</label>
+      <input type="file" id="videoFileInput" accept="image/*" hidden />
+      <label class="icon-btn" id="videoCameraBtn" title="Chụp ảnh">📷</label>
+      <textarea id="videoPrompt" rows="1" placeholder="Nhập mô tả video..."></textarea>
+      <button id="btnVideo" class="send-btn" title="Tạo Video">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="white" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12l14 7-7-7 7-7-14 7z"/>
+        </svg>
+      </button>
+    </div>
+  </div>
 </div>
-
+ 
 <script>
 // ============================================================
-// ⚙️ CÁC BIẾN TOÀN CỤC VÀ HÀM TIỆN ÍCH (Tối giản)
+// ⚙️ CÁC BIẾN TOÀN CỤC VÀ HÀM TIỆN ÍCH
 // ============================================================
 
 const API_BASE_URL = window.location.origin;
 
-let chatHistory = [];
-let currentAttachedImage = null;
-let currentPendingType = null; 
+let chatHistory = []; 
+let currentAttachedImage = null; 
 
 // Hàm chung để thêm tin nhắn người dùng
 function appendUserMessage(boxId, message, imageBase64 = null) {
@@ -197,8 +196,8 @@ function appendUserMessage(boxId, message, imageBase64 = null) {
         img.style.maxWidth = '100%';
         img.style.borderRadius = '8px';
         img.alt = 'Ảnh người dùng';
-        userImageBubble.appendChild(img);
         chatBox.appendChild(userImageBubble);
+        chatBox.appendChild(img);
     }
     
     if (message) {
@@ -240,17 +239,15 @@ function handleFileSelect(event, previewId, fileType) {
 
     if (fileType === 'image' && !file.type.startsWith('image/')) {
         alert("Chỉ chấp nhận file ảnh cho tác vụ này.");
-        event.target.value = null;
+        event.target.value = null; 
         return;
     }
 
     const reader = new FileReader();
     reader.onload = (e) => {
         currentAttachedImage = e.target.result;
-        currentPendingType = fileType;
-
         const previewDiv = document.getElementById(previewId);
-        previewDiv.innerHTML = `<img src="${currentAttachedImage}" alt="Preview" title="${file.name}">`;
+        if (previewDiv) previewDiv.innerHTML = `<img src="${currentAttachedImage}" alt="Preview" title="${file.name}">`;
     };
     reader.readAsDataURL(file);
 }
@@ -258,13 +255,12 @@ function handleFileSelect(event, previewId, fileType) {
 // Xóa file đính kèm
 function clearAttachment(previewId) {
     currentAttachedImage = null;
-    currentPendingType = null;
     const previewDiv = document.getElementById(previewId);
     if (previewDiv) previewDiv.innerHTML = '';
 }
 
 // ============================================================
-// 🖼️ HÀM TẠO ẢNH (Pollinations)
+// 🖼️ HÀM TẠO ẢNH (GỌI API)
 // ============================================================
 async function createImage() {
     const promptInput = document.getElementById('imagePrompt');
@@ -292,7 +288,7 @@ async function createImage() {
         if (response.ok && data.imageUrl) {
             const aiResponse = document.createElement('div');
             aiResponse.className = 'bubble ai-bubble';
-            aiResponse.innerHTML = `✅ Ảnh đã được tạo: <mark class="highlight">${prompt}</mark>.`;
+            aiResponse.innerHTML = `✅ Ảnh đã được tạo dựa trên: <mark class="highlight">${prompt}</mark>.`;
             chatBox.appendChild(aiResponse);
 
             const img = document.createElement('img');
@@ -313,7 +309,7 @@ async function createImage() {
 }
 
 // ============================================================
-// 💬🧮🎞️ HÀM GỬI CHUNG (Chat, Math, Video)
+// 💬🧮🎞️ HÀM GỬI CHUNG (Chat, Math, Video) (GỌI API)
 // ============================================================
 async function sendMessage(inputElementId, boxId, apiPath, isMath = false, isVideo = false) {
     const inputElement = document.getElementById(inputElementId);
@@ -332,7 +328,7 @@ async function sendMessage(inputElementId, boxId, apiPath, isMath = false, isVid
     appendUserMessage(boxId, message, imageBase64);
     
     // 2. Thêm pending message
-    let pendingText = isMath ? "Đang giải bài toán..." : isVideo ? "Đang tạo khung hình video..." : "AI đang trả lời...";
+    let pendingText = isMath ? "Đang giải bài toán..." : isVideo ? "Đang tạo chuyển động..." : "AI đang trả lời...";
     const pendingMsg = appendAIPendingMessage(boxId, pendingText);
     
     // 3. Reset input và attachment
@@ -340,12 +336,12 @@ async function sendMessage(inputElementId, boxId, apiPath, isMath = false, isVid
     const previewId = boxId.replace('Box', 'Preview');
     clearAttachment(previewId);
     
-    // Xây dựng payload (dùng field phù hợp với API Server)
+    // Xây dựng payload
     let payload = { 
         language: language,
         image: imageBase64,
-        prompt: message, 
-        question: message, 
+        prompt: message,
+        question: message,
         message: message,
         history: historyToUse
     };
@@ -365,7 +361,6 @@ async function sendMessage(inputElementId, boxId, apiPath, isMath = false, isVid
 
         if (response.ok) {
             
-            // Xử lý Tạo Video (nhận về mảng Base64 frames)
             if (isVideo && data.frames && data.frames.length > 0) {
                 const aiResponse = document.createElement('div');
                 aiResponse.className = 'bubble ai-bubble';
@@ -373,7 +368,7 @@ async function sendMessage(inputElementId, boxId, apiPath, isMath = false, isVid
                 chatBox.appendChild(aiResponse);
 
                 // Render GIF
-                const gifData = await renderGif(data.frames, 512, 512);
+                const gifData = await renderGif(data.frames, 512, 512); 
                 if (gifData) {
                     const videoElement = document.createElement('img');
                     videoElement.className = 'generated-video';
@@ -385,7 +380,6 @@ async function sendMessage(inputElementId, boxId, apiPath, isMath = false, isVid
                 }
             }
             
-            // Xử lý Chat và Math (nhận về response text)
             else if (data.response) {
                 let aiResponseText = data.response;
                 
@@ -399,13 +393,11 @@ async function sendMessage(inputElementId, boxId, apiPath, isMath = false, isVid
                 aiBubble.innerHTML = aiResponseText;
                 chatBox.appendChild(aiBubble);
 
-                // Lưu lịch sử nếu là tab Chat
                 if (!isMath && !isVideo) {
                     chatHistory.push({ role: 'user', text: message });
                     chatHistory.push({ role: 'assistant', text: aiResponseText });
                 }
 
-                // Render LaTeX nếu là tab Toán
                 if (isMath) {
                     MathJax.typesetPromise([chatBox]); 
                 }
@@ -475,17 +467,34 @@ function renderGif(frameDataUrls, width, height) {
 }
 
 
+// Hiệu ứng mở đầu
+function playIntro() {
+  const intro = document.getElementById("intro-screen");
+  const mainApp = document.getElementById("mainApp");
+ 
+  // Sau 6s ẩn intro và hiện app
+  setTimeout(() => {
+    intro.style.opacity = "0";
+    setTimeout(() => {
+      intro.style.display = "none";
+      mainApp.style.display = "block";
+      document.body.style.overflow = "auto";
+    }, 1800);
+  }, 6000);
+}
+playIntro();
+ 
 /* Tabs */
 const tabs=document.querySelectorAll(".tab-btn");
 const contents=document.querySelectorAll(".tab-content");
 tabs.forEach(tab=>tab.addEventListener("click",()=>{tabs.forEach(t=>t.classList.remove("active"));contents.forEach(c=>c.classList.remove("active"));tab.classList.add("active");document.getElementById(tab.dataset.tab).classList.add("active");
-    // Clear attachment khi chuyển tab
+    // Xóa file đính kèm khi chuyển tab
     clearAttachment('chatPreview');
     clearAttachment('mathPreview');
     clearAttachment('videoPreview');
 }));
 
-/* LẮNG NGHE SỰ KIỆN CÁC NÚT (Đây là phần chính cần thêm) */
+/* LẮNG NGHE SỰ KIỆN CÁC NÚT (PHẦN BỔ SUNG CHÍNH) */
 document.getElementById('btnCreateImage').addEventListener('click', createImage);
 document.getElementById('btnChat').addEventListener('click', () => sendMessage('chatInput', 'chatBox', '/api/chat'));
 document.getElementById('btnMath').addEventListener('click', () => sendMessage('mathPrompt', 'mathBox', '/api/math', true));
@@ -516,23 +525,6 @@ document.getElementById('settings-btn').addEventListener('click', () => {
     const modal = document.getElementById('settings-modal');
     modal.style.display = modal.style.display === 'block' ? 'none' : 'block';
 });
-
-// Hiệu ứng mở đầu
-function playIntro() {
-  const intro = document.getElementById("intro-screen");
-  const mainApp = document.getElementById("mainApp");
-
-  // Sau 6s ẩn intro và hiện app
-  setTimeout(() => {
-    intro.style.opacity = "0";
-    setTimeout(() => {
-      intro.style.display = "none";
-      mainApp.style.display = "block";
-      document.body.style.overflow = "auto";
-    }, 1800);
-  }, 6000);
-}
-playIntro();
 </script>
 </body>
 </html>

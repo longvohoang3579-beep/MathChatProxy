@@ -7,8 +7,38 @@
 <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet" />
 <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 <style>
-body { background-color:#0f0f13; color:#fff; font-family:'Segoe UI',sans-serif; margin:0; padding:0;}
-.container {max-width:900px;margin:2rem auto;background:#1a1c29;border-radius:1.5rem;padding:1.5rem;box-shadow:0 15px 30px rgba(0,0,0,0.7);}
+body {
+  background-color:#0f0f13; color:#fff; font-family:'Segoe UI',sans-serif;
+  margin:0; padding:0; overflow:hidden;
+}
+
+/* ---------- Intro ---------- */
+#intro-screen {
+  position: fixed;
+  top:0; left:0; width:100%; height:100vh;
+  background:black;
+  display:flex; align-items:center; justify-content:center;
+  flex-direction:column; z-index:1000;
+  transition:opacity 1.5s ease;
+}
+#intro-video {
+  position:absolute; top:0; left:0;
+  width:100%; height:100%; object-fit:cover; opacity:0.4;
+}
+#intro-text {
+  position:relative;
+  color:#facc15;
+  font-size:2rem; font-weight:bold;
+  text-shadow:0 0 15px rgba(255,255,150,0.8);
+  animation:fadeIn 2s ease-in-out;
+}
+@keyframes fadeIn {
+  from {opacity:0; transform:scale(0.9);}
+  to {opacity:1; transform:scale(1);}
+}
+
+/* ---------- Main Container ---------- */
+.container {max-width:900px;margin:2rem auto;background:#1a1c29;border-radius:1.5rem;padding:1.5rem;box-shadow:0 15px 30px rgba(0,0,0,0.7);display:none;}
 .tabs {display:flex;border-bottom:2px solid #333;margin-bottom:1rem;}
 .tab-btn {flex:1;text-align:center;padding:1rem;cursor:pointer;color:#aaa;font-weight:bold;transition:all 0.2s;}
 .tab-btn.active {color:#fff;border-bottom:3px solid #facc15;}
@@ -41,8 +71,18 @@ img.generated-image{border-radius:12px;max-width:100%;margin-top:1rem;}
 <script src="https://unpkg.com/gif.js@0.2.0/dist/gif.js"></script>
 <script src="https://unpkg.com/gif.js@0.2.0/dist/gif.worker.js"></script>
 </head>
+
 <body>
-<div class="container relative">
+<!-- INTRO -->
+<div id="intro-screen">
+  <video id="intro-video" autoplay muted playsinline>
+    <source src="https://cdn.pixabay.com/video/2022/10/25/136179-767617881_tiny.mp4" type="video/mp4" />
+  </video>
+  <div id="intro-text">✨ Welcome to <mark class="highlight">AI Assistant Pro</mark> ✨</div>
+</div>
+
+<!-- MAIN -->
+<div class="container relative" id="mainApp">
   <div id="settings-btn">⚙️</div>
   <div id="settings-modal">
     <label class="block mb-2">Ngôn ngữ chat:</label>
@@ -60,14 +100,12 @@ img.generated-image{border-radius:12px;max-width:100%;margin-top:1rem;}
     <div class="tab-btn" data-tab="video">🎞️ Tạo Video</div>
   </div>
 
-  <!-- Tạo Ảnh -->
   <div class="tab-content active" id="image">
     <div class="chat-box" id="imageBox"></div>
     <textarea id="imagePrompt" rows="2" placeholder="Nhập mô tả ảnh..."></textarea>
     <button id="btnCreateImage" class="mt-2 w-full">Tạo Ảnh</button>
   </div>
 
-  <!-- Chat -->
   <div class="tab-content" id="chat">
     <div class="chat-box" id="chatBox"></div>
     <div class="pending-preview" id="chatPreview"></div>
@@ -84,7 +122,6 @@ img.generated-image{border-radius:12px;max-width:100%;margin-top:1rem;}
     </div>
   </div>
 
-  <!-- Giải Toán -->
   <div class="tab-content" id="math">
     <div class="chat-box" id="mathBox"></div>
     <div class="pending-preview" id="mathPreview"></div>
@@ -101,7 +138,6 @@ img.generated-image{border-radius:12px;max-width:100%;margin-top:1rem;}
     </div>
   </div>
 
-  <!-- Tạo Video -->
   <div class="tab-content" id="video">
     <div class="chat-box" id="videoBox"></div>
     <div class="pending-preview" id="videoPreview"></div>
@@ -120,60 +156,41 @@ img.generated-image{border-radius:12px;max-width:100%;margin-top:1rem;}
 </div>
 
 <script>
-/* ---------- Tabs ---------- */
+function playIntro() {
+  const intro = document.getElementById("intro-screen");
+  const mainApp = document.getElementById("mainApp");
+
+  // Giọng nói nam huyền bí
+  const speak = new SpeechSynthesisUtterance("Welcome to AI Assistant Pro. Discover the power within you.");
+  speak.lang = "en-US";
+  speak.rate = 0.95;
+  speak.pitch = 0.8;
+  const voice = speechSynthesis.getVoices().find(v => v.lang.startsWith("en") && v.name.toLowerCase().includes("male"));
+  if (voice) speak.voice = voice;
+  speechSynthesis.speak(speak);
+
+  // Sau 6s ẩn intro và hiện app
+  setTimeout(() => {
+    intro.style.opacity = "0";
+    setTimeout(() => {
+      intro.style.display = "none";
+      mainApp.style.display = "block";
+      document.body.style.overflow = "auto";
+    }, 1500);
+  }, 6000);
+}
+
+// Giọng nói có thể chưa sẵn => đợi load voice xong
+if (speechSynthesis.getVoices().length === 0) {
+  speechSynthesis.onvoiceschanged = playIntro;
+} else {
+  playIntro();
+}
+
+/* Tabs */
 const tabs=document.querySelectorAll(".tab-btn");
 const contents=document.querySelectorAll(".tab-content");
-tabs.forEach(tab=>{tab.addEventListener("click",()=>{tabs.forEach(t=>t.classList.remove("active"));contents.forEach(c=>c.classList.remove("active"));tab.classList.add("active");document.getElementById(tab.dataset.tab).classList.add("active");});});
-
-/* ---------- Bubbles & Helpers ---------- */
-function addBubble(boxId,text,sender){const box=document.getElementById(boxId);const div=document.createElement("div");div.className=`bubble ${sender==="user"?"user-bubble":"ai-bubble"}`;div.innerHTML=text;box.appendChild(div);box.scrollTop=box.scrollHeight;}
-function updateLastAIBubble(boxId,text){const box=document.getElementById(boxId);const bubbles=box.getElementsByClassName("ai-bubble");if(bubbles.length>0){bubbles[bubbles.length-1].innerHTML=text;}box.scrollTop=box.scrollHeight;}
-function addBubbleWithFiles(boxId,text,files=[],sender='user'){const box=document.getElementById(boxId);const div=document.createElement("div");div.className=`bubble ${sender==='user'?'user-bubble':'ai-bubble'}`;files.forEach(f=>{if(f.type && f.type.startsWith("image/")){const img=document.createElement("img");img.src=URL.createObjectURL(f);img.style="max-width:120px;border-radius:6px;display:block;margin-bottom:6px;";div.appendChild(img);}else{const a=document.createElement("a");a.href=URL.createObjectURL(f);a.textContent=f.name;a.target="_blank";a.className="underline text-yellow-300 block mb-1";div.appendChild(a);}});div.append(text);box.appendChild(div);box.scrollTop=box.scrollHeight;}
-function renderPreview(id,files){const container=document.getElementById(id);container.innerHTML="";files.forEach(f=>{if(f.type && f.type.startsWith("image/")){const img=document.createElement("img");img.src=URL.createObjectURL(f);container.appendChild(img);}else{const span=document.createElement("span");span.textContent=f.name;container.appendChild(span);}})}
-function toBase64(file){return new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(reader.result);reader.onerror=e=>reject(e);reader.readAsDataURL(file);});}
-
-/* ---------- Settings / Language ---------- */
-let chatHistory=[];let currentLang=localStorage.getItem("geminiChatLanguage")||"vi";
-document.getElementById("language-select").value=currentLang;
-const settingsBtn=document.getElementById("settings-btn");const settingsModal=document.getElementById("settings-modal");
-settingsBtn.addEventListener("click",()=>{settingsModal.style.display=settingsModal.style.display==="none"?"block":"none";});
-document.addEventListener("click",(e)=>{if(!settingsModal.contains(e.target)&&!settingsBtn.contains(e.target)){settingsModal.style.display="none";}});
-document.getElementById("language-select").addEventListener("change",(e)=>{currentLang=e.target.value;localStorage.setItem("geminiChatLanguage",currentLang);chatHistory=[];document.getElementById("chatBox").innerHTML="";addBubble("chatBox", `Đã chuyển ngôn ngữ sang <mark class="highlight">${e.target.options[e.target.selectedIndex].text}</mark>. Vui lòng bắt đầu chat mới.`, "ai");});
-
-/* ---------- File inputs & camera placeholders ---------- */
-let chatPendingFiles=[], mathPendingFiles=[], videoPendingFiles=[];
-document.getElementById("chatFileInput").addEventListener("change",e=>{chatPendingFiles=[...e.target.files];renderPreview("chatPreview",chatPendingFiles);});
-document.getElementById("mathFileInput").addEventListener("change",e=>{mathPendingFiles=[...e.target.files];renderPreview("mathPreview",mathPendingFiles);});
-document.getElementById("videoFileInput").addEventListener("change",e=>{videoPendingFiles=[...e.target.files];renderPreview("videoPreview",videoPendingFiles);});
-document.getElementById("chatCameraBtn").addEventListener("click",()=>addBubble("chatBox","📷 Camera đang được phát triển","ai"));
-document.getElementById("mathCameraBtn").addEventListener("click",()=>addBubble("mathBox","📷 Camera đang được phát triển","ai"));
-document.getElementById("videoCameraBtn").addEventListener("click",()=>addBubble("videoBox","📷 Camera đang được phát triển","ai"));
-
-/* ---------- Welcome Message + AI Voice ---------- */
-window.addEventListener("DOMContentLoaded", () => {
-  // Hiển thị lời chào
-  addBubble("chatBox", "👋 <mark class='highlight'>Welcome to AI Assistant Pro!</mark> Here, you can do everything you want.", "ai");
-
-  // Phát giọng nói
-  const speakText = new SpeechSynthesisUtterance("Welcome to AI Assistant Pro! Here, you can do everything you want!");
-  speakText.lang = "en-US";
-  speakText.rate = 1;
-  speakText.pitch = 1.05;
-  speakText.volume = 1;
-
-  function speakNow() {
-    const voices = speechSynthesis.getVoices();
-    const voice = voices.find(v => v.lang.startsWith("en") && v.name.toLowerCase().includes("female"));
-    if (voice) speakText.voice = voice;
-    speechSynthesis.speak(speakText);
-  }
-
-  if (speechSynthesis.getVoices().length === 0) {
-    speechSynthesis.onvoiceschanged = speakNow;
-  } else {
-    speakNow();
-  }
-});
+tabs.forEach(tab=>tab.addEventListener("click",()=>{tabs.forEach(t=>t.classList.remove("active"));contents.forEach(c=>c.classList.remove("active"));tab.classList.add("active");document.getElementById(tab.dataset.tab).classList.add("active");}));
 </script>
 </body>
 </html>

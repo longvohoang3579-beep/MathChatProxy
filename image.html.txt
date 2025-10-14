@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Image Generator</title>
+<style>
+body { background: #111; color: #fff; font-family: sans-serif; margin: 0; }
+input, button { width: 90%; margin: 5px; padding: 8px; border-radius: 6px; border: none; }
+img { width: 100%; border-radius: 10px; margin-top: 10px; }
+</style>
+</head>
+<body>
+<h2>🎨 Image Generator</h2>
+<input id="prompt" placeholder="Enter image prompt..." />
+<button onclick="generate()">Generate</button>
+<div id="output"></div>
+<script>
+async function generate(){
+  const prompt = document.getElementById('prompt').value;
+  const res = await fetch('/api/pollinations-image',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({prompt})
+  });
+  const data = await res.json();
+  document.getElementById('output').innerHTML = `<img src="${data.imageUrl}" />`;
+}
+</script>
+</body>
+</html>

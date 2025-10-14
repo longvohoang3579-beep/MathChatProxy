@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Math Solver</title>
+<style>
+body { background: #111; color: #fff; font-family: sans-serif; margin: 0; }
+input, button { width: 90%; margin: 5px; padding: 8px; border-radius: 6px; border: none; }
+#result { margin: 10px; white-space: pre-wrap; }
+mark.highlight { background: yellow; }
+</style>
+</head>
+<body>
+<h2>🧮 Math Solver</h2>
+<input id="q" placeholder="Enter math question..." />
+<button onclick="solve()">Solve</button>
+<div id="result"></div>
+<script>
+async function solve(){
+  const q = document.getElementById('q').value;
+  const res = await fetch('/api/math', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ question: q })
+  });
+  const data = await res.json();
+  document.getElementById('result').innerHTML = data.response;
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Chat AI</title>
+<style>
+body { background: #111; color: #fff; font-family: sans-serif; margin: 0; }
+textarea, button { width: 90%; margin: 5px; padding: 8px; border-radius: 6px; border: none; }
+#output { margin: 10px; white-space: pre-wrap; }
+mark.highlight { background: yellow; }
+</style>
+</head>
+<body>
+<h2>💬 Chat Assistant</h2>
+<textarea id="msg" rows="3" placeholder="Enter message..."></textarea>
+<button onclick="send()">Send</button>
+<div id="output"></div>
+<script>
+async function send(){
+  const msg = document.getElementById('msg').value;
+  const res = await fetch('/api/chat', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ message: msg, language: 'en' })
+  });
+  const data = await res.json();
+  document.getElementById('output').innerHTML = data.response;
+}
+</script>
+</body>
+</html>

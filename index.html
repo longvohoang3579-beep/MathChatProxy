@@ -176,7 +176,7 @@ img.generated-image{border-radius:12px;max-width:100%;margin-top:1rem;}
  
 <script>
 // ============================================================
-// ⚙️ CÁC BIẾN TOÀN CỤC VÀ HÀM TIỆN ÍCH
+// ⚙️ CÁC BIẾN TOÀN CỤC VÀ HÀM TIỆN ÍCH (Chỉ để phục vụ logic nút ấn)
 // ============================================================
 
 const API_BASE_URL = window.location.origin;
@@ -184,7 +184,7 @@ const API_BASE_URL = window.location.origin;
 let chatHistory = []; 
 let currentAttachedImage = null; 
 
-// Hàm chung để thêm tin nhắn người dùng
+// Hàm chung để thêm tin nhắn người dùng (Cần thiết để người dùng thấy họ đã nhập gì)
 function appendUserMessage(boxId, message, imageBase64 = null) {
     const chatBox = document.getElementById(boxId);
     
@@ -210,7 +210,7 @@ function appendUserMessage(boxId, message, imageBase64 = null) {
     chatBox.scrollTop = chatBox.scrollHeight;
 }
 
-// Hàm chung để thêm tin nhắn đang chờ phản hồi
+// Hàm chung để thêm tin nhắn đang chờ phản hồi (Cần thiết để hiển thị loading)
 function appendAIPendingMessage(boxId, text = "AI đang xử lý...") {
     const chatBox = document.getElementById(boxId);
     const aiBubble = document.createElement('div');
@@ -260,7 +260,7 @@ function clearAttachment(previewId) {
 }
 
 // ============================================================
-// 🖼️ HÀM TẠO ẢNH (GỌI API)
+// 🖼️ HÀM TẠO ẢNH (CHỨC NĂNG NÚT TẠO ẢNH)
 // ============================================================
 async function createImage() {
     const promptInput = document.getElementById('imagePrompt');
@@ -288,7 +288,7 @@ async function createImage() {
         if (response.ok && data.imageUrl) {
             const aiResponse = document.createElement('div');
             aiResponse.className = 'bubble ai-bubble';
-            aiResponse.innerHTML = `✅ Ảnh đã được tạo dựa trên: <mark class="highlight">${prompt}</mark>.`;
+            aiResponse.innerHTML = `✅ Ảnh đã được tạo.`;
             chatBox.appendChild(aiResponse);
 
             const img = document.createElement('img');
@@ -309,7 +309,7 @@ async function createImage() {
 }
 
 // ============================================================
-// 💬🧮🎞️ HÀM GỬI CHUNG (Chat, Math, Video) (GỌI API)
+// 💬🧮🎞️ HÀM GỬI CHUNG (CHỨC NĂNG CÁC NÚT GỬI/GIẢI/TẠO VIDEO)
 // ============================================================
 async function sendMessage(inputElementId, boxId, apiPath, isMath = false, isVideo = false) {
     const inputElement = document.getElementById(inputElementId);
@@ -361,13 +361,14 @@ async function sendMessage(inputElementId, boxId, apiPath, isMath = false, isVid
 
         if (response.ok) {
             
+            // Xử lý tạo Video (tạo GIF từ frames)
             if (isVideo && data.frames && data.frames.length > 0) {
                 const aiResponse = document.createElement('div');
                 aiResponse.className = 'bubble ai-bubble';
                 aiResponse.innerHTML = `✅ Đã tải về ${data.frames.length} khung hình. Đang ghép GIF...`;
                 chatBox.appendChild(aiResponse);
-
-                // Render GIF
+                
+                // Hàm renderGif được gọi
                 const gifData = await renderGif(data.frames, 512, 512); 
                 if (gifData) {
                     const videoElement = document.createElement('img');
@@ -380,6 +381,7 @@ async function sendMessage(inputElementId, boxId, apiPath, isMath = false, isVid
                 }
             }
             
+            // Xử lý Chat và Math (dạng text)
             else if (data.response) {
                 let aiResponseText = data.response;
                 
@@ -399,6 +401,7 @@ async function sendMessage(inputElementId, boxId, apiPath, isMath = false, isVid
                 }
 
                 if (isMath) {
+                    // Gọi MathJax để render công thức toán
                     MathJax.typesetPromise([chatBox]); 
                 }
             }
@@ -411,14 +414,14 @@ async function sendMessage(inputElementId, boxId, apiPath, isMath = false, isVid
     } catch (error) {
         console.error(`Lỗi khi gọi API ${apiPath}:`, error);
         pendingMsg.remove();
-        document.getElementById(boxId).appendChild(createErrorBubble("❌ Lỗi kết nối đến Server. Vui lòng kiểm tra console server."));
+        document.getElementById(boxId).appendChild(createErrorBubble("❌ Lỗi kết nối đến Server."));
     }
     document.getElementById(boxId).scrollTop = document.getElementById(boxId).scrollHeight;
 }
 
 
 // ============================================================
-// 🎞️ HÀM RENDER GIF (Dùng gif.js)
+// 🎞️ HÀM RENDER GIF (Dùng gif.js) - Cần thiết cho Tạo Video
 // ============================================================
 function renderGif(frameDataUrls, width, height) {
     return new Promise((resolve) => {
@@ -514,8 +517,22 @@ document.querySelectorAll('textarea').forEach(textarea => {
     textarea.addEventListener('keypress', function(e) {
         if (e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault();
-            const btnId = 'btn' + this.id.replace('Input', '').replace('Prompt', '');
-            document.getElementById(btnId).click();
+            const tabId = document.querySelector('.tab-btn.active').dataset.tab;
+            let btnId;
+
+            if (tabId === 'image') {
+                btnId = 'btnCreateImage';
+            } else if (tabId === 'chat') {
+                btnId = 'btnChat';
+            } else if (tabId === 'math') {
+                btnId = 'btnMath';
+            } else if (tabId === 'video') {
+                btnId = 'btnVideo';
+            }
+
+            if (btnId) {
+                document.getElementById(btnId).click();
+            }
         }
     });
 });

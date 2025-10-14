@@ -1,203 +1,141 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>AI Assistant Pro</title>
-<link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet" />
-<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
-<style>
-body {
-  background-color:#0f0f13; color:#fff; font-family:'Segoe UI',sans-serif;
-  margin:0; padding:0; overflow:hidden;
-}
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MathChatProxy</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: "Poppins", sans-serif;
+      background-color: #000;
+      overflow: hidden;
+    }
 
-/* ---------- Intro ---------- */
-#intro-screen {
-  position: fixed;
-  top:0; left:0; width:100%; height:100vh;
-  background: radial-gradient(circle at center, #1a1c29 0%, #0a0a0a 80%);
-  overflow:hidden;
-  display:flex; align-items:center; justify-content:center;
-  flex-direction:column; z-index:1000;
-  transition:opacity 1.8s ease;
-}
-#intro-bg {
-  position:absolute; top:0; left:0; width:100%; height:100%;
-  background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.07) 0%, transparent 60%),
-              radial-gradient(circle at 70% 70%, rgba(255,255,255,0.05) 0%, transparent 60%),
-              radial-gradient(circle at 50% 100%, rgba(122, 255, 255, 0.08) 0%, transparent 70%);
-  animation: glowMove 10s ease-in-out infinite alternate;
-  filter: blur(50px);
-}
-@keyframes glowMove {
-  0% { transform: scale(1) translate(0, 0); }
-  100% { transform: scale(1.2) translate(20px, -20px); }
-}
-#intro-text {
-  position:relative;
-  color:#facc15;
-  font-size:2.3rem; font-weight:bold;
-  text-shadow:0 0 20px rgba(255, 255, 150, 0.8), 0 0 40px rgba(255,255,255,0.4);
-  animation: floatText 3s ease-in-out infinite alternate;
-}
-@keyframes floatText {
-  0% { transform: translateY(0); opacity:1; }
-  100% { transform: translateY(-10px); opacity:0.95; }
-}
-#intro-subtext {
-  color:#e0e7ff;
-  margin-top:1rem;
-  font-size:1.1rem;
-  opacity:0.85;
-  text-shadow:0 0 10px rgba(255,255,255,0.3);
-  animation: fadeIn 3s ease-in-out 1.5s forwards;
-  opacity:0;
-}
-@keyframes fadeIn {
-  from { opacity:0; }
-  to { opacity:1; }
-}
+    /* Intro */
+    #intro-screen {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%;
+      height: 100vh;
+      background: radial-gradient(circle at center, #001a33 0%, #000 90%);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+      animation: bgMove 6s infinite alternate ease-in-out;
+      z-index: 10000;
+    }
 
-/* ---------- Main Container ---------- */
-.container {max-width:900px;margin:2rem auto;background:#1a1c29;border-radius:1.5rem;padding:1.5rem;box-shadow:0 15px 30px rgba(0,0,0,0.7);display:none;}
-.tabs {display:flex;border-bottom:2px solid #333;margin-bottom:1rem;}
-.tab-btn {flex:1;text-align:center;padding:1rem;cursor:pointer;color:#aaa;font-weight:bold;transition:all 0.2s;}
-.tab-btn.active {color:#fff;border-bottom:3px solid #facc15;}
-.tab-content {display:none;}
-.tab-content.active {display:block;}
-.chat-box {background:#111827;border-radius:12px;padding:1rem;height:400px;overflow-y:auto;display:flex;flex-direction:column;}
-.bubble {max-width:80%;padding:10px 14px;border-radius:12px;margin-bottom:10px;line-height:1.5;word-wrap:break-word;white-space:pre-wrap;}
-.user-bubble {background:#2563eb;align-self:flex-end;color:white;border-bottom-right-radius:2px;}
-.ai-bubble {background:#374151;align-self:flex-start;color:#e5e7eb;border-bottom-left-radius:2px;}
-mark.highlight {background-color:#fde047;color:black;font-weight:bold;padding:0 3px;border-radius:3px;}
-textarea,input{width:100%;padding:0.75rem;border-radius:0.75rem;background:#1e1e2a;border:1px solid #333;color:white;resize:none;outline:none;}
-button{padding:0.75rem 1rem;border-radius:0.75rem;font-weight:bold;cursor:pointer;transition:all 0.2s;}
-#btnCreateImage{background:#10b981;color:#111827;}#btnCreateImage:hover{background:#059669;}
-#btnChat{background:#6366f1;color:white;}#btnChat:hover{background:#4f46e5;}
-#btnMath{background:#f59e0b;color:#111827;}#btnMath:hover{background:#d97706;}
-img.generated-image{border-radius:12px;max-width:100%;margin-top:1rem;}
-#settings-btn{position:absolute;top:1rem;right:1rem;font-size:1.5rem;cursor:pointer;color:#facc15;}
-#settings-modal{position:absolute;top:3rem;right:1rem;width:200px;background:#1a1c29;border:1px solid #facc15;border-radius:0.75rem;padding:1rem;display:none;}
-.pending-preview{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px;}
-.pending-preview img{width:60px;height:60px;object-fit:cover;border-radius:8px;border:2px solid #475569;}
-.input-row{display:flex;align-items:center;gap:6px;margin-top:8px;}
-.icon-btn{background:#27293a;padding:8px;border-radius:8px;cursor:pointer;transition:0.2s;}
-.icon-btn:hover{background:#3f4259;}
-.icon-btn svg{width:22px;height:22px;color:#facc15;}
-.send-btn{background:#6366f1;padding:10px;border-radius:50%;display:flex;align-items:center;justify-content:center;}
-.send-btn:hover{background:#4f46e5;}
-.send-btn svg{width:22px;height:22px;transform:rotate(0deg);}
-.generated-video{border-radius:12px;max-width:100%;margin-top:1rem;}
-</style>
-<script src="https://unpkg.com/gif.js@0.2.0/dist/gif.js"></script>
-<script src="https://unpkg.com/gif.js@0.2.0/dist/gif.worker.js"></script>
+    @keyframes bgMove {
+      0% { background: radial-gradient(circle at 30% 30%, #002b5c, #000); }
+      100% { background: radial-gradient(circle at 70% 70%, #003366, #000); }
+    }
+
+    .intro-text {
+      color: #00ffff;
+      font-size: 2em;
+      text-shadow: 0 0 15px #00ccff, 0 0 25px #0066ff;
+      text-align: center;
+      animation: fadeIn 3s ease-in-out;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    /* Giao diện chính */
+    #main-container {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      height: 100vh;
+      background: #0e0e0e;
+      position: relative;
+      z-index: 1;
+      pointer-events: auto;
+    }
+
+    .chat-frame {
+      width: 48%;
+      height: 48%;
+      margin: 1%;
+      border: 2px solid #333;
+      border-radius: 12px;
+      box-shadow: 0 0 12px rgba(0,255,255,0.2);
+      pointer-events: auto;
+    }
+
+    /* Nút "Bỏ qua intro" */
+    #skip-btn {
+      margin-top: 20px;
+      background: #00ffff33;
+      border: 1px solid #00ffff;
+      color: white;
+      padding: 10px 20px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+
+    #skip-btn:hover {
+      background: #00ffff66;
+    }
+  </style>
 </head>
-
 <body>
-<!-- INTRO -->
-<div id="intro-screen">
-  <div id="intro-bg"></div>
-  <div id="intro-text">🌌 Welcome to <mark class="highlight">AI Assistant Pro</mark> 🌌</div>
-  <div id="intro-subtext">Unleash the magic of creativity and intelligence.</div>
-</div>
-
-<!-- MAIN -->
-<div class="container relative" id="mainApp">
-  <div id="settings-btn">⚙️</div>
-  <div id="settings-modal">
-    <label class="block mb-2">Ngôn ngữ chat:</label>
-    <select id="language-select" class="w-full p-2 rounded bg-gray-800 text-white">
-      <option value="vi">Tiếng Việt</option>
-      <option value="en">English</option>
-      <option value="zh-CN">简体中文</option>
-    </select>
+  <!-- Màn hình Intro -->
+  <div id="intro-screen">
+    <div class="intro-overlay"></div>
+    <h1 class="intro-text">✨ Chào mừng bạn đến với Trí Tuệ Huyền Bí ✨</h1>
+    <button id="skip-btn">Bỏ qua intro</button>
   </div>
 
-  <div class="tabs">
-    <div class="tab-btn active" data-tab="image">🖼️ Tạo Ảnh</div>
-    <div class="tab-btn" data-tab="chat">💬 Chat</div>
-    <div class="tab-btn" data-tab="math">🧮 Giải Toán</div>
-    <div class="tab-btn" data-tab="video">🎞️ Tạo Video</div>
+  <!-- Giao diện chính -->
+  <div id="main-container" class="hidden">
+    <!-- 4 khung chat -->
+    <iframe src="chat.html" class="chat-frame" allow="microphone; camera"></iframe>
+    <iframe src="math.html" class="chat-frame"></iframe>
+    <iframe src="image.html" class="chat-frame"></iframe>
+    <iframe src="video.html" class="chat-frame"></iframe>
   </div>
 
-  <div class="tab-content active" id="image">
-    <div class="chat-box" id="imageBox"></div>
-    <textarea id="imagePrompt" rows="2" placeholder="Nhập mô tả ảnh..."></textarea>
-    <button id="btnCreateImage" class="mt-2 w-full">Tạo Ảnh</button>
-  </div>
+  <script>
+    // Phát giọng nam AI
+    function playWelcomeVoice() {
+      const utterance = new SpeechSynthesisUtterance(
+        "Chào mừng bạn đến với không gian trí tuệ huyền bí. Hãy bắt đầu khám phá!"
+      );
+      utterance.lang = "vi-VN";
+      utterance.pitch = 1;
+      utterance.rate = 1;
+      utterance.volume = 1;
+      utterance.voice = speechSynthesis.getVoices().find(v => v.name.toLowerCase().includes("nam")) || null;
+      speechSynthesis.speak(utterance);
+    }
 
-  <div class="tab-content" id="chat">
-    <div class="chat-box" id="chatBox"></div>
-    <div class="pending-preview" id="chatPreview"></div>
-    <div class="input-row">
-      <label class="icon-btn" for="chatFileInput" title="Tải ảnh hoặc file">📁</label>
-      <input type="file" id="chatFileInput" accept="image/*,.pdf,.txt,.docx" hidden />
-      <label class="icon-btn" id="chatCameraBtn" title="Chụp ảnh">📷</label>
-      <textarea id="chatInput" rows="1" placeholder="Nhập tin nhắn..."></textarea>
-      <button id="btnChat" class="send-btn" title="Gửi">
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="white" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12l14 7-7-7 7-7-14 7z"/>
-        </svg>
-      </button>
-    </div>
-  </div>
+    // Khi tải xong trang
+    window.addEventListener("load", () => {
+      playWelcomeVoice();
 
-  <div class="tab-content" id="math">
-    <div class="chat-box" id="mathBox"></div>
-    <div class="pending-preview" id="mathPreview"></div>
-    <div class="input-row">
-      <label class="icon-btn" for="mathFileInput" title="Tải ảnh hoặc file">📁</label>
-      <input type="file" id="mathFileInput" accept="image/*,.pdf,.txt,.docx" hidden />
-      <label class="icon-btn" id="mathCameraBtn" title="Chụp ảnh">📷</label>
-      <textarea id="mathPrompt" rows="1" placeholder="Nhập bài toán..."></textarea>
-      <button id="btnMath" class="send-btn" title="Giải">
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="white" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12l14 7-7-7 7-7-14 7z"/>
-        </svg>
-      </button>
-    </div>
-  </div>
+      // Sau 6 giây chuyển sang giao diện chính
+      const timer = setTimeout(() => {
+        document.getElementById("intro-screen").classList.add("hidden");
+        document.getElementById("main-container").classList.remove("hidden");
+      }, 6000);
 
-  <div class="tab-content" id="video">
-    <div class="chat-box" id="videoBox"></div>
-    <div class="pending-preview" id="videoPreview"></div>
-    <div class="input-row">
-      <label class="icon-btn" for="videoFileInput" title="Tải ảnh hoặc file">📁</label>
-      <input type="file" id="videoFileInput" accept="image/*" hidden />
-      <label class="icon-btn" id="videoCameraBtn" title="Chụp ảnh">📷</label>
-      <textarea id="videoPrompt" rows="1" placeholder="Nhập mô tả video..."></textarea>
-      <button id="btnVideo" class="send-btn" title="Tạo Video">
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="white" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12l14 7-7-7 7-7-14 7z"/>
-        </svg>
-      </button>
-    </div>
-  </div>
-</div>
-
-<script>
-// Hiệu ứng mở đầu
-function playIntro() {
-  const intro = document.getElementById("intro-screen");
-  const mainApp = document.getElementById("mainApp");
-
-  // Sau 6s ẩn intro và hiện app
-  setTimeout(() => {
-    intro.style.opacity = "0";
-    setTimeout(() => {
-      intro.style.display = "none";
-      mainApp.style.display = "block";
-      document.body.style.overflow = "auto";
-    }, 1800);
-  }, 6000);
-}
-playIntro();
-
-/* Tabs */
-const tabs=document.querySelectorAll(".tab-btn");
-const contents=document.querySelectorAll(".tab-content");
-tabs.forEach(tab=>tab.addEventListener("click",()=>{tabs.forEach(t=>t.classList.remove("active"));contents.forEach(c=>c.classList.remove("active"));tab.classList.add("active");document.getElementById(tab.dataset.tab).classList.add("active");}));
-</script>
+      // Nút bỏ qua intro
+      document.getElementById("skip-btn").addEventListener("click", () => {
+        clearTimeout(timer);
+        document.getElementById("intro-screen").classList.add("hidden");
+        document.getElementById("main-container").classList.remove("hidden");
+      });
+    });
+  </script>
 </body>
 </html>

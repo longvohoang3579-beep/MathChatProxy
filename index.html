@@ -7,9 +7,12 @@
 <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet" />
 <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 <style>
+/* Đảm bảo body có nền tối, tránh bị trắng bóc */
 body {
   background-color:#0f0f13; color:#fff; font-family:'Segoe UI',sans-serif;
-  margin:0; padding:0; overflow:hidden;
+  margin:0; padding:0; 
+  /* Sửa lỗi: Đặt overflow: hidden cho toàn bộ body trong thời gian intro */
+  overflow: hidden; 
 }
 
 /* ---------- Intro ---------- */
@@ -183,17 +186,22 @@ function playIntro() {
   const intro = document.getElementById("intro-screen");
   const mainApp = document.getElementById("mainApp");
 
+  // SỬA LỖI: Chắc chắn body có overflow: hidden khi intro đang chạy
+  document.body.style.overflow = "hidden"; 
+
   // Sau 6s ẩn intro và hiện app
   setTimeout(() => {
     intro.style.opacity = "0";
     setTimeout(() => {
       intro.style.display = "none";
       mainApp.style.display = "block";
-      document.body.style.overflow = "auto";
+      // SỬA LỖI: Chỉ mở lại overflow khi intro biến mất
+      document.body.style.overflow = "auto"; 
     }, 1800);
   }, 6000);
 }
-playIntro();
+// Chắc chắn hàm được gọi khi DOM đã sẵn sàng
+document.addEventListener('DOMContentLoaded', playIntro); 
 
 /* Tabs */
 const tabs=document.querySelectorAll(".tab-btn");
@@ -239,11 +247,10 @@ document.addEventListener('DOMContentLoaded', () => {
     // Thêm tin nhắn vào hộp chat
     function appendMessage(box, content, type) {
         const bubble = document.createElement('div');
-        // GIỮ NGUYÊN: Code tạo bubble gốc của bạn
         bubble.classList.add('bubble', type === 'user' ? 'user-bubble' : 'ai-bubble');
-        bubble.innerHTML = content; // Dùng innerHTML để render thẻ <mark> và <img>
+        bubble.innerHTML = content; 
         box.appendChild(bubble);
-        box.scrollTop = box.scrollHeight; // Tự động cuộn xuống
+        box.scrollTop = box.scrollHeight; 
         return bubble;
     }
 
@@ -302,7 +309,7 @@ document.addEventListener('DOMContentLoaded', () => {
         appendMessage(chatBox, message, 'user');
         const loadingBubble = showLoading(chatBox);
         chatInput.value = '';
-        chatPreview.innerHTML = ''; // Xóa preview
+        chatPreview.innerHTML = ''; 
         uploadedFiles.chat = null;
 
         try {
@@ -311,9 +318,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     message,
-                    image, // gửi ảnh base64 nếu có
+                    image, 
                     language: languageSelect.value,
-                    history: [] // Có thể thêm lịch sử chat sau
+                    history: [] 
                 }),
             });
             if (!response.ok) throw new Error('Lỗi từ server: ' + response.statusText);
@@ -327,7 +334,7 @@ document.addEventListener('DOMContentLoaded', () => {
     chatInput.addEventListener('keydown', (e) => { if(e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleChat(); } });
 
 
-    // 3. Giải toán (PHẦN ĐÃ SỬA ĐỂ KHẮC PHỤC LỖI HIỂN THỊ LATEX)
+    // 3. Giải toán (Đã sửa lỗi hiển thị LaTeX)
     async function handleMath() {
         const question = mathPrompt.value.trim();
         const image = uploadedFiles.math;
@@ -414,7 +421,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const imageElements = await Promise.all(imagePromises);
 
             imageElements.forEach(img => {
-                gif.addFrame(img, { delay: 100 }); // 100ms per frame
+                gif.addFrame(img, { delay: 100 }); 
             });
 
             gif.on('finished', function(blob) {

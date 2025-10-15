@@ -5,14 +5,24 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>AI Assistant Pro</title>
 <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet" />
+
+<script>
+  window.MathJax = {
+    tex: {
+      inlineMath: [['$', '$'], ['\\(', '\\)']]
+    },
+    svg: {
+      fontCache: 'global'
+    }
+  };
+</script>
 <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 <style>
+/* CSS của bạn không thay đổi, vẫn giữ nguyên */
 body {
   background-color:#0f0f13; color:#fff; font-family:'Segoe UI',sans-serif;
   margin:0; padding:0; overflow:hidden;
 }
-
-/* ---------- Intro ---------- */
 #intro-screen {
   position: fixed;
   top:0; left:0; width:100%; height:100vh;
@@ -58,8 +68,6 @@ body {
   from { opacity:0; }
   to { opacity:1; }
 }
-
-/* ---------- Main Container ---------- */
 .container {max-width:900px;margin:2rem auto;background:#1a1c29;border-radius:1.5rem;padding:1.5rem;box-shadow:0 15px 30px rgba(0,0,0,0.7);display:none;}
 .tabs {display:flex;border-bottom:2px solid #333;margin-bottom:1rem;}
 .tab-btn {flex:1;text-align:center;padding:1rem;cursor:pointer;color:#aaa;font-weight:bold;transition:all 0.2s;}
@@ -74,7 +82,7 @@ mark.highlight {background-color:#fde047;color:black;font-weight:bold;padding:0 
 textarea,input{width:100%;padding:0.75rem;border-radius:0.75rem;background:#1e1e2a;border:1px solid #333;color:white;resize:none;outline:none;}
 button{padding:0.75rem 1rem;border-radius:0.75rem;font-weight:bold;cursor:pointer;transition:all 0.2s; border: none;}
 #btnCreateImage{background:#10b981;color:#111827;}#btnCreateImage:hover{background:#059669;}
-.send-btn{background:#6366f1;color:white;} .send-btn:hover{background:#4f46e5;} /* Gộp chung cho các nút gửi */
+.send-btn{background:#6366f1;color:white;} .send-btn:hover{background:#4f46e5;}
 img.generated-image, .generated-video {border-radius:12px;max-width:100%;margin-top:1rem; display: block; max-height: 400px; margin-left: auto; margin-right: auto;}
 #settings-btn{position:absolute;top:1rem;right:1rem;font-size:1.5rem;cursor:pointer;color:#facc15;}
 #settings-modal{position:absolute;top:3rem;right:1rem;width:200px;background:#1a1c29;border:1px solid #facc15;border-radius:0.75rem;padding:1rem;display:none; z-index: 100;}
@@ -98,7 +106,6 @@ img.generated-image, .generated-video {border-radius:12px;max-width:100%;margin-
   <div id="intro-text">🌌 Welcome to <mark class="highlight">AI Assistant Pro</mark> 🌌</div>
   <div id="intro-subtext">Unleash the magic of creativity and intelligence.</div>
 </div>
-
 <div class="container relative" id="mainApp">
   <div id="settings-btn">⚙️</div>
   <div id="settings-modal">
@@ -109,20 +116,17 @@ img.generated-image, .generated-video {border-radius:12px;max-width:100%;margin-
       <option value="zh-CN">简体中文</option>
     </select>
   </div>
-
   <div class="tabs">
     <div class="tab-btn active" data-tab="image">🖼️ Tạo Ảnh</div>
     <div class="tab-btn" data-tab="chat">💬 Chat</div>
     <div class="tab-btn" data-tab="math">🧮 Giải Toán</div>
     <div class="tab-btn" data-tab="video">🎞️ Tạo Video</div>
   </div>
-
   <div class="tab-content active" id="image">
     <div class="chat-box" id="imageBox"></div>
     <textarea id="imagePrompt" rows="2" placeholder="Nhập mô tả ảnh..."></textarea>
     <button id="btnCreateImage" class="mt-2 w-full">Tạo Ảnh</button>
   </div>
-
   <div class="tab-content" id="chat">
     <div class="chat-box" id="chatBox"></div>
     <div class="pending-preview" id="chatPreview"></div>
@@ -137,7 +141,6 @@ img.generated-image, .generated-video {border-radius:12px;max-width:100%;margin-
       </button>
     </div>
   </div>
-
   <div class="tab-content" id="math">
     <div class="chat-box" id="mathBox"></div>
     <div class="pending-preview" id="mathPreview"></div>
@@ -152,12 +155,11 @@ img.generated-image, .generated-video {border-radius:12px;max-width:100%;margin-
       </button>
     </div>
   </div>
-
   <div class="tab-content" id="video">
     <div class="chat-box" id="videoBox"></div>
     <div class="pending-preview" id="videoPreview"></div>
     <div class="input-row">
-       <textarea id="videoPrompt" rows="1" placeholder="Nhập mô tả video..."></textarea>
+      <textarea id="videoPrompt" rows="1" placeholder="Nhập mô tả video..."></textarea>
       <button id="btnVideo" class="send-btn" title="Tạo Video">
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="white" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12l14 7-7-7 7-7-14 7z"/>
@@ -171,12 +173,9 @@ img.generated-image, .generated-video {border-radius:12px;max-width:100%;margin-
 // =======================================================
 // === MÃ GỐC CỦA BẠN (GIỮ NGUYÊN) ===
 // =======================================================
-// Hiệu ứng mở đầu
 function playIntro() {
   const intro = document.getElementById("intro-screen");
   const mainApp = document.getElementById("mainApp");
-
-  // Sau 6s ẩn intro và hiện app
   setTimeout(() => {
     intro.style.opacity = "0";
     setTimeout(() => {
@@ -188,14 +187,13 @@ function playIntro() {
 }
 playIntro();
 
-/* Tabs */
 const tabs=document.querySelectorAll(".tab-btn");
 const contents=document.querySelectorAll(".tab-content");
 tabs.forEach(tab=>tab.addEventListener("click",()=>{tabs.forEach(t=>t.classList.remove("active"));contents.forEach(c=>c.classList.remove("active"));tab.classList.add("active");document.getElementById(tab.dataset.tab).classList.add("active");}));
 
 
 // =======================================================
-// === START: MÃ BỔ SUNG ĐỂ FIX LỖI VÀ THÊM CHỨC NĂNG ===
+// === MÃ CHỨC NĂNG ĐÃ ĐƯỢC CẬP NHẬT VÀ SỬA LỖI ===
 // =======================================================
 document.addEventListener('DOMContentLoaded', () => {
 
@@ -203,52 +201,42 @@ document.addEventListener('DOMContentLoaded', () => {
     const imageBox = document.getElementById('imageBox');
     const imagePrompt = document.getElementById('imagePrompt');
     const btnCreateImage = document.getElementById('btnCreateImage');
-
     const chatBox = document.getElementById('chatBox');
     const chatInput = document.getElementById('chatInput');
     const btnChat = document.getElementById('btnChat');
     const chatFileInput = document.getElementById('chatFileInput');
     const chatPreview = document.getElementById('chatPreview');
-
     const mathBox = document.getElementById('mathBox');
     const mathPrompt = document.getElementById('mathPrompt');
     const btnMath = document.getElementById('btnMath');
     const mathFileInput = document.getElementById('mathFileInput');
     const mathPreview = document.getElementById('mathPreview');
-    
     const videoBox = document.getElementById('videoBox');
     const videoPrompt = document.getElementById('videoPrompt');
     const btnVideo = document.getElementById('btnVideo');
-
     const languageSelect = document.getElementById('language-select');
     const settingsBtn = document.getElementById('settings-btn');
     const settingsModal = document.getElementById('settings-modal');
     
-    // Lưu trữ ảnh đã upload (dưới dạng base64)
     let uploadedFiles = { chat: null, math: null };
 
     // === Hàm trợ giúp ===
-
-    // Thêm tin nhắn vào hộp chat
     function appendMessage(box, content, type) {
         const bubble = document.createElement('div');
         bubble.classList.add('bubble', type === 'user' ? 'user-bubble' : 'ai-bubble');
-        bubble.innerHTML = content; // Dùng innerHTML để render thẻ <mark> và <img>
+        bubble.innerHTML = content;
         box.appendChild(bubble);
-        box.scrollTop = box.scrollHeight; // Tự động cuộn xuống
+        box.scrollTop = box.scrollHeight;
         return bubble;
     }
 
-    // Hiển thị loading...
     function showLoading(box) {
         return appendMessage(box, 'Đang xử lý...', 'ai');
     }
 
-    // Xử lý file upload
     function handleFileUpload(event, type) {
         const file = event.target.files[0];
         if (!file) return;
-
         const reader = new FileReader();
         reader.onloadend = () => {
             uploadedFiles[type] = reader.result;
@@ -260,7 +248,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // === Gán sự kiện cho các nút ===
 
-    // 1. Tạo ảnh
+    // 1. Tạo ảnh (ĐÃ SỬA LỖI)
     btnCreateImage.addEventListener('click', async () => {
         const prompt = imagePrompt.value.trim();
         if (!prompt) return;
@@ -275,37 +263,55 @@ document.addEventListener('DOMContentLoaded', () => {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ prompt }),
             });
-
-            if (!response.ok) throw new Error('Lỗi từ server: ' + response.statusText);
+            if (!response.ok) throw new Error('Server returned an error: ' + response.statusText);
             
             const data = await response.json();
-            loadingBubble.innerHTML = `<img src="${data.imageUrl}" class="generated-image" alt="Generated Image">`;
+            if (!data.imageUrl) throw new Error('Image URL not found in response.');
+
+            // ---- START: Cải tiến xử lý ảnh ----
+            loadingBubble.textContent = 'Đã có link ảnh, đang tải...';
+            const img = new Image(); // Tạo một đối tượng ảnh trong bộ nhớ
+            img.src = data.imageUrl;
+            img.className = 'generated-image';
+            img.alt = prompt;
+
+            // Khi ảnh tải thành công
+            img.onload = () => {
+                loadingBubble.innerHTML = ''; // Xóa chữ "đang tải"
+                loadingBubble.appendChild(img); // Thêm ảnh vào bubble
+                imageBox.scrollTop = imageBox.scrollHeight;
+            };
+
+            // Khi ảnh tải thất bại
+            img.onerror = () => {
+                loadingBubble.textContent = `❌ Lỗi: Không thể tải ảnh từ link được cung cấp. Dịch vụ tạo ảnh có thể đang bận.`;
+            };
+            // ---- END: Cải tiến xử lý ảnh ----
+
         } catch (error) {
             loadingBubble.textContent = `❌ Lỗi: ${error.message}`;
         }
     });
 
-    // 2. Chat
+    // 2. Chat (Giữ nguyên)
     async function handleChat() {
         const message = chatInput.value.trim();
         const image = uploadedFiles.chat;
         if (!message && !image) return;
-
         appendMessage(chatBox, message, 'user');
         const loadingBubble = showLoading(chatBox);
         chatInput.value = '';
-        chatPreview.innerHTML = ''; // Xóa preview
+        chatPreview.innerHTML = '';
         uploadedFiles.chat = null;
-
         try {
             const response = await fetch('/api/chat', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     message,
-                    image, // gửi ảnh base64 nếu có
+                    image,
                     language: languageSelect.value,
-                    history: [] // Có thể thêm lịch sử chat sau
+                    history: []
                 }),
             });
             if (!response.ok) throw new Error('Lỗi từ server: ' + response.statusText);
@@ -319,7 +325,7 @@ document.addEventListener('DOMContentLoaded', () => {
     chatInput.addEventListener('keydown', (e) => { if(e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleChat(); } });
 
 
-    // 3. Giải toán
+    // 3. Giải toán (ĐÃ SỬA LỖI)
     async function handleMath() {
         const question = mathPrompt.value.trim();
         const image = uploadedFiles.math;
@@ -340,8 +346,10 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!response.ok) throw new Error('Lỗi từ server: ' + response.statusText);
             const data = await response.json();
             loadingBubble.innerHTML = data.response;
-            // Yêu cầu MathJax render lại công thức LaTeX
-            MathJax.typesetPromise([loadingBubble]);
+            
+            // Yêu cầu MathJax render lại công thức LaTeX trong bubble vừa được cập nhật
+            // Cấu hình mới ở <head> sẽ đảm bảo nó hoạt động đúng
+            MathJax.typesetPromise([loadingBubble]).catch(err => console.error('MathJax Typeset Error:', err));
         } catch (error) {
             loadingBubble.textContent = `❌ Lỗi: ${error.message}`;
         }
@@ -349,39 +357,26 @@ document.addEventListener('DOMContentLoaded', () => {
     btnMath.addEventListener('click', handleMath);
     mathPrompt.addEventListener('keydown', (e) => { if(e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleMath(); } });
 
-    // 4. Tạo Video (GIF)
+    // 4. Tạo Video (GIF) (Giữ nguyên)
     btnVideo.addEventListener('click', async () => {
         const prompt = videoPrompt.value.trim();
         if (!prompt) return;
-
         appendMessage(videoBox, prompt, 'user');
         const loadingBubble = showLoading(videoBox);
         videoPrompt.value = '';
-        
         try {
-            // Bước 1: Gọi API để lấy các khung hình
             loadingBubble.textContent = 'Đang tải các khung hình (bước 1/2)...';
             const frameResponse = await fetch('/api/pollinations-frames', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ prompt }),
             });
-
             if (!frameResponse.ok) throw new Error(`Lỗi tải khung hình: ${frameResponse.statusText}`);
             const { frames } = await frameResponse.json();
-
             if (!frames || frames.length === 0) throw new Error('Không nhận được khung hình nào.');
             
-            // Bước 2: Dùng gif.js để tạo GIF từ các khung hình
             loadingBubble.textContent = `Đang render video từ ${frames.length} khung hình (bước 2/2)...`;
-            
-            const gif = new GIF({
-                workers: 2,
-                quality: 10,
-                width: 512,
-                height: 512
-            });
-
+            const gif = new GIF({ workers: 2, quality: 10, width: 512, height: 512 });
             const imagePromises = frames.map(frameData => {
                 return new Promise(resolve => {
                     const img = new Image();
@@ -389,42 +384,31 @@ document.addEventListener('DOMContentLoaded', () => {
                     img.onload = () => resolve(img);
                 });
             });
-
             const imageElements = await Promise.all(imagePromises);
-
-            imageElements.forEach(img => {
-                gif.addFrame(img, { delay: 100 }); // 100ms per frame
-            });
-
+            imageElements.forEach(img => gif.addFrame(img, { delay: 100 }));
             gif.on('finished', function(blob) {
                 const videoUrl = URL.createObjectURL(blob);
                 loadingBubble.innerHTML = `<img src="${videoUrl}" class="generated-video" alt="Generated Video">`;
                 videoBox.scrollTop = videoBox.scrollHeight;
             });
-            
             gif.render();
-
         } catch (error) {
             loadingBubble.textContent = `❌ Lỗi: ${error.message}`;
         }
     });
 
-    // === Sự kiện khác ===
+    // === Sự kiện khác (Giữ nguyên) ===
     chatFileInput.addEventListener('change', (e) => handleFileUpload(e, 'chat'));
     mathFileInput.addEventListener('change', (e) => handleFileUpload(e, 'math'));
-
-    // Mở/đóng settings
     settingsBtn.addEventListener('click', () => {
         settingsModal.style.display = settingsModal.style.display === 'block' ? 'none' : 'block';
     });
-    // Đóng settings khi click ra ngoài
     document.addEventListener('click', (e) => {
         if (!settingsModal.contains(e.target) && !settingsBtn.contains(e.target)) {
             settingsModal.style.display = 'none';
         }
     });
 });
-// === END: MÃ BỔ SUNG ===
 </script>
 </body>
 </html>

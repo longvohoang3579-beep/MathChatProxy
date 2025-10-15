@@ -71,7 +71,7 @@ body {
 .user-bubble {background:#2563eb;align-self:flex-end;color:white;border-bottom-right-radius:2px;}
 .ai-bubble {background:#374151;align-self:flex-start;color:#e5e7eb;border-bottom-left-radius:2px;}
 
-/* CSS MỚI: Ẩn tạm thời bong bóng chat toán học trong khi MathJax đang render */
+/* CSS SỬA LỖI: Ẩn tạm thời bong bóng chat toán học trong khi MathJax đang render */
 .ai-bubble-mathjax-pending {
   visibility: hidden;
 }
@@ -142,6 +142,7 @@ img.generated-image, .generated-video {border-radius:12px;max-width:100%;margin-
         </svg>
       </button>
     </div>
+    
   </div>
 
   <div class="tab-content" id="math">
@@ -238,7 +239,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Thêm tin nhắn vào hộp chat
     function appendMessage(box, content, type) {
         const bubble = document.createElement('div');
-        // THAY ĐỔI: Không thêm class ẩn ở đây, chỉ thêm khi nhận kết quả toán học
+        // GIỮ NGUYÊN: Code tạo bubble gốc của bạn
         bubble.classList.add('bubble', type === 'user' ? 'user-bubble' : 'ai-bubble');
         bubble.innerHTML = content; // Dùng innerHTML để render thẻ <mark> và <img>
         box.appendChild(bubble);
@@ -326,7 +327,7 @@ document.addEventListener('DOMContentLoaded', () => {
     chatInput.addEventListener('keydown', (e) => { if(e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleChat(); } });
 
 
-    // 3. Giải toán
+    // 3. Giải toán (PHẦN ĐÃ SỬA ĐỂ KHẮC PHỤC LỖI HIỂN THỊ LATEX)
     async function handleMath() {
         const question = mathPrompt.value.trim();
         const image = uploadedFiles.math;
@@ -346,23 +347,24 @@ document.addEventListener('DOMContentLoaded', () => {
             });
             if (!response.ok) throw new Error('Lỗi từ server: ' + response.statusText);
             const data = await response.json();
-            
-            // THAY ĐỔI: Thêm logic ẩn/hiện để tránh thấy ký hiệu LaTeX $...$ và thẻ <mark> trước khi render
+            
+            // 1. Chèn nội dung thô (có $...$ và <mark>)
             loadingBubble.innerHTML = data.response;
-            
-            // 1. Thêm class ẩn
+            
+            // 2. Ẩn tạm thời để tránh thấy ký hiệu thô
             loadingBubble.classList.add('ai-bubble-mathjax-pending');
 
-            // 2. Yêu cầu MathJax render lại công thức LaTeX (sử dụng await để đảm bảo nó render xong)
+            // 3. Yêu cầu MathJax render lại (Bắt buộc phải dùng await)
             await MathJax.typesetPromise([loadingBubble]);
             
-            // 3. Sau khi render xong, loại bỏ class ẩn để hiển thị nội dung mượt mà
+            // 4. Hiển thị nội dung đã được render đẹp
             loadingBubble.classList.remove('ai-bubble-mathjax-pending');
 
 
         } catch (error) {
             loadingBubble.textContent = `❌ Lỗi: ${error.message}`;
-            loadingBubble.classList.remove('ai-bubble-mathjax-pending'); // Đảm bảo lỗi được hiển thị
+            // Đảm bảo lỗi vẫn được hiển thị nếu có
+            loadingBubble.classList.remove('ai-bubble-mathjax-pending'); 
         }
     }
     btnMath.addEventListener('click', handleMath);

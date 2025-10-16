@@ -13,7 +13,7 @@ body {
   margin:0; padding:0; overflow:hidden;
 }
 
-/* ---------- INTRO (RỒNG BAY PHƯỢNG MÚA) ---------- */
+/* ---------- INTRO: NỀN HUYỀN BÍ + RỒNG & PHƯỢNG BAY ---------- */
 #intro-screen {
   position: fixed;
   top:0; left:0; width:100%; height:100vh;
@@ -21,70 +21,88 @@ body {
   display:flex; align-items:center; justify-content:center;
   flex-direction:column; z-index:1000;
   transition:opacity 1.8s ease;
-  background: radial-gradient(circle at 50% 50%, #11131e 0%, #07080d 70%);
+  background: radial-gradient(circle at 50% 50%, #0a0b13 0%, #050609 80%);
 }
 
+/* Hiệu ứng nền ánh sáng chuyển động */
 #intro-bg {
   position:absolute; top:0; left:0; width:100%; height:100%;
-  overflow:hidden;
-  background: radial-gradient(circle at 30% 30%, rgba(0,255,255,0.05) 0%, transparent 60%),
-              radial-gradient(circle at 70% 70%, rgba(255,0,255,0.07) 0%, transparent 60%),
-              radial-gradient(circle at 50% 100%, rgba(255,200,0,0.06) 0%, transparent 70%);
-  filter: blur(50px);
-  animation: glowShift 12s ease-in-out infinite alternate;
+  background:
+    radial-gradient(circle at 20% 30%, rgba(0,255,255,0.1) 0%, transparent 60%),
+    radial-gradient(circle at 70% 70%, rgba(255,0,255,0.1) 0%, transparent 70%),
+    radial-gradient(circle at 50% 100%, rgba(255,200,0,0.1) 0%, transparent 80%);
+  animation: glowShift 14s ease-in-out infinite alternate;
+  filter: blur(60px);
 }
 @keyframes glowShift {
-  0% { transform: scale(1) translate(0,0); }
-  50% { transform: scale(1.2) translate(-20px,10px); }
-  100% { transform: scale(1.1) translate(20px,-20px); }
+  0% { transform: scale(1) translate(0,0); opacity:0.8; }
+  50% { transform: scale(1.3) translate(-30px,20px); opacity:1; }
+  100% { transform: scale(1.1) translate(30px,-20px); opacity:0.7; }
 }
 
-/* Hiệu ứng “rồng bay phượng múa” — các dải ánh sáng uốn lượn */
+/* ---------- RỒNG & PHƯỢNG (hiệu ứng ánh sáng uốn lượn bay) ---------- */
 .dragon, .phoenix {
   position:absolute;
-  width:300px; height:300px;
-  opacity:0.6;
-  filter: blur(20px);
-  background: conic-gradient(from 0deg, rgba(0,255,255,0.6), rgba(255,0,150,0.4), rgba(255,255,0,0.5), rgba(0,255,255,0.6));
+  width:350px; height:350px;
   border-radius:50%;
-  animation: swirl 10s linear infinite;
+  filter: blur(25px);
+  opacity:0.55;
+  mix-blend-mode:screen;
 }
-.dragon { top:20%; left:10%; animation-delay:-3s; mix-blend-mode:screen; }
-.phoenix { bottom:10%; right:10%; animation-delay:-6s; mix-blend-mode:screen; }
-@keyframes swirl {
-  0% { transform: rotate(0deg) scale(1); }
-  50% { transform: rotate(180deg) scale(1.2); }
-  100% { transform: rotate(360deg) scale(1); }
+.dragon {
+  background: conic-gradient(from 0deg, rgba(0,255,255,0.7), rgba(255,0,150,0.5), rgba(255,255,0,0.4), rgba(0,255,255,0.7));
+  animation: dragonFly 12s ease-in-out infinite alternate;
+  top:20%; left:10%;
+}
+.phoenix {
+  background: conic-gradient(from 90deg, rgba(255,100,0,0.6), rgba(255,0,150,0.4), rgba(255,255,255,0.3), rgba(255,100,0,0.6));
+  animation: phoenixFly 14s ease-in-out infinite alternate;
+  bottom:15%; right:15%;
+}
+@keyframes dragonFly {
+  0% { transform: translate(0,0) scale(1) rotate(0deg); }
+  25% { transform: translate(60px,40px) scale(1.2) rotate(45deg); }
+  50% { transform: translate(100px,-20px) scale(1) rotate(90deg); }
+  75% { transform: translate(-50px,-40px) scale(1.1) rotate(135deg); }
+  100% { transform: translate(0,0) scale(1) rotate(180deg); }
+}
+@keyframes phoenixFly {
+  0% { transform: translate(0,0) scale(1) rotate(0deg); }
+  25% { transform: translate(-60px,40px) scale(1.1) rotate(-45deg); }
+  50% { transform: translate(-120px,-30px) scale(1.25) rotate(-90deg); }
+  75% { transform: translate(40px,-50px) scale(1.1) rotate(-135deg); }
+  100% { transform: translate(0,0) scale(1) rotate(-180deg); }
 }
 
+/* ---------- TEXT ---------- */
 #intro-text {
   position:relative;
   color:#facc15;
-  font-size:2.3rem; font-weight:bold;
-  text-shadow:0 0 20px rgba(255,255,150,0.8), 0 0 40px rgba(255,255,255,0.4);
-  animation: floatText 3s ease-in-out infinite alternate;
+  font-size:2.5rem; font-weight:bold;
+  text-shadow:0 0 20px rgba(255,255,150,0.8), 0 0 40px rgba(255,255,255,0.5);
+  animation: fadeIn 3s ease-in-out;
 }
-@keyframes floatText {
-  0% { transform: translateY(0); opacity:1; }
-  100% { transform: translateY(-10px); opacity:0.95; }
-}
-
 #intro-subtext {
   color:#e0e7ff;
   margin-top:1rem;
   font-size:1.1rem;
-  opacity:0.85;
-  text-shadow:0 0 10px rgba(255,255,255,0.3);
-  animation: fadeIn 3s ease-in-out 1.5s forwards;
   opacity:0;
+  text-shadow:0 0 10px rgba(255,255,255,0.3);
+  animation: fadeInSub 4s ease-in-out 1s forwards;
 }
-@keyframes fadeIn {
-  from { opacity:0; }
-  to { opacity:1; }
-}
+@keyframes fadeIn { from{opacity:0;} to{opacity:1;} }
+@keyframes fadeInSub { to{opacity:1;} }
 
-/* ---------- MAIN UI (GIỮ NGUYÊN HOÀN TOÀN) ---------- */
-.container {max-width:900px;margin:2rem auto;background:#1a1c29;border-radius:1.5rem;padding:1.5rem;box-shadow:0 15px 30px rgba(0,0,0,0.7);display:none;}
+/* ---------- GIAO DIỆN 4 KHUNG CHAT (GIỮ NGUYÊN) ---------- */
+.container {
+  max-width:900px;
+  margin:2rem auto;
+  background:#1a1c29;
+  border-radius:1.5rem;
+  padding:1.5rem;
+  box-shadow:0 15px 30px rgba(0,0,0,0.7);
+  display:none;
+}
 .tabs {display:flex;border-bottom:2px solid #333;margin-bottom:1rem;}
 .tab-btn {flex:1;text-align:center;padding:1rem;cursor:pointer;color:#aaa;font-weight:bold;transition:all 0.2s;}
 .tab-btn.active {color:#fff;border-bottom:3px solid #facc15;}
@@ -100,17 +118,6 @@ button{padding:0.75rem 1rem;border-radius:0.75rem;font-weight:bold;cursor:pointe
 #btnCreateImage{background:#10b981;color:#111827;}#btnCreateImage:hover{background:#059669;}
 .send-btn{background:#6366f1;color:white;} .send-btn:hover{background:#4f46e5;}
 img.generated-image, .generated-video {border-radius:12px;max-width:100%;margin-top:1rem; display: block; max-height: 400px; margin-left: auto; margin-right: auto;}
-#settings-btn{position:absolute;top:1rem;right:1rem;font-size:1.5rem;cursor:pointer;color:#facc15;}
-#settings-modal{position:absolute;top:3rem;right:1rem;width:200px;background:#1a1c29;border:1px solid #facc15;border-radius:0.75rem;padding:1rem;display:none; z-index: 100;}
-.pending-preview{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px;}
-.pending-preview img{width:60px;height:60px;object-fit:cover;border-radius:8px;border:2px solid #475569;}
-.input-row{display:flex;align-items:center;gap:6px;margin-top:8px;}
-.icon-btn{background:#27293a;padding:8px;border-radius:8px;cursor:pointer;transition:0.2s;}
-.icon-btn:hover{background:#3f4259;}
-.icon-btn svg{width:22px;height:22px;color:#facc15;}
-.send-btn{background:#6366f1;padding:10px;border-radius:50%;display:flex;align-items:center;justify-content:center;}
-.send-btn:hover{background:#4f46e5;}
-.send-btn svg{width:22px;height:22px;transform:rotate(0deg);}
 </style>
 </head>
 
@@ -124,9 +131,9 @@ img.generated-image, .generated-video {border-radius:12px;max-width:100%;margin-
   <div id="intro-subtext">Unleash the magic of creativity and intelligence.</div>
 </div>
 
-<!-- GIỮ NGUYÊN TOÀN BỘ PHẦN GIAO DIỆN 4 KHUNG CHAT DƯỚI -->
-<div class="container relative" id="mainApp">
-  <!-- ... PHẦN CÒN LẠI GIỮ NGUYÊN NHƯ BẠN GỬI ... -->
+<!-- GIỮ NGUYÊN TOÀN BỘ GIAO DIỆN 4 KHUNG CHAT -->
+<div class="container" id="mainApp">
+  <!-- Toàn bộ phần chat, toán, ảnh, video... bạn đã có sẵn -->
 </div>
 
 <script>
@@ -140,7 +147,7 @@ function playIntro() {
       mainApp.style.display = "block";
       document.body.style.overflow = "auto";
     }, 1800);
-  }, 6000);
+  }, 6000); // 6s intro
 }
 playIntro();
 </script>

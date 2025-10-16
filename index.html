@@ -1,155 +1,134 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>AI Assistant Pro</title>
-<link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet" />
-<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+  <meta charset="UTF-8">
+  <title>AI Assistant Pro - 4 Chat Frames</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      padding: 0;
+      height: 100vh;
+      background: radial-gradient(circle at center, #0b0b0b, #000);
+      overflow: hidden;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      grid-template-rows: 1fr 1fr;
+      gap: 12px;
+      padding: 12px;
+      font-family: 'Poppins', sans-serif;
+    }
+    .chat-box {
+      background: rgba(255, 255, 255, 0.08);
+      border: 2px solid gold;
+      border-radius: 16px;
+      padding: 12px;
+      color: #fff;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 0 20px rgba(255,215,0,0.3);
+    }
+    .chat-box h2 {
+      text-align: center;
+      color: gold;
+      margin-top: 0;
+    }
 
-<style>
-body {
-  background-color:#0f0f13; color:#fff; font-family:'Segoe UI',sans-serif;
-  margin:0; padding:0; overflow:hidden;
-}
+    /* Intro Canvas */
+    #introCanvas {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100vw; height: 100vh;
+      z-index: 999;
+      pointer-events: none;
+      background: linear-gradient(180deg, #000, #111);
+      animation: fadeOut 8s ease-in-out forwards;
+    }
 
-/* ---------- INTRO: NỀN HUYỀN BÍ + RỒNG & PHƯỢNG BAY ---------- */
-#intro-screen {
-  position: fixed;
-  top:0; left:0; width:100%; height:100vh;
-  overflow:hidden;
-  display:flex; align-items:center; justify-content:center;
-  flex-direction:column; z-index:1000;
-  transition:opacity 1.8s ease;
-  background: radial-gradient(circle at 50% 50%, #0a0b13 0%, #050609 80%);
-}
-
-/* Hiệu ứng nền ánh sáng chuyển động */
-#intro-bg {
-  position:absolute; top:0; left:0; width:100%; height:100%;
-  background:
-    radial-gradient(circle at 20% 30%, rgba(0,255,255,0.1) 0%, transparent 60%),
-    radial-gradient(circle at 70% 70%, rgba(255,0,255,0.1) 0%, transparent 70%),
-    radial-gradient(circle at 50% 100%, rgba(255,200,0,0.1) 0%, transparent 80%);
-  animation: glowShift 14s ease-in-out infinite alternate;
-  filter: blur(60px);
-}
-@keyframes glowShift {
-  0% { transform: scale(1) translate(0,0); opacity:0.8; }
-  50% { transform: scale(1.3) translate(-30px,20px); opacity:1; }
-  100% { transform: scale(1.1) translate(30px,-20px); opacity:0.7; }
-}
-
-/* ---------- RỒNG & PHƯỢNG (hiệu ứng ánh sáng uốn lượn bay) ---------- */
-.dragon, .phoenix {
-  position:absolute;
-  width:350px; height:350px;
-  border-radius:50%;
-  filter: blur(25px);
-  opacity:0.55;
-  mix-blend-mode:screen;
-}
-.dragon {
-  background: conic-gradient(from 0deg, rgba(0,255,255,0.7), rgba(255,0,150,0.5), rgba(255,255,0,0.4), rgba(0,255,255,0.7));
-  animation: dragonFly 12s ease-in-out infinite alternate;
-  top:20%; left:10%;
-}
-.phoenix {
-  background: conic-gradient(from 90deg, rgba(255,100,0,0.6), rgba(255,0,150,0.4), rgba(255,255,255,0.3), rgba(255,100,0,0.6));
-  animation: phoenixFly 14s ease-in-out infinite alternate;
-  bottom:15%; right:15%;
-}
-@keyframes dragonFly {
-  0% { transform: translate(0,0) scale(1) rotate(0deg); }
-  25% { transform: translate(60px,40px) scale(1.2) rotate(45deg); }
-  50% { transform: translate(100px,-20px) scale(1) rotate(90deg); }
-  75% { transform: translate(-50px,-40px) scale(1.1) rotate(135deg); }
-  100% { transform: translate(0,0) scale(1) rotate(180deg); }
-}
-@keyframes phoenixFly {
-  0% { transform: translate(0,0) scale(1) rotate(0deg); }
-  25% { transform: translate(-60px,40px) scale(1.1) rotate(-45deg); }
-  50% { transform: translate(-120px,-30px) scale(1.25) rotate(-90deg); }
-  75% { transform: translate(40px,-50px) scale(1.1) rotate(-135deg); }
-  100% { transform: translate(0,0) scale(1) rotate(-180deg); }
-}
-
-/* ---------- TEXT ---------- */
-#intro-text {
-  position:relative;
-  color:#facc15;
-  font-size:2.5rem; font-weight:bold;
-  text-shadow:0 0 20px rgba(255,255,150,0.8), 0 0 40px rgba(255,255,255,0.5);
-  animation: fadeIn 3s ease-in-out;
-}
-#intro-subtext {
-  color:#e0e7ff;
-  margin-top:1rem;
-  font-size:1.1rem;
-  opacity:0;
-  text-shadow:0 0 10px rgba(255,255,255,0.3);
-  animation: fadeInSub 4s ease-in-out 1s forwards;
-}
-@keyframes fadeIn { from{opacity:0;} to{opacity:1;} }
-@keyframes fadeInSub { to{opacity:1;} }
-
-/* ---------- GIAO DIỆN 4 KHUNG CHAT (GIỮ NGUYÊN) ---------- */
-.container {
-  max-width:900px;
-  margin:2rem auto;
-  background:#1a1c29;
-  border-radius:1.5rem;
-  padding:1.5rem;
-  box-shadow:0 15px 30px rgba(0,0,0,0.7);
-  display:none;
-}
-.tabs {display:flex;border-bottom:2px solid #333;margin-bottom:1rem;}
-.tab-btn {flex:1;text-align:center;padding:1rem;cursor:pointer;color:#aaa;font-weight:bold;transition:all 0.2s;}
-.tab-btn.active {color:#fff;border-bottom:3px solid #facc15;}
-.tab-content {display:none;}
-.tab-content.active {display:block;}
-.chat-box {background:#111827;border-radius:12px;padding:1rem;height:400px;overflow-y:auto;display:flex;flex-direction:column; scroll-behavior: smooth;}
-.bubble {max-width:80%;padding:10px 14px;border-radius:12px;margin-bottom:10px;line-height:1.5;word-wrap:break-word;white-space:pre-wrap;}
-.user-bubble {background:#2563eb;align-self:flex-end;color:white;border-bottom-right-radius:2px;}
-.ai-bubble {background:#374151;align-self:flex-start;color:#e5e7eb;border-bottom-left-radius:2px;}
-mark.highlight {background-color:#fde047;color:black;font-weight:bold;padding:0 3px;border-radius:3px;}
-textarea,input{width:100%;padding:0.75rem;border-radius:0.75rem;background:#1e1e2a;border:1px solid #333;color:white;resize:none;outline:none;}
-button{padding:0.75rem 1rem;border-radius:0.75rem;font-weight:bold;cursor:pointer;transition:all 0.2s; border: none;}
-#btnCreateImage{background:#10b981;color:#111827;}#btnCreateImage:hover{background:#059669;}
-.send-btn{background:#6366f1;color:white;} .send-btn:hover{background:#4f46e5;}
-img.generated-image, .generated-video {border-radius:12px;max-width:100%;margin-top:1rem; display: block; max-height: 400px; margin-left: auto; margin-right: auto;}
-</style>
+    @keyframes fadeOut {
+      0%,70% { opacity: 1; }
+      100% { opacity: 0; display: none; }
+    }
+  </style>
 </head>
-
 <body>
-<!-- INTRO -->
-<div id="intro-screen">
-  <div id="intro-bg"></div>
-  <div class="dragon"></div>
-  <div class="phoenix"></div>
-  <div id="intro-text">🌌 Welcome to <mark class="highlight">AI Assistant Pro</mark> 🌌</div>
-  <div id="intro-subtext">Unleash the magic of creativity and intelligence.</div>
-</div>
 
-<!-- GIỮ NGUYÊN TOÀN BỘ GIAO DIỆN 4 KHUNG CHAT -->
-<div class="container" id="mainApp">
-  <!-- Toàn bộ phần chat, toán, ảnh, video... bạn đã có sẵn -->
-</div>
+  <!-- Canvas hiệu ứng rồng phượng -->
+  <canvas id="introCanvas"></canvas>
 
-<script>
-function playIntro() {
-  const intro = document.getElementById("intro-screen");
-  const mainApp = document.getElementById("mainApp");
-  setTimeout(() => {
-    intro.style.opacity = "0";
-    setTimeout(() => {
-      intro.style.display = "none";
-      mainApp.style.display = "block";
-      document.body.style.overflow = "auto";
-    }, 1800);
-  }, 6000); // 6s intro
-}
-playIntro();
-</script>
+  <!-- 4 khung chat -->
+  <div class="chat-box"><h2>💬 Chat</h2></div>
+  <div class="chat-box"><h2>🧮 Giải Toán</h2></div>
+  <div class="chat-box"><h2>🎨 Tạo Ảnh</h2></div>
+  <div class="chat-box"><h2>📘 Giải Chi Tiết</h2></div>
+
+  <script>
+    const canvas = document.getElementById('introCanvas');
+    const ctx = canvas.getContext('2d');
+    canvas.width = innerWidth;
+    canvas.height = innerHeight;
+
+    class Spirit {
+      constructor(x, y, color, type) {
+        this.x = x;
+        this.y = y;
+        this.type = type; // 'dragon' hoặc 'phoenix'
+        this.angle = Math.random() * Math.PI * 2;
+        this.radius = 80 + Math.random() * 50;
+        this.speed = 0.01 + Math.random() * 0.02;
+        this.color = color;
+        this.size = 20 + Math.random() * 20;
+      }
+      update() {
+        this.angle += this.speed;
+        this.x += Math.cos(this.angle) * 2;
+        this.y += Math.sin(this.angle) * 2;
+        if (this.x < -100) this.x = innerWidth + 100;
+        if (this.x > innerWidth + 100) this.x = -100;
+        if (this.y < -100) this.y = innerHeight + 100;
+        if (this.y > innerHeight + 100) this.y = -100;
+      }
+      draw() {
+        ctx.save();
+        ctx.translate(this.x, this.y);
+        ctx.rotate(this.angle);
+        const gradient = ctx.createLinearGradient(-this.size, 0, this.size, 0);
+        if (this.type === 'dragon') {
+          gradient.addColorStop(0, '#00b3ff');
+          gradient.addColorStop(1, '#0040ff');
+        } else {
+          gradient.addColorStop(0, '#ffb300');
+          gradient.addColorStop(1, '#ff0055');
+        }
+        ctx.fillStyle = gradient;
+        ctx.beginPath();
+        ctx.moveTo(-this.size, 0);
+        ctx.quadraticCurveTo(0, -this.size/2, this.size, 0);
+        ctx.quadraticCurveTo(0, this.size/2, -this.size, 0);
+        ctx.fill();
+        ctx.shadowColor = this.type === 'dragon' ? '#00ffff' : '#ff6600';
+        ctx.shadowBlur = 20;
+        ctx.beginPath();
+        ctx.arc(this.size, 0, this.size/3, 0, Math.PI*2);
+        ctx.fill();
+        ctx.restore();
+      }
+    }
+
+    const spirits = [];
+    for (let i = 0; i < 8; i++) {
+      spirits.push(new Spirit(Math.random()*innerWidth, Math.random()*innerHeight, 'gold', i%2 ? 'dragon' : 'phoenix'));
+    }
+
+    function animate() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      for (const s of spirits) {
+        s.update();
+        s.draw();
+      }
+      requestAnimationFrame(animate);
+    }
+    animate();
+  </script>
 </body>
 </html>

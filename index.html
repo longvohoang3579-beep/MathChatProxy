@@ -1,206 +1,198 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>AI Assistant Pro</title>
 <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet" />
 <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
-
 <style>
 body {
-  margin:0;
-  background:#0b0b0b;
-  color:white;
-  font-family:'Segoe UI',sans-serif;
-  overflow:hidden;
+  background-color:#0f0f13; color:#fff; font-family:'Segoe UI',sans-serif;
+  margin:0; padding:0; overflow:hidden;
 }
 
-/* --- INTRO --- */
+/* ========== INTRO ========== */
 #intro-screen {
-  position:fixed; top:0; left:0; width:100%; height:100%;
-  background: radial-gradient(circle at 50% 50%, #111 0%, #000 100%);
-  overflow:hidden; display:flex; align-items:center; justify-content:center;
+  position: fixed;
+  top:0; left:0; width:100%; height:100vh;
+  background: radial-gradient(circle at center, #1a1c29 0%, #000 90%);
+  overflow:hidden;
+  display:flex; align-items:center; justify-content:center;
   flex-direction:column; z-index:1000;
-  transition:opacity 1.5s ease;
+  transition:opacity 1.8s ease;
 }
-
-.dragon, .phoenix {
-  position:absolute; width:320px; height:320px;
-  background: radial-gradient(circle at 30% 30%, rgba(255,215,0,0.9), rgba(255,100,0,0.4) 60%, transparent 100%);
-  border-radius:50%;
-  filter: blur(18px);
-  opacity:0.7;
-  animation: fly 8s ease-in-out infinite;
+#intro-bg {
+  position:absolute; top:0; left:0; width:100%; height:100%;
+  background: radial-gradient(circle at 20% 30%, rgba(255,215,0,0.12) 0%, transparent 60%),
+              radial-gradient(circle at 80% 70%, rgba(255,255,200,0.08) 0%, transparent 60%),
+              radial-gradient(circle at 50% 100%, rgba(255,230,120,0.1) 0%, transparent 80%);
+  animation: glowMove 10s ease-in-out infinite alternate;
+  filter: blur(60px);
 }
-.dragon { left:-15%; top:10%; animation-delay:0s; }
-.phoenix { right:-15%; bottom:10%; animation-delay:3s; }
-
-@keyframes fly {
-  0% { transform:translate(0,0) scale(1); }
-  25% { transform:translate(200px,50px) scale(1.2); }
-  50% { transform:translate(0,100px) scale(0.9); }
-  75% { transform:translate(-200px,50px) scale(1.1); }
-  100% { transform:translate(0,0) scale(1); }
+@keyframes glowMove {
+  0% { transform: scale(1) translate(0, 0); }
+  100% { transform: scale(1.2) translate(25px, -25px); }
 }
-
-.spark {
-  position:absolute; width:6px; height:6px;
-  background: radial-gradient(circle, #fff 0%, rgba(255,255,0,0) 70%);
-  border-radius:50%;
-  opacity:0.8;
-  animation: sparkle 2.5s linear infinite;
-}
-@keyframes sparkle {
-  0% { transform:translateY(0) scale(0.8); opacity:1; }
-  100% { transform:translateY(-80px) scale(0); opacity:0; }
-}
-
 #intro-text {
   position:relative;
-  font-size:2.5rem;
-  color:#ffd700;
-  text-shadow:0 0 25px #ffea80, 0 0 45px #ffaa00;
+  color:#facc15;
+  font-size:2.6rem; font-weight:800; letter-spacing:1px;
+  text-shadow:0 0 25px rgba(255,215,0,0.9), 0 0 50px rgba(255,255,150,0.7);
   animation: floatText 3s ease-in-out infinite alternate;
 }
 @keyframes floatText {
-  0% { transform:translateY(0); }
-  100% { transform:translateY(-10px); }
+  0% { transform: translateY(0); opacity:1; }
+  100% { transform: translateY(-10px); opacity:0.95; }
 }
-
 #intro-subtext {
-  color:#fff8dc;
-  margin-top:0.5rem;
-  opacity:0.8;
-  animation: fadeIn 3s ease forwards 2s;
+  color:#f5f3c4;
+  margin-top:1rem;
+  font-size:1.2rem;
+  opacity:0.85;
+  text-shadow:0 0 15px rgba(255,255,180,0.4);
+  animation: fadeIn 3s ease-in-out 1.5s forwards;
+  opacity:0;
 }
-@keyframes fadeIn { from{opacity:0;} to{opacity:1;} }
+@keyframes fadeIn {
+  from { opacity:0; }
+  to { opacity:1; }
+}
 
-#burst {
-  position:absolute;
-  width:100%; height:100%;
-  background: radial-gradient(circle, rgba(255,230,150,0.8), transparent 70%);
-  opacity:0; transition:opacity 0.7s ease;
-}
-
-/* --- MAIN APP --- */
-.container {
-  max-width:900px; margin:2rem auto;
-  background:#1a1c29; border-radius:1.5rem;
-  padding:1.5rem; box-shadow:0 15px 30px rgba(0,0,0,0.7);
-  display:none;
-}
+/* ========== 4 KHUNG CHAT GỐC ========== */
+.container {max-width:900px;margin:2rem auto;background:#1a1c29;border-radius:1.5rem;padding:1.5rem;box-shadow:0 15px 30px rgba(0,0,0,0.7);display:none;}
 .tabs {display:flex;border-bottom:2px solid #333;margin-bottom:1rem;}
 .tab-btn {flex:1;text-align:center;padding:1rem;cursor:pointer;color:#aaa;font-weight:bold;transition:all 0.2s;}
 .tab-btn.active {color:#fff;border-bottom:3px solid #facc15;}
 .tab-content {display:none;}
 .tab-content.active {display:block;}
-.chat-box {background:#111827;border-radius:12px;padding:1rem;height:400px;overflow-y:auto;display:flex;flex-direction:column;}
-.bubble {max-width:80%;padding:10px 14px;border-radius:12px;margin-bottom:10px;line-height:1.5;white-space:pre-wrap;}
+.chat-box {background:#111827;border-radius:12px;padding:1rem;height:400px;overflow-y:auto;display:flex;flex-direction:column; scroll-behavior: smooth;}
+.bubble {max-width:80%;padding:10px 14px;border-radius:12px;margin-bottom:10px;line-height:1.5;word-wrap:break-word;white-space:pre-wrap;}
 .user-bubble {background:#2563eb;align-self:flex-end;color:white;border-bottom-right-radius:2px;}
 .ai-bubble {background:#374151;align-self:flex-start;color:#e5e7eb;border-bottom-left-radius:2px;}
 mark.highlight {background-color:#fde047;color:black;font-weight:bold;padding:0 3px;border-radius:3px;}
 textarea,input{width:100%;padding:0.75rem;border-radius:0.75rem;background:#1e1e2a;border:1px solid #333;color:white;resize:none;outline:none;}
-button{padding:0.75rem 1rem;border-radius:0.75rem;font-weight:bold;cursor:pointer;transition:all 0.2s; border:none;}
-.send-btn{background:#6366f1;color:white;}
-.send-btn:hover{background:#4f46e5;}
+button{padding:0.75rem 1rem;border-radius:0.75rem;font-weight:bold;cursor:pointer;transition:all 0.2s; border: none;}
+#btnCreateImage{background:#10b981;color:#111827;}#btnCreateImage:hover{background:#059669;}
+.send-btn{background:#6366f1;color:white;} .send-btn:hover{background:#4f46e5;}
+img.generated-image, .generated-video {border-radius:12px;max-width:100%;margin-top:1rem; display: block; max-height: 400px; margin-left: auto; margin-right: auto;}
+#settings-btn{position:absolute;top:1rem;right:1rem;font-size:1.5rem;cursor:pointer;color:#facc15;}
+#settings-modal{position:absolute;top:3rem;right:1rem;width:200px;background:#1a1c29;border:1px solid #facc15;border-radius:0.75rem;padding:1rem;display:none; z-index: 100;}
+.pending-preview{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px;}
+.pending-preview img{width:60px;height:60px;object-fit:cover;border-radius:8px;border:2px solid #475569;}
+.input-row{display:flex;align-items:center;gap:6px;margin-top:8px;}
+.icon-btn{background:#27293a;padding:8px;border-radius:8px;cursor:pointer;transition:0.2s;}
+.icon-btn:hover{background:#3f4259;}
+.icon-btn svg{width:22px;height:22px;color:#facc15;}
+.send-btn svg{width:22px;height:22px;}
 </style>
+<script src="https://unpkg.com/gif.js@0.2.0/dist/gif.js"></script>
+<script src="https://unpkg.com/gif.js@0.2.0/dist/gif.worker.js"></script>
 </head>
 
 <body>
+
 <!-- INTRO -->
 <div id="intro-screen">
-  <div id="burst"></div>
-  <div class="dragon"></div>
-  <div class="phoenix"></div>
-  <div id="intro-text">🐉 <mark class="highlight">AI Assistant Pro</mark> 🦅</div>
-  <div id="intro-subtext">Ignite your imagination — Powered by intelligence and art.</div>
+  <div id="intro-bg"></div>
+  <div id="intro-text">✨ Welcome to <mark class="highlight">AI Assistant Pro</mark> ✨</div>
+  <div id="intro-subtext">Where <b>Creativity</b> meets <b>Intelligence</b>.</div>
 </div>
 
-<!-- MAIN UI -->
-<div class="container" id="mainApp">
+<!-- APP -->
+<div class="container relative" id="mainApp">
+  <div id="settings-btn">⚙️</div>
+  <div id="settings-modal">
+    <label class="block mb-2">Ngôn ngữ chat:</label>
+    <select id="language-select" class="w-full p-2 rounded bg-gray-800 text-white">
+      <option value="vi">Tiếng Việt</option>
+      <option value="en">English</option>
+      <option value="zh-CN">简体中文</option>
+    </select>
+  </div>
+
   <div class="tabs">
-    <div class="tab-btn active" data-tab="chat">💬 Chat</div>
-    <div class="tab-btn" data-tab="math">📘 Giải Toán</div>
-    <div class="tab-btn" data-tab="image">🎨 Tạo Ảnh</div>
-    <div class="tab-btn" data-tab="video">🎥 Video</div>
+    <div class="tab-btn active" data-tab="image">🖼️ Tạo Ảnh</div>
+    <div class="tab-btn" data-tab="chat">💬 Chat</div>
+    <div class="tab-btn" data-tab="math">🧮 Giải Toán</div>
+    <div class="tab-btn" data-tab="video">🎞️ Tạo Video</div>
   </div>
 
-  <div id="chat" class="tab-content active">
-    <div class="chat-box" id="chatBox"></div>
-    <div class="mt-3 flex gap-2">
-      <textarea id="chatInput" placeholder="Nhập tin nhắn..."></textarea>
-      <button class="send-btn" onclick="sendChat()">Gửi</button>
-    </div>
-  </div>
-
-  <div id="math" class="tab-content">
-    <div class="chat-box" id="mathBox"></div>
-    <div class="mt-3 flex gap-2">
-      <textarea id="mathInput" placeholder="Nhập bài toán..."></textarea>
-      <button class="send-btn" onclick="sendMath()">Giải</button>
-    </div>
-  </div>
-
-  <div id="image" class="tab-content">
+  <div class="tab-content active" id="image">
     <div class="chat-box" id="imageBox"></div>
-    <div class="mt-3 flex gap-2">
-      <textarea id="imageInput" placeholder="Mô tả hình ảnh..."></textarea>
-      <button class="send-btn" onclick="createImage()">Tạo</button>
+    <textarea id="imagePrompt" rows="2" placeholder="Nhập mô tả ảnh..."></textarea>
+    <button id="btnCreateImage" class="mt-2 w-full">Tạo Ảnh</button>
+  </div>
+
+  <div class="tab-content" id="chat">
+    <div class="chat-box" id="chatBox"></div>
+    <div class="pending-preview" id="chatPreview"></div>
+    <div class="input-row">
+      <label class="icon-btn" for="chatFileInput">📁</label>
+      <input type="file" id="chatFileInput" accept="image/*" hidden />
+      <textarea id="chatInput" rows="1" placeholder="Nhập tin nhắn..."></textarea>
+      <button id="btnChat" class="send-btn">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="white" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12l14 7-7-7 7-7-14 7z"/>
+        </svg>
+      </button>
     </div>
   </div>
 
-  <div id="video" class="tab-content">
+  <div class="tab-content" id="math">
+    <div class="chat-box" id="mathBox"></div>
+    <div class="pending-preview" id="mathPreview"></div>
+    <div class="input-row">
+      <label class="icon-btn" for="mathFileInput">📁</label>
+      <input type="file" id="mathFileInput" accept="image/*" hidden />
+      <textarea id="mathPrompt" rows="1" placeholder="Nhập bài toán..."></textarea>
+      <button id="btnMath" class="send-btn">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="white" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12l14 7-7-7 7-7-14 7z"/>
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <div class="tab-content" id="video">
     <div class="chat-box" id="videoBox"></div>
-    <div class="mt-3 flex gap-2">
-      <textarea id="videoInput" placeholder="Mô tả video..."></textarea>
-      <button class="send-btn" onclick="createVideo()">Tạo</button>
+    <div class="pending-preview" id="videoPreview"></div>
+    <div class="input-row">
+      <textarea id="videoPrompt" rows="1" placeholder="Nhập mô tả video..."></textarea>
+      <button id="btnVideo" class="send-btn">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="white" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12l14 7-7-7 7-7-14 7z"/>
+        </svg>
+      </button>
     </div>
   </div>
 </div>
 
 <script>
-// --- Intro Animation ---
+// ===== Intro Transition =====
 function playIntro() {
   const intro = document.getElementById("intro-screen");
   const mainApp = document.getElementById("mainApp");
-  const burst = document.getElementById("burst");
-
-  // tạo spark bay ngẫu nhiên
-  for (let i=0;i<60;i++){
-    const s=document.createElement("div");
-    s.className="spark";
-    s.style.left=Math.random()*100+"%";
-    s.style.bottom=Math.random()*100+"px";
-    s.style.animationDelay=(Math.random()*2)+"s";
-    intro.appendChild(s);
-  }
-
-  setTimeout(()=>{
-    burst.style.opacity="1";
-    setTimeout(()=>{
-      intro.style.opacity="0";
-      setTimeout(()=>{
-        intro.style.display="none";
-        mainApp.style.display="block";
-        document.body.style.overflow="auto";
-      },1500);
-    },700);
-  },7000); // 7 giây
+  setTimeout(() => {
+    intro.style.opacity = "0";
+    setTimeout(() => {
+      intro.style.display = "none";
+      mainApp.style.display = "block";
+      document.body.style.overflow = "auto";
+    }, 1800);
+  }, 6000);
 }
 playIntro();
 
-// --- Tab Switching ---
-const tabBtns = document.querySelectorAll(".tab-btn");
-const tabContents = document.querySelectorAll(".tab-content");
-tabBtns.forEach(btn=>{
-  btn.addEventListener("click",()=>{
-    tabBtns.forEach(b=>b.classList.remove("active"));
-    tabContents.forEach(c=>c.classList.remove("active"));
-    btn.classList.add("active");
-    document.getElementById(btn.dataset.tab).classList.add("active");
-  });
-});
+// ===== Tabs =====
+const tabs = document.querySelectorAll(".tab-btn");
+const contents = document.querySelectorAll(".tab-content");
+tabs.forEach(tab => tab.addEventListener("click", () => {
+  tabs.forEach(t => t.classList.remove("active"));
+  contents.forEach(c => c.classList.remove("active"));
+  tab.classList.add("active");
+  document.getElementById(tab.dataset.tab).classList.add("active");
+}));
 </script>
 </body>
 </html>

@@ -8,258 +8,619 @@
 <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 
 <style>
+/* ================= GLOBAL ================= */
 body {
-  margin: 0;
-  padding: 0;
-  background-color: #0f0f13;
-  color: #fff;
-  font-family: 'Segoe UI', sans-serif;
-  overflow: hidden;
+  background-color:#0f0f13; color:#fff; font-family:'Segoe UI',sans-serif;
+  margin:0; padding:0; overflow:hidden;
 }
 
-/* ===== INTRO - Canvas rồng phượng ánh kim ===== */
+/* ================ INTRO ================ */
 #intro-screen {
   position: fixed;
-  top: 0; left: 0;
-  width: 100%; height: 100vh;
-  background: radial-gradient(circle at 50% 50%, #000000 0%, #1a1300 100%);
-  display: flex; align-items: center; justify-content: center;
-  flex-direction: column;
-  z-index: 1000;
-  overflow: hidden;
+  inset: 0;
+  background: #050405;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  flex-direction:column;
+  z-index:2000;
+  transition:opacity 1s ease;
+  overflow:hidden;
 }
 
+/* canvas covers whole intro */
 #intro-canvas {
-  position: absolute;
-  top: 0; left: 0;
-  width: 100%; height: 100%;
-  z-index: 1;
+  position:absolute; inset:0; width:100%; height:100%; display:block;
+}
+
+/* center contents */
+#intro-content {
+  position:relative;
+  z-index:2010;
+  text-align:center;
+  pointer-events:none;
 }
 
 #intro-text {
-  position: relative;
-  color: #facc15;
-  font-size: 2.6rem;
-  font-weight: bold;
-  text-shadow: 0 0 25px #facc15, 0 0 50px #ffcc33;
-  z-index: 2;
-  animation: floatText 3s ease-in-out infinite alternate;
+  color:#ffd24d;
+  font-size:2.6rem;
+  font-weight:800;
+  letter-spacing:0.6px;
+  text-shadow: 0 0 16px rgba(255,215,0,0.85), 0 0 36px rgba(255,140,0,0.55);
+  margin-bottom:0.6rem;
+  transform:translateY(0);
+  animation: introFloat 3s ease-in-out infinite alternate;
 }
-
-@keyframes floatText {
-  from { transform: translateY(0); opacity: 1; }
-  to { transform: translateY(-8px); opacity: 0.9; }
-}
+@keyframes introFloat { 0% { transform: translateY(0);} 100% { transform: translateY(-8px);} }
 
 #intro-subtext {
-  color: #fff8dc;
-  margin-top: 0.5rem;
-  font-size: 1.1rem;
-  opacity: 0.85;
-  text-shadow: 0 0 15px rgba(255,255,200,0.4);
-  z-index: 2;
-  animation: fadeIn 3s ease-in-out 1.5s forwards;
-  opacity: 0;
-}
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  color:#ffeecf;
+  opacity:0.9;
+  text-shadow:0 0 10px rgba(255,230,180,0.3);
+  font-size:1rem;
+  pointer-events:none;
+  margin-top:6px;
 }
 
-/* Burst vàng khi kết thúc intro */
-#burst {
-  position: absolute;
-  top: 0; left: 0;
-  width: 100%; height: 100%;
-  background: radial-gradient(circle at center, rgba(255,215,0,1) 0%, rgba(255,215,0,0.5) 40%, transparent 80%);
-  opacity: 0;
-  z-index: 5;
-  pointer-events: none;
-  transition: opacity 1.2s ease-out;
+/* burst overlay (yellow flash) */
+#intro-burst {
+  position:absolute; inset:0; z-index:2020; pointer-events:none;
+  background: radial-gradient(circle at 50% 40%, rgba(255,230,140,0.95), rgba(255,200,80,0.7) 20%, rgba(255,120,40,0.25) 45%, transparent 60%);
+  opacity:0;
+  transition: opacity 0.7s ease;
+  mix-blend-mode:screen;
 }
 
-/* ===== MAIN APP (4 KHUNG CHAT GỐC) ===== */
+/* subtle metallic particles (in front) */
+.intro-spark {
+  position:absolute; width:6px; height:6px; border-radius:50%;
+  pointer-events:none;
+  box-shadow:0 0 8px rgba(255,210,120,0.9), 0 0 18px rgba(255,140,40,0.6);
+  opacity:0.95;
+  transform: translate(-50%,-50%);
+}
+
+/* ============== MAIN UI (UNCHANGED) ============== */
 .container {max-width:900px;margin:2rem auto;background:#1a1c29;border-radius:1.5rem;padding:1.5rem;box-shadow:0 15px 30px rgba(0,0,0,0.7);display:none;}
 .tabs {display:flex;border-bottom:2px solid #333;margin-bottom:1rem;}
 .tab-btn {flex:1;text-align:center;padding:1rem;cursor:pointer;color:#aaa;font-weight:bold;transition:all 0.2s;}
 .tab-btn.active {color:#fff;border-bottom:3px solid #facc15;}
 .tab-content {display:none;}
 .tab-content.active {display:block;}
-.chat-box {background:#111827;border-radius:12px;padding:1rem;height:400px;overflow-y:auto;display:flex;flex-direction:column;scroll-behavior:smooth;}
+.chat-box {background:#111827;border-radius:12px;padding:1rem;height:400px;overflow-y:auto;display:flex;flex-direction:column; scroll-behavior: smooth;}
 .bubble {max-width:80%;padding:10px 14px;border-radius:12px;margin-bottom:10px;line-height:1.5;word-wrap:break-word;white-space:pre-wrap;}
 .user-bubble {background:#2563eb;align-self:flex-end;color:white;border-bottom-right-radius:2px;}
 .ai-bubble {background:#374151;align-self:flex-start;color:#e5e7eb;border-bottom-left-radius:2px;}
 mark.highlight {background-color:#fde047;color:black;font-weight:bold;padding:0 3px;border-radius:3px;}
 textarea,input{width:100%;padding:0.75rem;border-radius:0.75rem;background:#1e1e2a;border:1px solid #333;color:white;resize:none;outline:none;}
-button{padding:0.75rem 1rem;border-radius:0.75rem;font-weight:bold;cursor:pointer;transition:all 0.2s;border:none;}
+button{padding:0.75rem 1rem;border-radius:0.75rem;font-weight:bold;cursor:pointer;transition:all 0.2s; border: none;}
 #btnCreateImage{background:#10b981;color:#111827;}#btnCreateImage:hover{background:#059669;}
 .send-btn{background:#6366f1;color:white;} .send-btn:hover{background:#4f46e5;}
-img.generated-image, .generated-video {border-radius:12px;max-width:100%;margin-top:1rem;display:block;max-height:400px;margin-left:auto;margin-right:auto;}
+img.generated-image, .generated-video {border-radius:12px;max-width:100%;margin-top:1rem; display:block; max-height:400px; margin-left:auto; margin-right:auto;}
+#settings-btn{position:absolute;top:1rem;right:1rem;font-size:1.5rem;cursor:pointer;color:#facc15;}
+#settings-modal{position:absolute;top:3rem;right:1rem;width:200px;background:#1a1c29;border:1px solid #facc15;border-radius:0.75rem;padding:1rem;display:none; z-index:100;}
+.pending-preview{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px;}
+.pending-preview img{width:60px;height:60px;object-fit:cover;border-radius:8px;border:2px solid #475569;}
+.input-row{display:flex;align-items:center;gap:6px;margin-top:8px;}
+.icon-btn{background:#27293a;padding:8px;border-radius:8px;cursor:pointer;transition:0.2s;}
+.icon-btn:hover{background:#3f4259;}
+.icon-btn svg{width:22px;height:22px;color:#facc15;}
+.send-btn{background:#6366f1;padding:10px;border-radius:50%;display:flex;align-items:center;justify-content:center;}
+.send-btn:hover{background:#4f46e5;}
+.send-btn svg{width:22px;height:22px;transform:rotate(0deg);}
+
+/* small responsive tweaks */
+@media (max-width:640px){
+  #intro-text { font-size:1.6rem; }
+  .container { margin:1rem; }
+}
 </style>
 </head>
-
 <body>
-<!-- INTRO -->
-<div id="intro-screen">
+
+<!-- ========== INTRO ========== -->
+<div id="intro-screen" aria-hidden="false">
   <canvas id="intro-canvas"></canvas>
-  <div id="burst"></div>
-  <div id="intro-text">🐉 <mark class="highlight">AI Assistant Pro</mark> 🕊️</div>
-  <div id="intro-subtext">Unleash the golden power of intelligence.</div>
+
+  <!-- center content -->
+  <div id="intro-content">
+    <div id="intro-text">🌌 Welcome to <mark class="highlight">AI Assistant Pro</mark> 🌌</div>
+    <div id="intro-subtext">Unleash the magic of creativity and intelligence.</div>
+  </div>
+
+  <!-- burst overlay -->
+  <div id="intro-burst"></div>
 </div>
 
-<!-- 4 KHUNG CHAT GỐC -->
-<div class="container" id="mainApp">
+<!-- ========== MAIN APP (kept original UI) ========== -->
+<div class="container relative" id="mainApp" aria-hidden="true">
+  <div id="settings-btn">⚙️</div>
+  <div id="settings-modal">
+    <label class="block mb-2">Ngôn ngữ chat:</label>
+    <select id="language-select" class="w-full p-2 rounded bg-gray-800 text-white">
+      <option value="vi">Tiếng Việt</option>
+      <option value="en">English</option>
+      <option value="zh-CN">简体中文</option>
+    </select>
+  </div>
+
   <div class="tabs">
-    <div class="tab-btn active" data-tab="chat">💬 Chat</div>
+    <div class="tab-btn active" data-tab="image">🖼️ Tạo Ảnh</div>
+    <div class="tab-btn" data-tab="chat">💬 Chat</div>
     <div class="tab-btn" data-tab="math">🧮 Giải Toán</div>
-    <div class="tab-btn" data-tab="image">🎨 Tạo Ảnh</div>
-    <div class="tab-btn" data-tab="video">🎬 Tạo Video</div>
+    <div class="tab-btn" data-tab="video">🎞️ Tạo Video</div>
   </div>
 
-  <div id="chat" class="tab-content active">
-    <div class="chat-box" id="chatBox"></div>
-    <div class="input-row">
-      <textarea id="chatInput" rows="2" placeholder="Nhập tin nhắn..."></textarea>
-      <button class="send-btn" onclick="sendMessage('chat')">➤</button>
-    </div>
-  </div>
-
-  <div id="math" class="tab-content">
-    <div class="chat-box" id="mathBox"></div>
-    <div class="input-row">
-      <textarea id="mathInput" rows="2" placeholder="Nhập bài toán..."></textarea>
-      <button class="send-btn" onclick="sendMessage('math')">➤</button>
-    </div>
-  </div>
-
-  <div id="image" class="tab-content">
+  <div class="tab-content active" id="image">
     <div class="chat-box" id="imageBox"></div>
+    <textarea id="imagePrompt" rows="2" placeholder="Nhập mô tả ảnh..."></textarea>
+    <button id="btnCreateImage" class="mt-2 w-full">Tạo Ảnh</button>
+  </div>
+
+  <div class="tab-content" id="chat">
+    <div class="chat-box" id="chatBox"></div>
+    <div class="pending-preview" id="chatPreview"></div>
     <div class="input-row">
-      <textarea id="imageInput" rows="2" placeholder="Mô tả hình ảnh..."></textarea>
-      <button id="btnCreateImage" onclick="sendMessage('image')">Tạo Ảnh</button>
+      <label class="icon-btn" for="chatFileInput" title="Tải ảnh hoặc file">📁</label>
+      <input type="file" id="chatFileInput" accept="image/*,.pdf,.txt,.docx" hidden />
+      <textarea id="chatInput" rows="1" placeholder="Nhập tin nhắn..."></textarea>
+      <button id="btnChat" class="send-btn" title="Gửi">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="white" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12l14 7-7-7 7-7-14 7z"/>
+        </svg>
+      </button>
     </div>
   </div>
 
-  <div id="video" class="tab-content">
-    <div class="chat-box" id="videoBox"></div>
+  <div class="tab-content" id="math">
+    <div class="chat-box" id="mathBox"></div>
+    <div class="pending-preview" id="mathPreview"></div>
     <div class="input-row">
-      <textarea id="videoInput" rows="2" placeholder="Mô tả video..."></textarea>
-      <button class="send-btn" onclick="sendMessage('video')">➤</button>
+      <label class="icon-btn" for="mathFileInput" title="Tải ảnh hoặc file">📁</label>
+      <input type="file" id="mathFileInput" accept="image/*,.pdf,.txt,.docx" hidden />
+      <textarea id="mathPrompt" rows="1" placeholder="Nhập bài toán..."></textarea>
+      <button id="btnMath" class="send-btn" title="Giải">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="white" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12l14 7-7-7 7-7-14 7z"/>
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <div class="tab-content" id="video">
+    <div class="chat-box" id="videoBox"></div>
+    <div class="pending-preview" id="videoPreview"></div>
+    <div class="input-row">
+      <textarea id="videoPrompt" rows="1" placeholder="Nhập mô tả video..."></textarea>
+      <button id="btnVideo" class="send-btn" title="Tạo Video">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="white" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12l14 7-7-7 7-7-14 7z"/>
+        </svg>
+      </button>
     </div>
   </div>
 </div>
+
+<!-- gif.js worker -->
+<script src="https://unpkg.com/gif.js@0.2.0/dist/gif.js"></script>
+<script src="https://unpkg.com/gif.js@0.2.0/dist/gif.worker.js"></script>
 
 <script>
-// ========== INTRO CANVAS ========== //
-const canvas = document.getElementById("intro-canvas");
-const ctx = canvas.getContext("2d");
-canvas.width = innerWidth;
-canvas.height = innerHeight;
+/* ================= INTRO CANVAS ANIMATION =================
+  - "Dragons"/"Phoenixes" are circular light blobs moving on smooth orbits/sine waves
+  - Runs for 6s, then burst full-screen, then reveals the app
+  - Written to be visually rich but reasonably light (few shapes, simple composition)
+*/
 
-let particles = [];
-function createParticle(x, y, color) {
-  return {
-    x, y,
-    vx: (Math.random() - 0.5) * 3,
-    vy: (Math.random() - 0.5) * 3,
-    size: Math.random() * 3 + 1,
-    color,
-  };
-}
+(function(){
+  const canvas = document.getElementById('intro-canvas');
+  const introScreen = document.getElementById('intro-screen');
+  const burst = document.getElementById('intro-burst');
+  const app = document.getElementById('mainApp');
 
-function drawDragonPhoenix() {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  particles.forEach(p => {
-    ctx.beginPath();
-    ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-    ctx.fillStyle = p.color;
-    ctx.fill();
-    p.x += p.vx;
-    p.y += p.vy;
-    if (p.x < 0 || p.x > canvas.width || p.y < 0 || p.y > canvas.height) {
-      p.x = Math.random() * canvas.width;
-      p.y = Math.random() * canvas.height;
-    }
-  });
-  requestAnimationFrame(drawDragonPhoenix);
-}
-
-function initParticles() {
-  const colors = ["#ffd700", "#ffb347", "#ff6347", "#ffa500", "#fff1b2"];
-  for (let i = 0; i < 500; i++) {
-    particles.push(createParticle(Math.random() * canvas.width, Math.random() * canvas.height, colors[Math.floor(Math.random() * colors.length)]));
+  // sizing
+  function resize() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
   }
-}
-initParticles();
-drawDragonPhoenix();
+  window.addEventListener('resize', resize);
+  resize();
+  const ctx = canvas.getContext('2d');
 
-function burstEffect() {
-  const burst = document.getElementById("burst");
-  burst.style.opacity = "1";
-  setTimeout(() => {
-    burst.style.opacity = "0";
-  }, 800);
-}
+  // particle groups (two species: dragons and phoenixes)
+  class LightBlob {
+    constructor(opts){
+      this.cx = opts.cx; this.cy = opts.cy;
+      this.orbitR = opts.orbitR;
+      this.phase = Math.random()*Math.PI*2;
+      this.speed = opts.speed;
+      this.baseSize = opts.size;
+      this.hue = opts.hue;
+      this.glow = opts.glow || 28;
+      this.dir = opts.dir || 1;
+      this.offsetPhase = opts.offsetPhase || 0;
+    }
+    update(t){
+      // t in seconds
+      const ang = this.phase + this.dir * (t * this.speed) + this.offsetPhase;
+      // orbit + wobble
+      const x = this.cx + Math.cos(ang) * this.orbitR + Math.sin(t * this.speed * 0.7 + this.phase)*20;
+      const y = this.cy + Math.sin(ang * 0.9) * (this.orbitR * 0.55) + Math.cos(t * this.speed * 0.6 + this.phase)*14;
+      const size = this.baseSize * (1 + 0.12 * Math.sin(ang*2 + t*0.8));
+      this.draw(x,y,size);
+    }
+    draw(x,y,size){
+      // radial gradient glow
+      const g = ctx.createRadialGradient(x,y,0,x,y,size*1.6);
+      // shift hue slightly to add warm color
+      g.addColorStop(0, `hsla(${this.hue},100%,65%,1)`);
+      g.addColorStop(0.25, `hsla(${(this.hue+20)%360},100%,55%,0.85)`);
+      g.addColorStop(0.6, `hsla(${(this.hue+40)%360},90%,45%,0.45)`);
+      g.addColorStop(1, `rgba(0,0,0,0)`);
+      ctx.save();
+      ctx.globalCompositeOperation = 'screen';
+      ctx.fillStyle = g;
+      ctx.beginPath();
+      ctx.arc(x,y,size,0,Math.PI*2);
+      ctx.fill();
+      // thin highlight ring
+      ctx.globalCompositeOperation = 'lighter';
+      ctx.strokeStyle = `rgba(255, 240, 200, 0.08)`;
+      ctx.lineWidth = Math.max(1, size*0.12);
+      ctx.beginPath();
+      ctx.arc(x,y,size*1.05,0,Math.PI*2);
+      ctx.stroke();
+      ctx.restore();
+    }
+  }
 
-// ========== INTRO EXIT ========== //
-function playIntro() {
-  const intro = document.getElementById("intro-screen");
-  const mainApp = document.getElementById("mainApp");
+  // create groups
+  const blobs = [];
+  function createBlobs(){
+    blobs.length = 0;
+    const w = canvas.width, h = canvas.height;
+    // center points for orbits (two centers for "dragon" and "phoenix" multi-direction)
+    const centers = [
+      {cx: w*0.25, cy: h*0.35},
+      {cx: w*0.75, cy: h*0.65}
+    ];
+    // create several blobs per center with different hues
+    const huesDragon = [40, 24, 12]; // gold->orange->red
+    const huesPhoenix = [12, 28, 48];
+    for(let i=0;i<centers.length;i++){
+      const c = centers[i];
+      const baseHueSet = i===0 ? huesDragon : huesPhoenix;
+      for(let j=0;j<baseHueSet.length;j++){
+        const orbitR = Math.min(w,h) * (0.12 + 0.06*j + Math.random()*0.04);
+        blobs.push(new LightBlob({
+          cx: c.cx, cy: c.cy, orbitR,
+          speed: 0.6 + Math.random()*0.6,
+          size: 42 + Math.random()*32,
+          hue: baseHueSet[j] + Math.random()*10 -5,
+          dir: (Math.random() > 0.5 ? 1 : -1),
+          offsetPhase: Math.random()*Math.PI*2
+        }));
+      }
+    }
+    // smaller satellites
+    for(let k=0;k<8;k++){
+      blobs.push(new LightBlob({
+        cx: w*0.5 + (Math.random()*w - w/2)*0.55,
+        cy: h*0.5 + (Math.random()*h - h/2)*0.35,
+        orbitR: 20 + Math.random()*180,
+        speed: 0.8 + Math.random()*1.2,
+        size: 8 + Math.random()*18,
+        hue: 30 + Math.random()*40,
+        dir: Math.random()>0.5?1:-1
+      }));
+    }
+  }
+  createBlobs();
+
+  // subtle metallic particles overlay (DOM sparks), create now
+  function spawnSparks(){
+    const count = Math.min(80, Math.max(30, Math.round(window.innerWidth/18)));
+    for(let i=0;i<count;i++){
+      const el = document.createElement('div');
+      el.className = 'intro-spark';
+      const left = Math.random()*100;
+      const top = Math.random()*70 + 10;
+      el.style.left = left + '%';
+      el.style.top = top + '%';
+      const scale = 0.6 + Math.random()*1.4;
+      el.style.width = (4*scale)+'px';
+      el.style.height = (4*scale)+'px';
+      el.style.opacity = (0.35 + Math.random()*0.8).toString();
+      el.style.transform = `translate(-50%,-50%)`;
+      // random drift animation using CSS transitions
+      el.style.transition = `transform ${5+Math.random()*6}s ease-in-out, opacity ${6+Math.random()*4}s linear`;
+      document.getElementById('intro-screen').appendChild(el);
+      // kick movement
+      setTimeout(()=> {
+        const dx = (Math.random()-0.5)*200;
+        const dy = (Math.random()-0.5)*120;
+        el.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
+        el.style.opacity = (0.1 + Math.random()*0.6).toString();
+      }, 60 + Math.random()*400);
+      // remove later
+      setTimeout(()=> el.remove(), 9000);
+    }
+  }
+  spawnSparks();
+
+  // animation loop
+  let start = performance.now();
+  let running = true;
+  function render(now){
+    if(!running) return;
+    const t = (now - start)/1000; // seconds
+    // fade background subtle gradient
+    ctx.clearRect(0,0,canvas.width, canvas.height);
+
+    // dark vignette base
+    const vg = ctx.createLinearGradient(0,0,canvas.width,canvas.height);
+    vg.addColorStop(0, "#050406");
+    vg.addColorStop(1, "#070507");
+    ctx.fillStyle = vg;
+    ctx.fillRect(0,0,canvas.width,canvas.height);
+
+    // draw blobs
+    for(let b of blobs){
+      b.update(t*1.0);
+    }
+
+    // small trails (soft)
+    ctx.globalCompositeOperation = 'lighter';
+    // subtle radial sheen in center
+    const cx = canvas.width*0.52, cy = canvas.height*0.45;
+    const largeG = ctx.createRadialGradient(cx,cy,0,cx,cy,Math.max(canvas.width, canvas.height)*0.6);
+    largeG.addColorStop(0, 'rgba(255,220,140,0.035)');
+    largeG.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = largeG;
+    ctx.fillRect(0,0,canvas.width,canvas.height);
+
+    // done
+    ctx.globalCompositeOperation = 'source-over';
+    requestAnimationFrame(render);
+  }
+  requestAnimationFrame(render);
+
+  // intro timing: 6s visible then burst effect then hide
+  const DURATION_VISIBLE = 6000; // 6 seconds
   setTimeout(() => {
-    burstEffect();
-    intro.style.transition = "opacity 2s ease";
-    intro.style.opacity = "0";
+    // show burst overlay (bright flash)
+    burst.style.opacity = '1';
+    // intensify small sparks by animating them quickly
+    document.querySelectorAll('.intro-spark').forEach((s, i) => {
+      s.style.transitionDuration = (0.5 + Math.random()*0.8)+'s';
+      const dx = (Math.random()-0.5)*600;
+      const dy = (Math.random()-0.5)*400;
+      s.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px)) scale(1.4)`;
+      s.style.opacity = '1';
+    });
+
+    // after brief time, fade out everything and stop animation
     setTimeout(() => {
-      intro.style.display = "none";
-      mainApp.style.display = "block";
-      document.body.style.overflow = "auto";
-    }, 2000);
-  }, 6000);
-}
-playIntro();
+      burst.style.transition = 'opacity 0.9s ease';
+      burst.style.opacity = '0';
+      introScreen.style.opacity = '0';
+      // stop anim loop after fade-out to save CPU
+      running = false;
+      // remove remaining sparks
+      setTimeout(()=> {
+        // hide intro and show app
+        introScreen.style.display = 'none';
+        app.style.display = 'block';
+        app.setAttribute('aria-hidden','false');
+        document.body.style.overflow = 'auto';
+        // ensure tab functionality active
+      }, 900);
+    }, 650); // burst visible for ~650ms
+  }, DURATION_VISIBLE);
 
-// ========== TAB SWITCHING ========== //
-document.querySelectorAll(".tab-btn").forEach(btn => {
-  btn.addEventListener("click", () => {
-    document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
-    document.querySelectorAll(".tab-content").forEach(c => c.classList.remove("active"));
-    btn.classList.add("active");
-    document.getElementById(btn.dataset.tab).classList.add("active");
-  });
+  // ensure when hidden, stop resizing handler as appropriate (kept minimal)
+})();
+
+/* ================= MAIN APP SCRIPTS (unchanged behavior + API calls) ================= */
+document.addEventListener('DOMContentLoaded', () => {
+    // Tabs (working)
+    const tabs = document.querySelectorAll('.tab-btn');
+    const contents = document.querySelectorAll('.tab-content');
+    tabs.forEach(tab=>{
+      tab.addEventListener('click', ()=>{
+        tabs.forEach(t=>t.classList.remove('active'));
+        contents.forEach(c=>c.classList.remove('active'));
+        tab.classList.add('active');
+        const id = tab.dataset.tab;
+        document.getElementById(id).classList.add('active');
+      });
+    });
+
+    // Grab elements
+    const imageBox = document.getElementById('imageBox');
+    const imagePrompt = document.getElementById('imagePrompt');
+    const btnCreateImage = document.getElementById('btnCreateImage');
+
+    const chatBox = document.getElementById('chatBox');
+    const chatInput = document.getElementById('chatInput');
+    const btnChat = document.getElementById('btnChat');
+    const chatFileInput = document.getElementById('chatFileInput');
+    const chatPreview = document.getElementById('chatPreview');
+
+    const mathBox = document.getElementById('mathBox');
+    const mathPrompt = document.getElementById('mathPrompt');
+    const btnMath = document.getElementById('btnMath');
+    const mathFileInput = document.getElementById('mathFileInput');
+    const mathPreview = document.getElementById('mathPreview');
+
+    const videoBox = document.getElementById('videoBox');
+    const videoPrompt = document.getElementById('videoPrompt');
+    const btnVideo = document.getElementById('btnVideo');
+
+    const languageSelect = document.getElementById('language-select');
+    const settingsBtn = document.getElementById('settings-btn');
+    const settingsModal = document.getElementById('settings-modal');
+
+    let uploadedFiles = { chat: null, math: null };
+
+    // helpers
+    function appendMessage(box, content, type) {
+        const bubble = document.createElement('div');
+        bubble.classList.add('bubble', type === 'user' ? 'user-bubble' : 'ai-bubble');
+        bubble.innerHTML = content;
+        box.appendChild(bubble);
+        box.scrollTop = box.scrollHeight;
+        return bubble;
+    }
+    function showLoading(box) {
+        return appendMessage(box, 'Đang xử lý...', 'ai');
+    }
+
+    function handleFileUpload(event, type) {
+        const file = event.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onloadend = () => {
+            uploadedFiles[type] = reader.result;
+            const previewContainer = type === 'chat' ? chatPreview : mathPreview;
+            previewContainer.innerHTML = `<img src="${reader.result}" alt="preview">`;
+        };
+        reader.readAsDataURL(file);
+    }
+
+    // 1. Create image
+    btnCreateImage.addEventListener('click', async () => {
+        const prompt = imagePrompt.value.trim();
+        if (!prompt) return;
+        appendMessage(imageBox, prompt, 'user');
+        const loadingBubble = showLoading(imageBox);
+        imagePrompt.value = '';
+        try {
+            const response = await fetch('/api/pollinations-image', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ prompt }),
+            });
+            if (!response.ok) throw new Error('Lỗi từ server: ' + response.statusText);
+            const data = await response.json();
+            loadingBubble.innerHTML = `<img src="${data.imageUrl}" class="generated-image" alt="Generated Image">`;
+        } catch (error) {
+            loadingBubble.textContent = `❌ Lỗi: ${error.message}`;
+        }
+    });
+
+    // 2. Chat
+    async function handleChat() {
+        const message = chatInput.value.trim();
+        const image = uploadedFiles.chat;
+        if (!message && !image) return;
+        appendMessage(chatBox, message, 'user');
+        const loadingBubble = showLoading(chatBox);
+        chatInput.value = '';
+        chatPreview.innerHTML = '';
+        uploadedFiles.chat = null;
+        try {
+            const response = await fetch('/api/chat', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    message,
+                    image,
+                    language: languageSelect.value,
+                    history: []
+                }),
+            });
+            if (!response.ok) throw new Error('Lỗi từ server: ' + response.statusText);
+            const data = await response.json();
+            loadingBubble.innerHTML = data.response;
+        } catch (error) {
+            loadingBubble.textContent = `❌ Lỗi: ${error.message}`;
+        }
+    }
+    btnChat.addEventListener('click', handleChat);
+    chatInput.addEventListener('keydown', (e) => { if(e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleChat(); } });
+    chatFileInput.addEventListener('change', (e) => handleFileUpload(e, 'chat'));
+
+    // 3. Math
+    async function handleMath() {
+        const question = mathPrompt.value.trim();
+        const image = uploadedFiles.math;
+        if (!question && !image) return;
+        appendMessage(mathBox, question, 'user');
+        const loadingBubble = showLoading(mathBox);
+        mathPrompt.value = '';
+        mathPreview.innerHTML = '';
+        uploadedFiles.math = null;
+        try {
+            const response = await fetch('/api/math', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ question, image }),
+            });
+            if (!response.ok) throw new Error('Lỗi từ server: ' + response.statusText);
+            const data = await response.json();
+            loadingBubble.innerHTML = data.response;
+            if (window.MathJax) MathJax.typesetPromise([loadingBubble]).catch(()=>{});
+        } catch (error) {
+            loadingBubble.textContent = `❌ Lỗi: ${error.message}`;
+        }
+    }
+    btnMath.addEventListener('click', handleMath);
+    mathPrompt.addEventListener('keydown', (e) => { if(e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleMath(); } });
+    mathFileInput.addEventListener('change', (e) => handleFileUpload(e, 'math'));
+
+    // 4. Video (frames -> GIF)
+    btnVideo.addEventListener('click', async () => {
+        const prompt = videoPrompt.value.trim();
+        if (!prompt) return;
+        appendMessage(videoBox, prompt, 'user');
+        const loadingBubble = showLoading(videoBox);
+        videoPrompt.value = '';
+        try {
+            loadingBubble.textContent = 'Đang tải các khung hình (bước 1/2)...';
+            const frameResponse = await fetch('/api/pollinations-frames', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ prompt }),
+            });
+            if (!frameResponse.ok) throw new Error(`Lỗi tải khung hình: ${frameResponse.statusText}`);
+            const { frames } = await frameResponse.json();
+            if (!frames || frames.length === 0) throw new Error('Không nhận được khung hình nào.');
+            loadingBubble.textContent = `Đang render video từ ${frames.length} khung hình (bước 2/2)...`;
+
+            const gif = new GIF({ workers: 2, quality: 10, width: 512, height: 512 });
+            const imagePromises = frames.map(frameData => new Promise(resolve => {
+                const img = new Image();
+                img.src = frameData;
+                img.onload = () => resolve(img);
+                img.onerror = () => resolve(null);
+            }));
+            const imageElements = (await Promise.all(imagePromises)).filter(Boolean);
+            imageElements.forEach(img => gif.addFrame(img, { delay: 100 }));
+            gif.on('finished', function(blob) {
+                const videoUrl = URL.createObjectURL(blob);
+                loadingBubble.innerHTML = `<img src="${videoUrl}" class="generated-video" alt="Generated Video">`;
+                videoBox.scrollTop = videoBox.scrollHeight;
+            });
+            gif.render();
+        } catch (error) {
+            loadingBubble.textContent = `❌ Lỗi: ${error.message}`;
+        }
+    });
+
+    // settings
+    settingsBtn.addEventListener('click', () => {
+        settingsModal.style.display = settingsModal.style.display === 'block' ? 'none' : 'block';
+    });
+    document.addEventListener('click', (e) => {
+        if (!settingsModal.contains(e.target) && !settingsBtn.contains(e.target)) {
+            settingsModal.style.display = 'none';
+        }
+    });
+
+    // ensure main app hidden initially (intro visible)
+    document.getElementById('mainApp').style.display = 'none';
 });
-
-// ========== GỬI LÊN SERVER (API HOẠT ĐỘNG) ========== //
-function sendMessage(type) {
-  const input = document.getElementById(type + "Input");
-  const box = document.getElementById(type + "Box");
-  const text = input.value.trim();
-  if (!text) return;
-
-  const userBubble = document.createElement("div");
-  userBubble.className = "bubble user-bubble";
-  userBubble.textContent = text;
-  box.appendChild(userBubble);
-  input.value = "";
-
-  const aiBubble = document.createElement("div");
-  aiBubble.className = "bubble ai-bubble";
-  aiBubble.textContent = "⏳ Đang xử lý...";
-  box.appendChild(aiBubble);
-  box.scrollTop = box.scrollHeight;
-
-  fetch(`/api/${type}`, {
-    method: "POST",
-    headers: {"Content-Type": "application/json"},
-    body: JSON.stringify({ message: text })
-  })
-  .then(res => res.json())
-  .then(data => {
-    aiBubble.innerHTML = data.reply || "Không có phản hồi.";
-    MathJax.typesetPromise();
-    box.scrollTop = box.scrollHeight;
-  })
-  .catch(() => aiBubble.textContent = "⚠️ Lỗi khi gửi yêu cầu.");
-}
 </script>
 </body>
 </html>

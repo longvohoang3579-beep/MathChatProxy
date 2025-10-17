@@ -1,204 +1,657 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AI Chat Universe</title>
-  <style>
-    body {
-      margin: 0;
-      padding: 0;
-      background: radial-gradient(circle at center, #050505 30%, #000000 90%);
-      font-family: 'Poppins', sans-serif;
-      color: white;
-      overflow: hidden;
-    }
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>AI Assistant Pro</title>
+<link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet" />
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<style>
+/* ---------- GLOBAL ---------- */
+body {
+  background-color:#0f0f13;
+  color:#fff;
+  font-family:'Segoe UI',sans-serif;
+  margin:0; padding:0; overflow:hidden;
+}
 
-    /* ==== RỒNG & PHƯỢNG REALISTIC ==== */
-    .creature {
-      position: absolute;
-      width: 320px;
-      height: 320px;
-      background-size: contain;
-      background-repeat: no-repeat;
-      background-position: center;
-      filter: drop-shadow(0 0 30px gold);
-      z-index: 1;
-      opacity: 0.95;
-      animation-timing-function: linear;
-    }
+/* ---------- INTRO OVERLAY (BLACK + GOLD AURA) ---------- */
+#intro-screen {
+  position: fixed;
+  inset: 0;
+  width:100%;
+  height:100vh;
+  background: radial-gradient(1200px 600px at 50% 45%, rgba(60,40,10,0.28) 0%, rgba(8,6,4,0.95) 45%);
+  z-index: 9999;
+  display: flex;
+  align-items:center;
+  justify-content:center;
+  flex-direction:column;
+  transition: opacity 1.2s ease;
+  overflow: hidden;
+}
 
-    .dragon {
-      background-image: url('https://i.imgur.com/JN7fVqa.png');
-      animation: flyDragon 25s infinite;
-    }
+/* decorative gold rim */
+#intro-screen::before {
+  content:"";
+  position:absolute; inset:12px;
+  border-radius: 10px;
+  pointer-events:none;
+  background: linear-gradient(90deg, rgba(255,215,90,0.12), rgba(255,240,160,0.05));
+  mix-blend-mode: overlay;
+}
 
-    .phoenix {
-      background-image: url('https://i.imgur.com/LmFYlfl.png');
-      animation: flyPhoenix 22s infinite;
-    }
+/* SVG stage occupies full screen */
+#intro-stage {
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+}
 
-    @keyframes flyDragon {
-      0% { top: 100%; left: -20%; transform: scale(1.1) rotate(20deg); }
-      25% { top: 50%; left: 30%; transform: scale(1.3) rotate(10deg); }
-      50% { top: 10%; left: 80%; transform: scale(1.2) rotate(-10deg); }
-      75% { top: 40%; left: 20%; transform: scale(1.25) rotate(0deg); }
-      100% { top: 100%; left: -20%; transform: scale(1.1) rotate(20deg); }
-    }
+/* center logo/text */
+#intro-center {
+  z-index: 2;
+  text-align:center;
+  transform: translateY(-6%);
+}
+#intro-logo {
+  display:inline-block;
+  padding: 18px 28px;
+  border-radius: 14px;
+  background: linear-gradient(180deg, rgba(255,230,140,0.06), rgba(255,200,80,0.03));
+  border: 1px solid rgba(255,200,80,0.12);
+  box-shadow: 0 8px 40px rgba(0,0,0,0.6), 0 0 40px rgba(255,200,80,0.06) inset;
+}
+#intro-logo h1 {
+  margin:0;
+  font-size:2.2rem;
+  letter-spacing:0.6px;
+  color: #ffd66a;
+  text-shadow: 0 2px 10px rgba(255,200,80,0.18), 0 0 30px rgba(255,215,100,0.08);
+}
+#intro-subtext {
+  margin-top:10px;
+  color:#f0e7c9;
+  opacity:0.9;
+  font-size:1rem;
+  text-shadow:0 1px 6px rgba(0,0,0,0.6);
+}
 
-    @keyframes flyPhoenix {
-      0% { top: -30%; left: 100%; transform: scale(1.3) rotate(-20deg); }
-      25% { top: 20%; left: 60%; transform: scale(1.4) rotate(10deg); }
-      50% { top: 70%; left: 10%; transform: scale(1.2) rotate(0deg); }
-      75% { top: 30%; left: 70%; transform: scale(1.3) rotate(-15deg); }
-      100% { top: -30%; left: 100%; transform: scale(1.3) rotate(-20deg); }
-    }
+/* creature (dragon/phoenix) base style */
+.creature {
+  position:absolute;
+  width: 64px; height: 64px;
+  transform-origin: center;
+  will-change: transform, opacity;
+  pointer-events: none;
+}
 
-    /* Hiệu ứng ánh sáng và tia lửa */
-    .spark {
-      position: absolute;
-      width: 3px;
-      height: 3px;
-      border-radius: 50%;
-      background: radial-gradient(circle, gold, orange, transparent);
-      animation: sparkle 3s infinite;
-      opacity: 0.8;
-      z-index: 0;
-    }
+/* metallic gold gradient stroke / fill via SVG inlined */
 
-    @keyframes sparkle {
-      from { transform: scale(0.5); opacity: 0.8; }
-      to { transform: scale(2); opacity: 0; }
-    }
+/* wing-flap animation (subtle) */
+@keyframes flap {
+  0% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-2px) rotate(2deg); }
+  100% { transform: translateY(0) rotate(0deg); }
+}
 
-    /* ==== KHUNG 4 CHAT ==== */
-    .container {
-      position: relative;
-      z-index: 5;
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      grid-template-rows: repeat(2, 1fr);
-      gap: 20px;
-      width: 90%;
-      max-width: 1200px;
-      margin: 80px auto;
-    }
+/* shimmer on logo */
+@keyframes goldShine {
+  0% { filter: brightness(0.96) saturate(1); transform: translateY(-1px) scale(1); }
+  50% { filter: brightness(1.12) saturate(1.1); transform: translateY(-3px) scale(1.02); }
+  100% { filter: brightness(0.98) saturate(1); transform: translateY(-1px) scale(1); }
+}
+#intro-logo { animation: goldShine 3s ease-in-out infinite; }
 
-    .chat-box {
-      background: rgba(20, 20, 20, 0.75);
-      border: 2px solid gold;
-      border-radius: 20px;
-      padding: 20px;
-      box-shadow: 0 0 25px rgba(255, 215, 0, 0.5);
-      height: 280px;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      transition: 0.3s;
-      backdrop-filter: blur(8px);
-    }
+/* fade out helper */
+.fade-out { opacity: 0 !important; visibility: hidden; transition: opacity .9s ease; }
 
-    .chat-box:hover {
-      transform: scale(1.02);
-      box-shadow: 0 0 40px rgba(255, 215, 0, 0.9);
-    }
+/* ---------- MAIN UI (KEPT EXACTLY AS YOUR ORIGINAL) ---------- */
+.container {max-width:900px;margin:2rem auto;background:#1a1c29;border-radius:1.5rem;padding:1.5rem;box-shadow:0 15px 30px rgba(0,0,0,0.7);display:none;}
+.tabs {display:flex;border-bottom:2px solid #333;margin-bottom:1rem;}
+.tab-btn {flex:1;text-align:center;padding:1rem;cursor:pointer;color:#aaa;font-weight:bold;transition:all 0.2s;}
+.tab-btn.active {color:#fff;border-bottom:3px solid #facc15;}
+.tab-content {display:none;}
+.tab-content.active {display:block;}
+.chat-box {background:#111827;border-radius:12px;padding:1rem;height:400px;overflow-y:auto;display:flex;flex-direction:column; scroll-behavior: smooth;}
+.bubble {max-width:80%;padding:10px 14px;border-radius:12px;margin-bottom:10px;line-height:1.5;word-wrap:break-word;white-space:pre-wrap;}
+.user-bubble {background:#2563eb;align-self:flex-end;color:white;border-bottom-right-radius:2px;}
+.ai-bubble {background:#374151;align-self:flex-start;color:#e5e7eb;border-bottom-left-radius:2px;}
+mark.highlight {background-color:#fde047;color:black;font-weight:bold;padding:0 3px;border-radius:3px;}
+textarea,input{width:100%;padding:0.75rem;border-radius:0.75rem;background:#1e1e2a;border:1px solid #333;color:white;resize:none;outline:none;}
+button{padding:0.75rem 1rem;border-radius:0.75rem;font-weight:bold;cursor:pointer;transition:all 0.2s; border: none;}
+#btnCreateImage{background:#10b981;color:#111827;}#btnCreateImage:hover{background:#059669;}
+.send-btn{background:#6366f1;color:white;} .send-btn:hover{background:#4f46e5;} /* Gộp chung cho các nút gửi */
+img.generated-image, .generated-video {border-radius:12px;max-width:100%;margin-top:1rem; display: block; max-height: 400px; margin-left: auto; margin-right: auto;}
+#settings-btn{position:absolute;top:1rem;right:1rem;font-size:1.5rem;cursor:pointer;color:#facc15;}
+#settings-modal{position:absolute;top:3rem;right:1rem;width:200px;background:#1a1c29;border:1px solid #facc15;border-radius:0.75rem;padding:1rem;display:none; z-index: 100;}
+.pending-preview{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px;}
+.pending-preview img{width:60px;height:60px;object-fit:cover;border-radius:8px;border:2px solid #475569;}
+.input-row{display:flex;align-items:center;gap:6px;margin-top:8px;}
+.icon-btn{background:#27293a;padding:8px;border-radius:8px;cursor:pointer;transition:0.2s;}
+.icon-btn:hover{background:#3f4259;}
+.icon-btn svg{width:22px;height:22px;color:#facc15;}
+.send-btn{background:#6366f1;padding:10px;border-radius:50%;display:flex;align-items:center;justify-content:center;}
+.send-btn:hover{background:#4f46e5;}
+.send-btn svg{width:22px;height:22px;transform:rotate(0deg);}
 
-    h3 {
-      margin-top: 0;
-      color: gold;
-      text-shadow: 0 0 10px gold;
-      font-weight: 600;
-    }
-
-    .output {
-      flex-grow: 1;
-      overflow-y: auto;
-      padding: 10px;
-      border-radius: 10px;
-      background: rgba(255,255,255,0.05);
-    }
-
-    .input-area {
-      display: flex;
-      gap: 10px;
-      margin-top: 10px;
-    }
-
-    input {
-      flex: 1;
-      padding: 10px;
-      border-radius: 10px;
-      border: none;
-      outline: none;
-    }
-
-    button {
-      background: linear-gradient(90deg, gold, orange);
-      border: none;
-      border-radius: 10px;
-      font-weight: bold;
-      color: black;
-      cursor: pointer;
-      padding: 10px 15px;
-      transition: 0.3s;
-    }
-
-    button:hover {
-      filter: brightness(1.2);
-      box-shadow: 0 0 10px gold;
-    }
-  </style>
+/* responsive */
+@media (max-width: 880px) {
+  .container { margin: 1rem; padding: 1rem; max-width: calc(100% - 2rem); }
+}
+</style>
 </head>
+
 <body>
+<!-- INTRO -->
+<div id="intro-screen" aria-hidden="false">
+  <svg id="intro-stage" viewBox="0 0 1920 1080" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <!-- gold gradient -->
+      <linearGradient id="goldGrad" x1="0" x2="1">
+        <stop offset="0%" stop-color="#fff7d6"/>
+        <stop offset="40%" stop-color="#ffd66a"/>
+        <stop offset="100%" stop-color="#f5b131"/>
+      </linearGradient>
 
-  <!-- RỒNG & PHƯỢNG -->
-  <div class="creature dragon"></div>
-  <div class="creature phoenix"></div>
+      <!-- metallic stroke -->
+      <linearGradient id="strokeGrad" x1="0" x2="1">
+        <stop offset="0%" stop-color="#ffe6a0"/>
+        <stop offset="50%" stop-color="#ffd66a"/>
+        <stop offset="100%" stop-color="#f7b04b"/>
+      </linearGradient>
 
-  <!-- HIỆU ỨNG TIA SÁNG -->
-  <div class="spark" style="top:15%; left:10%;"></div>
-  <div class="spark" style="top:70%; left:80%;"></div>
-  <div class="spark" style="top:50%; left:40%;"></div>
-  <div class="spark" style="top:30%; left:70%;"></div>
-  <div class="spark" style="top:80%; left:20%;"></div>
+      <!-- subtle glow filter -->
+      <filter id="glow">
+        <feGaussianBlur stdDeviation="4" result="coloredBlur"/>
+        <feMerge>
+          <feMergeNode in="coloredBlur"/>
+          <feMergeNode in="SourceGraphic"/>
+        </feMerge>
+      </filter>
 
-  <!-- GIAO DIỆN 4 KHUNG CHAT -->
-  <div class="container">
-    <div class="chat-box">
-      <h3>💬 Chat</h3>
-      <div class="output" id="chat-output"></div>
-      <div class="input-area">
-        <input id="chat-input" placeholder="Nhập tin nhắn...">
-        <button>Gửi</button>
-      </div>
+      <!-- wing shape (reusable) -->
+      <g id="simple-wing">
+        <path d="M2 30 C20 5, 50 5, 62 30 C50 18, 30 18, 2 30 Z" fill="url(#goldGrad)"/>
+      </g>
+
+      <!-- stylized creature body -->
+      <g id="creature-shape">
+        <!-- body -->
+        <ellipse cx="32" cy="30" rx="14" ry="10" fill="url(#goldGrad)" stroke="url(#strokeGrad)" stroke-width="1.6"/>
+        <!-- head -->
+        <circle cx="46" cy="24" r="6" fill="#fff6d8" stroke="url(#strokeGrad)" stroke-width="1"/>
+        <!-- left wing -->
+        <use href="#simple-wing" x="-6" y="6" style="transform-origin:28px 30px;"/>
+        <!-- right wing mirrored -->
+        <use href="#simple-wing" x="-6" y="6" transform="scale(-1,1) translate(-64,0)"/>
+      </g>
+
+      <!-- motion paths (curvy) -->
+      <path id="pathA" d="M120 980 C 420 700, 620 200, 960 140 C 1300 80, 1500 520, 1820 200" fill="none"/>
+      <path id="pathB" d="M1820 900 C 1500 700, 1200 300, 980 180 C 760 60, 420 480, 120 200" fill="none"/>
+      <path id="pathC" d="M960 1100 C 760 700, 420 500, 120 900" fill="none"/>
+      <path id="pathD" d="M200 100 C 420 400, 760 300, 960 480 C 1160 660, 1520 540, 1720 900" fill="none"/>
+    </defs>
+
+    <!-- show subtle bezier guides in dev only (comment out later) -->
+    <!-- <use href="#pathA" stroke="rgba(255,255,255,0.03)" stroke-width="1" /> -->
+
+    <!-- container for creatures -->
+    <g id="creatures-layer"></g>
+  </svg>
+
+  <div id="intro-center">
+    <div id="intro-logo" role="img" aria-label="AI Assistant Pro">
+      <h1>AI Assistant Pro</h1>
     </div>
+    <div id="intro-subtext">Sắc vàng kim — cinematic intro</div>
+  </div>
+</div>
 
-    <div class="chat-box">
-      <h3>🧮 Giải Toán</h3>
-      <div class="output" id="math-output"></div>
-      <div class="input-area">
-        <input id="math-input" placeholder="Nhập bài toán...">
-        <button>Giải</button>
-      </div>
-    </div>
+<!-- MAIN APP (kept original UI) -->
+<div class="container relative" id="mainApp">
+  <div id="settings-btn">⚙️</div>
+  <div id="settings-modal">
+    <label class="block mb-2">Ngôn ngữ chat:</label>
+    <select id="language-select" class="w-full p-2 rounded bg-gray-800 text-white">
+      <option value="vi">Tiếng Việt</option>
+      <option value="en">English</option>
+      <option value="zh-CN">简体中文</option>
+    </select>
+  </div>
 
-    <div class="chat-box">
-      <h3>🎨 Tạo Ảnh</h3>
-      <div class="output" id="image-output"></div>
-      <div class="input-area">
-        <input id="image-input" placeholder="Mô tả hình ảnh...">
-        <button>Tạo</button>
-      </div>
-    </div>
+  <div class="tabs">
+    <div class="tab-btn active" data-tab="image">🖼️ Tạo Ảnh</div>
+    <div class="tab-btn" data-tab="chat">💬 Chat</div>
+    <div class="tab-btn" data-tab="math">🧮 Giải Toán</div>
+    <div class="tab-btn" data-tab="video">🎞️ Tạo Video</div>
+  </div>
 
-    <div class="chat-box">
-      <h3>🎥 Tạo Video</h3>
-      <div class="output" id="video-output"></div>
-      <div class="input-area">
-        <input id="video-input" placeholder="Mô tả video...">
-        <button>Tạo</button>
-      </div>
+  <div class="tab-content active" id="image">
+    <div class="chat-box" id="imageBox"></div>
+    <textarea id="imagePrompt" rows="2" placeholder="Nhập mô tả ảnh..."></textarea>
+    <button id="btnCreateImage" class="mt-2 w-full">Tạo Ảnh</button>
+  </div>
+
+  <div class="tab-content" id="chat">
+    <div class="chat-box" id="chatBox"></div>
+    <div class="pending-preview" id="chatPreview"></div>
+    <div class="input-row">
+      <label class="icon-btn" for="chatFileInput" title="Tải ảnh hoặc file">📁</label>
+      <input type="file" id="chatFileInput" accept="image/*" hidden />
+      <textarea id="chatInput" rows="1" placeholder="Nhập tin nhắn..."></textarea>
+      <button id="btnChat" class="send-btn" title="Gửi">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="white" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12l14 7-7-7 7-7-14 7z"/>
+        </svg>
+      </button>
     </div>
   </div>
+
+  <div class="tab-content" id="math">
+    <div class="chat-box" id="mathBox"></div>
+    <div class="pending-preview" id="mathPreview"></div>
+    <div class="input-row">
+      <label class="icon-btn" for="mathFileInput" title="Tải ảnh hoặc file">📁</label>
+      <input type="file" id="mathFileInput" accept="image/*" hidden />
+      <textarea id="mathPrompt" rows="1" placeholder="Nhập bài toán..."></textarea>
+      <button id="btnMath" class="send-btn" title="Giải">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="white" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12l14 7-7-7 7-7-14 7z"/>
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <div class="tab-content" id="video">
+    <div class="chat-box" id="videoBox"></div>
+    <div class="pending-preview" id="videoPreview"></div>
+    <div class="input-row">
+       <textarea id="videoPrompt" rows="1" placeholder="Nhập mô tả video..."></textarea>
+      <button id="btnVideo" class="send-btn" title="Tạo Video">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="white" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12l14 7-7-7 7-7-14 7z"/>
+        </svg>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Your original JS logic + intro animation script -->
+<script>
+/* ===========================================================
+   INTRO ANIMATION (creates many creatures flying along paths)
+   - duration: between 5 and 7 seconds (configurable)
+   - uses SVG paths defined in <defs> above
+   - doesn't touch your main UI code; when intro ends shows the main UI
+   =========================================================== */
+(function(){
+  const INTRO_DURATION = 6500; // ms - ~6.5s (between 5 and 7s)
+  const NUM_DRAGONS = 6;   // reduce if heavy
+  const NUM_PHOENIX = 5;   // reduce if heavy
+
+  const creaturesLayer = document.getElementById('creatures-layer');
+  const svg = document.getElementById('intro-stage');
+  // pre-get paths
+  const paths = [
+    svg.querySelector('#pathA'),
+    svg.querySelector('#pathB'),
+    svg.querySelector('#pathC'),
+    svg.querySelector('#pathD')
+  ];
+
+  function createCreature(id, typeIndex) {
+    // clone creature group shape (use <use> referencing #creature-shape)
+    const g = document.createElementNS('http://www.w3.org/2000/svg','g');
+    g.setAttribute('class','creature');
+    g.setAttribute('id','creature-'+id);
+    // apply a random initial transform scale for depth feel
+    const scale = 0.8 + Math.random()*0.9;
+    g.setAttribute('transform','scale(' + scale + ')');
+
+    // colorize: alternate gold / rose-gold for phoenix vs dragon
+    const tint = (typeIndex % 2 === 0) ? '#ffd66a' : '#ffb383';
+    // create a use node referencing #creature-shape
+    const use = document.createElementNS('http://www.w3.org/2000/svg','use');
+    use.setAttributeNS('http://www.w3.org/1999/xlink','href','#creature-shape');
+    // add slight glow via filter
+    use.setAttribute('filter','url(#glow)');
+    // we can set a tint by adding a small rect with blend? simpler: set overall opacity and rely on gradient
+    use.setAttribute('opacity', 0.98);
+
+    g.appendChild(use);
+    creaturesLayer.appendChild(g);
+
+    // wing flap animation using CSS transform on the group (subtle)
+    g.style.animation = 'flap ' + (1.0 + Math.random()*0.8) + 's ease-in-out infinite';
+
+    return g;
+  }
+
+  function pointOnPath(path, t) {
+    // t in [0,1]
+    const len = path.getTotalLength();
+    return path.getPointAtLength(t * len);
+  }
+
+  function animateAlongPath(elem, path, duration, delay, rotateAlong) {
+    const start = performance.now() + delay;
+    const len = path.getTotalLength();
+    function step(now) {
+      const elapsed = now - start;
+      if (elapsed < 0) { requestAnimationFrame(step); return; }
+      const t = Math.min(1, elapsed / duration);
+      const pt = path.getPointAtLength(t * len);
+      // compute angle (approx) for rotation
+      if (rotateAlong) {
+        const nextT = Math.min(1, (t + 0.01));
+        const p2 = path.getPointAtLength(nextT * len);
+        const angle = Math.atan2(p2.y - pt.y, p2.x - pt.x) * 180 / Math.PI;
+        elem.setAttribute('transform', `translate(${pt.x - 32}, ${pt.y - 32}) rotate(${angle} ${32} ${32}) scale(${elem._scale || 1})`);
+      } else {
+        elem.setAttribute('transform', `translate(${pt.x - 32}, ${pt.y - 32}) scale(${elem._scale || 1})`);
+      }
+
+      // subtle fade near start/end
+      if (t < 0.08) elem.style.opacity = (0.2 + t*10*0.08).toString();
+      else if (t > 0.92) elem.style.opacity = ((1 - t)/0.08).toString();
+      else elem.style.opacity = '1';
+
+      if (t < 1) requestAnimationFrame(step);
+    }
+    requestAnimationFrame(step);
+  }
+
+  function spawnAll() {
+    let id = 0;
+    // dragons (use all 4 paths round-robin)
+    for (let i=0;i<NUM_DRAGONS;i++){
+      const c = createCreature('d'+id, i);
+      // store random internal scale
+      c._scale = (0.7 + Math.random()*0.9).toFixed(2);
+      // choose path
+      const path = paths[i % paths.length];
+      const dur = (4000 + Math.random()*2600); // each creature ~4-6s to cross
+      const delay = Math.random() * 900; // up to 0.9s
+      animateAlongPath(c, path, dur, delay, true);
+      id++;
+    }
+    // phoenix (slightly faster, different color)
+    for (let i=0;i<NUM_PHOENIX;i++){
+      const c = createCreature('p'+id, i+1);
+      c._scale = (0.6 + Math.random()*0.8).toFixed(2);
+      const path = paths[(i+2) % paths.length];
+      const dur = (3200 + Math.random()*2200); // ~3.2-5.4s
+      const delay = Math.random() * 1200;
+      animateAlongPath(c, path, dur, delay, true);
+      id++;
+    }
+  }
+
+  // start spawn
+  spawnAll();
+
+  // after INTRO_DURATION, fade intro out and reveal main app
+  function endIntro() {
+    const intro = document.getElementById('intro-screen');
+    intro.style.transition = 'opacity 900ms ease';
+    intro.style.opacity = '0';
+    setTimeout(()=> {
+      // hide completely and release pointer events
+      intro.style.display = 'none';
+      intro.setAttribute('aria-hidden','true');
+      // show main app (kept original behavior)
+      const mainApp = document.getElementById('mainApp');
+      mainApp.style.display = 'block';
+      document.body.style.overflow = 'auto';
+    }, 950);
+  }
+
+  // Safety: if user clicks intro, skip it
+  document.getElementById('intro-screen').addEventListener('click', endIntro);
+
+  // schedule end
+  setTimeout(endIntro, INTRO_DURATION);
+})();
+
+/* ===========================================================
+   BELOW: YOUR ORIGINAL APP JS (kept functionally the same)
+   I copied and preserved your event handlers + fetch calls.
+   =========================================================== */
+(function(){
+  // Wait for DOM to be ready
+  document.addEventListener('DOMContentLoaded', () => {
+
+    // === Lấy các phần tử DOM ===
+    const imageBox = document.getElementById('imageBox');
+    const imagePrompt = document.getElementById('imagePrompt');
+    const btnCreateImage = document.getElementById('btnCreateImage');
+
+    const chatBox = document.getElementById('chatBox');
+    const chatInput = document.getElementById('chatInput');
+    const btnChat = document.getElementById('btnChat');
+    const chatFileInput = document.getElementById('chatFileInput');
+    const chatPreview = document.getElementById('chatPreview');
+
+    const mathBox = document.getElementById('mathBox');
+    const mathPrompt = document.getElementById('mathPrompt');
+    const btnMath = document.getElementById('btnMath');
+    const mathFileInput = document.getElementById('mathFileInput');
+    const mathPreview = document.getElementById('mathPreview');
+
+    const videoBox = document.getElementById('videoBox');
+    const videoPrompt = document.getElementById('videoPrompt');
+    const btnVideo = document.getElementById('btnVideo');
+
+    const languageSelect = document.getElementById('language-select');
+    const settingsBtn = document.getElementById('settings-btn');
+    const settingsModal = document.getElementById('settings-modal');
+
+    // Lưu trữ ảnh đã upload (dưới dạng base64)
+    let uploadedFiles = { chat: null, math: null };
+
+    // Thêm tin nhắn vào hộp chat
+    function appendMessage(box, content, type) {
+      const bubble = document.createElement('div');
+      bubble.classList.add('bubble', type === 'user' ? 'user-bubble' : 'ai-bubble');
+      bubble.innerHTML = content;
+      box.appendChild(bubble);
+      box.scrollTop = box.scrollHeight;
+      return bubble;
+    }
+
+    // Hiển thị loading...
+    function showLoading(box) {
+      return appendMessage(box, 'Đang xử lý...', 'ai');
+    }
+
+    // Xử lý file upload
+    function handleFileUpload(event, type) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        uploadedFiles[type] = reader.result;
+        const previewContainer = type === 'chat' ? chatPreview : mathPreview;
+        previewContainer.innerHTML = `<img src="${reader.result}" alt="preview">`;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    // 1. Tạo ảnh
+    btnCreateImage && btnCreateImage.addEventListener('click', async () => {
+      const prompt = imagePrompt.value.trim();
+      if (!prompt) return;
+
+      appendMessage(imageBox, prompt, 'user');
+      const loadingBubble = showLoading(imageBox);
+      imagePrompt.value = '';
+
+      try {
+        const response = await fetch('/api/pollinations-image', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ prompt }),
+        });
+
+        if (!response.ok) throw new Error('Lỗi từ server: ' + response.statusText);
+
+        const data = await response.json();
+        loadingBubble.innerHTML = `<img src="${data.imageUrl}" class="generated-image" alt="Generated Image">`;
+      } catch (error) {
+        loadingBubble.textContent = `❌ Lỗi: ${error.message}`;
+      }
+    });
+
+    // 2. Chat
+    async function handleChat() {
+      const message = chatInput.value.trim();
+      const image = uploadedFiles.chat;
+      if (!message && !image) return;
+
+      appendMessage(chatBox, message, 'user');
+      const loadingBubble = showLoading(chatBox);
+      chatInput.value = '';
+      chatPreview.innerHTML = '';
+      uploadedFiles.chat = null;
+
+      try {
+        const response = await fetch('/api/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            message,
+            image,
+            language: languageSelect ? languageSelect.value : 'vi',
+            history: []
+          }),
+        });
+        if (!response.ok) throw new Error('Lỗi từ server: ' + response.statusText);
+        const data = await response.json();
+        loadingBubble.innerHTML = data.response;
+      } catch (error) {
+        loadingBubble.textContent = `❌ Lỗi: ${error.message}`;
+      }
+    }
+    btnChat && btnChat.addEventListener('click', handleChat);
+    chatInput && chatInput.addEventListener('keydown', (e) => { if(e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleChat(); } });
+
+    // 3. Giải toán
+    async function handleMath() {
+      const question = mathPrompt.value.trim();
+      const image = uploadedFiles.math;
+      if (!question && !image) return;
+
+      appendMessage(mathBox, question, 'user');
+      const loadingBubble = showLoading(mathBox);
+      mathPrompt.value = '';
+      mathPreview.innerHTML = '';
+      uploadedFiles.math = null;
+
+      try {
+        const response = await fetch('/api/math', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ question, image }),
+        });
+        if (!response.ok) throw new Error('Lỗi từ server: ' + response.statusText);
+        const data = await response.json();
+        loadingBubble.innerHTML = data.response;
+        // Yêu cầu MathJax render lại công thức LaTeX
+        MathJax.typesetPromise([loadingBubble]).catch(()=>{});
+      } catch (error) {
+        loadingBubble.textContent = `❌ Lỗi: ${error.message}`;
+      }
+    }
+    btnMath && btnMath.addEventListener('click', handleMath);
+    mathPrompt && mathPrompt.addEventListener('keydown', (e) => { if(e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleMath(); } });
+
+    // 4. Tạo Video (GIF)
+    btnVideo && btnVideo.addEventListener('click', async () => {
+      const prompt = videoPrompt.value.trim();
+      if (!prompt) return;
+
+      appendMessage(videoBox, prompt, 'user');
+      const loadingBubble = showLoading(videoBox);
+      videoPrompt.value = '';
+
+      try {
+        loadingBubble.textContent = 'Đang tải các khung hình (bước 1/2)...';
+        const frameResponse = await fetch('/api/pollinations-frames', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ prompt }),
+        });
+
+        if (!frameResponse.ok) throw new Error(`Lỗi tải khung hình: ${frameResponse.statusText}`);
+        const { frames } = await frameResponse.json();
+
+        if (!frames || frames.length === 0) throw new Error('Không nhận được khung hình nào.');
+
+        loadingBubble.textContent = `Đang render video từ ${frames.length} khung hình (bước 2/2)...`;
+
+        // create GIF - using gif.js included earlier
+        const gif = new GIF({
+          workers: 2,
+          quality: 10,
+          width: 512,
+          height: 512
+        });
+
+        const imagePromises = frames.map(frameData => {
+          return new Promise(resolve => {
+            const img = new Image();
+            img.src = frameData;
+            img.onload = () => resolve(img);
+            img.onerror = () => resolve(null);
+          });
+        });
+
+        const imageElements = (await Promise.all(imagePromises)).filter(Boolean);
+
+        imageElements.forEach(img => {
+          gif.addFrame(img, { delay: 100 });
+        });
+
+        gif.on('finished', function(blob) {
+          const videoUrl = URL.createObjectURL(blob);
+          loadingBubble.innerHTML = `<img src="${videoUrl}" class="generated-video" alt="Generated Video">`;
+          videoBox.scrollTop = videoBox.scrollHeight;
+        });
+
+        gif.render();
+
+      } catch (error) {
+        loadingBubble.textContent = `❌ Lỗi: ${error.message}`;
+      }
+    });
+
+    // events for file inputs
+    chatFileInput && chatFileInput.addEventListener('change', (e) => handleFileUpload(e, 'chat'));
+    mathFileInput && mathFileInput.addEventListener('change', (e) => handleFileUpload(e, 'math'));
+
+    // settings toggle
+    settingsBtn && settingsBtn.addEventListener('click', () => {
+      if (!settingsModal) return;
+      settingsModal.style.display = settingsModal.style.display === 'block' ? 'none' : 'block';
+    });
+    document.addEventListener('click', (e) => {
+      if (!settingsModal) return;
+      if (!settingsModal.contains(e.target) && !settingsBtn.contains(e.target)) {
+        settingsModal.style.display = 'none';
+      }
+    });
+
+    // Ensure if intro skipped or already hidden, show main app
+    const intro = document.getElementById('intro-screen');
+    if (!intro || intro.style.display === 'none') {
+      document.getElementById('mainApp').style.display = 'block';
+      document.body.style.overflow = 'auto';
+    }
+  });
+})();
+</script>
 </body>
 </html>

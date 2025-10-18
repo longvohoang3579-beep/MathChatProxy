@@ -1,707 +1,160 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="vi">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>AI Assistant Pro</title>
-<link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
-
 <style>
-  :root{
-    --bg:#0f0f13;
-    --panel:#1a1c29;
-    --muted:#9aa0b0;
-    --gold:#ffd24d;
-    --gold-dark: #b38a12;
-  }
-  html,body{height:100%;margin:0;background:var(--bg);color:#fff;font-family:"Segoe UI",sans-serif;overflow:hidden;}
-  /* ========== INTRO ========== */
-  #intro-screen{
-    position:fixed; inset:0; z-index:2200;
-    background: linear-gradient(180deg,#030306 0%, #050406 60%, #000 100%);
-    display:flex; align-items:center; justify-content:center; flex-direction:column;
-    overflow:hidden; transition:opacity .9s ease;
-  }
-  canvas#intro-canvas{position:absolute; inset:0; width:100%; height:100%; display:block;}
-  #intro-content{position:relative; z-index:2210; text-align:center; pointer-events:none;}
-  #intro-text{
-    color:var(--gold);
-    font-weight:900;
-    font-size:3rem;
-    letter-spacing:.6px;
-    text-shadow: 0 0 18px rgba(255,215,0,0.85), 0 0 44px rgba(255,160,60,0.35);
-    transform-origin:center center;
-  }
-  /* scale & shimmer animation (logo animates when burst triggers) */
-  .logo-small { transform: scale(.9); filter:brightness(0.9); }
-  .logo-zoom {
-    animation: logoZoom 0.45s cubic-bezier(.2,.9,.3,1) forwards;
-  }
-  @keyframes logoZoom {
-    0% { transform: scale(.7); filter:brightness(.6); text-shadow:0 0 6px rgba(255,200,80,0.25); }
-    60% { transform: scale(1.25); filter:brightness(1.6); text-shadow:0 0 50px rgba(255,240,180,0.98); }
-    100%{ transform: scale(1); filter:brightness(1); }
+  body {
+    margin: 0;
+    background-color: black;
+    overflow: hidden;
+    font-family: "Poppins", sans-serif;
   }
 
-  #intro-burst{ position:absolute; inset:0; z-index:2220; pointer-events:none; mix-blend-mode:screen;
-    background: radial-gradient(circle at 50% 40%, rgba(255,240,160,0.98), rgba(255,190,80,0.85) 18%, rgba(255,110,40,0.32) 48%, transparent 70%);
-    opacity:0; transition:opacity .75s ease; }
-  .intro-spark{ position:absolute; width:6px; height:6px; border-radius:50%; box-shadow:0 0 10px rgba(255,210,120,0.9), 0 0 20px rgba(255,140,40,0.6); pointer-events:none; opacity:0.95; transform:translate(-50%,-50%); }
-  /* screen shake */
-  .shake { animation: screenShake .45s cubic-bezier(.36,.07,.19,.97); }
-  @keyframes screenShake {
-    10%,90%{ transform: translate3d(-1px,0,0); }
-    20%,80%{ transform: translate3d(2px,0,0); }
-    30%,50%,70%{ transform: translate3d(-4px,0,0); }
-    40%,60%{ transform: translate3d(4px,0,0); }
+  /* === INTRO === */
+  #intro {
+    position: fixed;
+    inset: 0;
+    background: radial-gradient(circle at center, #1a1a1a 0%, #000 80%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    animation: introFadeOut 5s ease forwards;
+    z-index: 9999;
   }
 
-  /* ========== APP UI ========== */
-  .app-wrap{ position:relative; width:100%; height:100%; display:flex; align-items:flex-start; justify-content:center; padding:28px; box-sizing:border-box; }
-  .container{ width:900px; background:var(--panel); border-radius:16px; padding:20px; box-shadow:0 18px 40px rgba(0,0,0,.7); display:none; box-sizing:border-box; }
-  .topbar{ display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:12px; position:relative; }
-  .hamburger{ display:flex; align-items:center; justify-content:center; width:44px; height:44px; background:#0c0d10; border-radius:10px; cursor:pointer; border:1px solid rgba(255,210,80,0.06);}
-  .hamburger:hover{ box-shadow:0 8px 20px rgba(0,0,0,.6); }
-  .logo-title{ font-weight:700; font-size:1.05rem; color:var(--gold); text-shadow:0 0 8px rgba(255,200,80,0.25); }
-  #settings-btn{ position:relative; cursor:pointer; width:44px; height:44px; display:flex; align-items:center; justify-content:center; border-radius:10px; background:#0c0d10; border:1px solid rgba(255,210,80,0.04); }
-  #side-menu{
-    position:fixed; left:0; top:0; bottom:0; width:320px; background:linear-gradient(180deg,#0f1115,#0b0c0f);
-    transform:translateX(-110%); transition:transform .32s ease; z-index:2100; box-shadow:6px 0 30px rgba(0,0,0,0.6); padding:18px;
+  @keyframes introFadeOut {
+    0%, 85% { opacity: 1; }
+    100% { opacity: 0; visibility: hidden; }
   }
-  #side-menu.open{ transform:translateX(0); }
-  #side-menu h3{ color:var(--gold); margin:4px 0 10px; }
-  .menu-btn{ display:block; padding:10px 12px; border-radius:8px; cursor:pointer; color:#dfe6f2; background:transparent; margin-bottom:8px; }
-  .menu-btn:hover{ background:rgba(255,255,255,0.02); }
 
-  .chat-area{ display:flex; flex-direction:column; gap:12px; }
-  .chat-box{ background:#0f1720; border-radius:12px; padding:16px; height:420px; overflow:auto; display:flex; flex-direction:column; scroll-behavior:smooth; border:1px solid rgba(255,210,80,0.03); }
-  .bubble{ max-width:80%; padding:12px 16px; border-radius:12px; margin-bottom:12px; line-height:1.4; white-space:pre-wrap; box-shadow: 0 6px 16px rgba(0,0,0,0.6); }
-  .user-bubble{ background:linear-gradient(180deg,#2b6df0,#1f4fe0); color:#fff; align-self:flex-end; border-bottom-right-radius:4px; }
-  .ai-bubble{ background:#15171b; color:#e6e7ea; align-self:flex-start; border-bottom-left-radius:4px; border:1px solid rgba(255,210,80,0.03); }
-  .ai-bubble .title-large{ display:block; font-size:1.02rem; font-weight:700; color:var(--gold); margin-bottom:6px; }
-  .thumbnail{ width:90px; height:90px; object-fit:cover; border-radius:8px; border:2px solid rgba(255,255,255,0.06); margin-top:8px; display:block; }
+  .gold-glow {
+    font-size: 80px;
+    font-weight: 700;
+    background: linear-gradient(90deg, #c8a33a, #ffd700, #c8a33a);
+    background-size: 200%;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: shimmer 3s linear infinite, scaleInOut 4s ease-in-out forwards;
+    text-shadow: 0 0 25px rgba(255, 215, 0, 0.6);
+  }
 
-  .controls{ display:flex; gap:8px; align-items:center; }
-  .input-row{ display:flex; gap:8px; align-items:center; margin-top:6px; }
-  textarea{ width:100%; min-height:56px; max-height:160px; resize:none; padding:12px; border-radius:10px; background:#111318; border:1px solid rgba(255,255,255,0.03); color:#fff; outline:none; }
-  .send-btn{ background:linear-gradient(180deg,#6366f1,#5450e5); color:#fff; padding:10px 12px; border-radius:12px; cursor:pointer; display:flex; align-items:center; justify-content:center; border:none; }
-  .mode-bar{ margin-top:10px; display:flex; gap:10px; }
-  .mode-btn{ padding:8px 12px; border-radius:999px; background:transparent; border:1px solid rgba(255,255,255,0.04); color:var(--muted); cursor:pointer; user-select:none; }
-  .mode-btn.active-multi{ color:#111; background: linear-gradient(90deg,#ffdb7a,#ffb36a); box-shadow:0 8px 18px rgba(255,180,60,0.12); border:none; }
+  @keyframes shimmer {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+  }
 
-  .icon-btn{ width:44px; height:44px; border-radius:8px; background:#0e1013; display:flex; align-items:center; justify-content:center; cursor:pointer; border:1px solid rgba(255,210,80,0.04); }
-  .pending-preview{ display:flex; gap:8px; margin-top:6px; flex-wrap:wrap; }
+  @keyframes scaleInOut {
+    0% { transform: scale(0.2); opacity: 0; }
+    30% { transform: scale(1.2); opacity: 1; }
+    60% { transform: scale(0.9); }
+    85% { transform: scale(1.05); }
+    100% { transform: scale(1); }
+  }
 
-  #settings-modal{ position:absolute; top:56px; right:4px; width:220px; background:var(--panel); border-radius:10px; padding:10px; border:1px solid rgba(250,200,21,0.08); display:none; z-index:2200; }
-  #settings-modal.show{ display:block; }
+  .flare {
+    position: absolute;
+    width: 400px;
+    height: 400px;
+    background: radial-gradient(circle, rgba(255, 200, 50, 0.4), transparent 70%);
+    filter: blur(80px);
+    animation: flareMove 4s ease-in-out infinite alternate;
+  }
 
-  .history-item{ padding:10px; border-radius:8px; margin-bottom:8px; cursor:pointer; background:transparent; color:#dfe6f2; }
-  .history-item:hover{ background:rgba(255,255,255,0.02); }
+  @keyframes flareMove {
+    0% { transform: translate(-100px, -50px) scale(1); opacity: 0.5; }
+    100% { transform: translate(100px, 50px) scale(1.3); opacity: 0.8; }
+  }
 
-  /* responsive */
-  @media (max-width:980px){ .container{ width:92%; } }
-  @media (max-width:640px){ #intro-text{ font-size:1.6rem; } .container{ width:95%; padding:12px; } #side-menu{ width:86%; } }
+  .burst {
+    position: absolute;
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(255, 215, 0, 0.7), transparent 70%);
+    animation: burst 1s ease-out forwards;
+    opacity: 0;
+  }
+
+  @keyframes burst {
+    0% { width: 0; height: 0; opacity: 1; }
+    70% { width: 250vw; height: 250vh; opacity: 0.8; }
+    100% { opacity: 0; }
+  }
+
+  /* === MAIN CHAT === */
+  #chat-container {
+    display: none;
+    height: 100vh;
+    background: linear-gradient(to bottom right, #000, #1a1a1a);
+    color: white;
+    justify-content: center;
+    align-items: center;
+  }
 </style>
 </head>
 <body>
 
-<!-- INTRO -->
-<div id="intro-screen" aria-hidden="false">
-  <canvas id="intro-canvas"></canvas>
-
-  <div id="intro-content">
-    <div id="intro-text" class="logo-small">AI Assistant Pro</div>
-    <!-- no subtext as requested -->
-  </div>
-
-  <div id="intro-burst" aria-hidden="true"></div>
-  <!-- sparks will be appended dynamically -->
+<div id="intro">
+  <div class="flare"></div>
+  <div class="gold-glow">AI Assistant Pro</div>
 </div>
 
-<!-- APP WRAPPER -->
-<div class="app-wrap" aria-hidden="true">
-  <!-- side menu -->
-  <div id="side-menu" aria-hidden="true">
-    <h3>Menu</h3>
-    <button class="menu-btn" id="new-chat-btn">🆕 New Chat</button>
-    <div style="margin-top:12px;color:#bfc8d6;margin-bottom:8px;font-weight:600;">History</div>
-    <div id="history-list" style="max-height:72vh; overflow:auto;"></div>
-    <hr style="border-color: rgba(255,255,255,0.03); margin:12px 0;">
-    <div style="color:var(--muted); font-size:0.92rem;">Language & Upload</div>
-    <div style="margin-top:8px;">
-      <label style="color:#dfe6f2;font-weight:600;font-size:0.9rem;display:block;margin-bottom:6px;">Language</label>
-      <select id="language-select" style="width:100%;padding:8px;border-radius:8px;background:#0f1720;color:#fff;border:1px solid #2b3038;">
-        <option value="en">English</option>
-        <option value="vi">Tiếng Việt</option>
-        <option value="zh">中文</option>
-      </select>
-    </div>
-    <div style="margin-top:12px;">
-      <label class="menu-btn" id="side-upload-btn" style="display:inline-flex;align-items:center;gap:8px;">
-        📁 Upload File
-      </label>
-      <input id="sideFile" type="file" accept="image/*,.pdf,.txt,.docx" style="display:none;">
-    </div>
-  </div>
-
-  <!-- main container -->
-  <div class="container" id="mainApp" aria-hidden="true">
-    <div class="topbar">
-      <div style="display:flex;align-items:center;gap:12px;">
-        <div class="hamburger" id="hamburger" title="Menu (New chat & History)">
-          <!-- triple bars -->
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M4 7h16M4 12h16M4 17h16" stroke="#ffd24d" stroke-width="1.6" stroke-linecap="round"/></svg>
-        </div>
-        <div class="logo-title">AI Assistant Pro</div>
-      </div>
-
-      <div style="display:flex; gap:8px; align-items:center;">
-        <div id="settings-btn" title="Settings (language)">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 15.5A3.5 3.5 0 1 0 12 8.5a3.5 3.5 0 0 0 0 7z" stroke="#ffd24d" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06A2 2 0 0 1 3.3 17.8l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09c.64 0 1.19-.27 1.51-1a1.65 1.65 0 0 0-.33-1.82l-.06-.06A2 2 0 0 1 6.2 3.3l.06.06a1.65 1.65 0 0 0 1.82.33H8a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09c0 .64.27 1.19 1 1.51h.92a1.65 1.65 0 0 0 1.82-.33l.06-.06A2 2 0 0 1 20.7 6.2l-.06.06c-.38.38-.47 1.07-.33 1.82V9c0 .64.27 1.19 1 1.51H21a2 2 0 1 1 0 4h-.09c-.64 0-1.19.27-1.51 1z" stroke="#ffd24d" stroke-width="0.9" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        </div>
-
-        <div id="settings-modal">
-          <label style="color:#dfe6f2;font-weight:600;font-size:0.9rem;margin-bottom:8px;display:block;">Language</label>
-          <select id="language-select-top" style="width:100%;padding:8px;border-radius:8px;background:#0f1720;color:#fff;border:1px solid #2b3038;">
-            <option value="en">English</option>
-            <option value="vi">Tiếng Việt</option>
-            <option value="zh">中文</option>
-          </select>
-        </div>
-      </div>
-    </div>
-
-    <!-- Chat area -->
-    <div class="chat-area">
-      <div class="chat-box" id="chatBox" aria-live="polite"></div>
-
-      <!-- pending preview (uploaded thumbnails) -->
-      <div class="pending-preview" id="pendingPreview"></div>
-
-      <!-- input row -->
-      <div class="input-row">
-        <label class="icon-btn" title="Upload image/file" id="uploadLabel">
-          <input id="fileInput" type="file" accept="image/*,.pdf,.txt,.docx" style="display:none" />
-          <svg id="fileIcon" width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M7 7v10a2 2 0 0 0 2 2h6" stroke="#ffd24d" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M20 7l-8-5-8 5v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7z" stroke="#ffd24d" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        </label>
-
-        <textarea id="chatInput" placeholder="Type a message..."></textarea>
-
-        <button class="send-btn" id="sendBtn" title="Send">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M5 12l14 7-7-7 7-7-14 7z" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        </button>
-      </div>
-
-      <!-- mode controls (multi-select) -->
-      <div class="mode-bar" role="tablist" aria-label="Modes">
-        <button class="mode-btn active-multi" data-mode="chat">Chat</button>
-        <button class="mode-btn" data-mode="image">Create Image</button>
-        <button class="mode-btn" data-mode="video">Create Video</button>
-        <button class="mode-btn" data-mode="math">Solve Math</button>
-      </div>
-    </div>
-  </div> <!-- end container -->
-</div> <!-- end app-wrap -->
-
-<!-- GIF worker libs -->
-<script src="https://unpkg.com/gif.js@0.2.0/dist/gif.js"></script>
-<script src="https://unpkg.com/gif.js@0.2.0/dist/gif.worker.js"></script>
+<div id="chat-container">
+  <h1>✨ Giao diện Chat Chính ✨</h1>
+</div>
 
 <script>
-/* ========= INTRO CANVAS + AUDIO (Web Audio API) ========= */
-(function introModule(){
-  const canvas = document.getElementById('intro-canvas');
-  const introScreen = document.getElementById('intro-screen');
-  const burst = document.getElementById('intro-burst');
-  const appWrap = document.querySelector('.app-wrap');
-  const mainApp = document.getElementById('mainApp');
-  const logoEl = document.getElementById('intro-text');
+  // === Web Audio API: tạo âm thanh intro ===
+  function playIntroSound() {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const now = ctx.currentTime;
 
-  function resize(){ canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
-  window.addEventListener('resize', resize);
-  resize();
-  const ctx = canvas.getContext('2d');
+    // whoosh
+    const whoosh = ctx.createOscillator();
+    const gain1 = ctx.createGain();
+    whoosh.frequency.setValueAtTime(200, now);
+    whoosh.frequency.exponentialRampToValueAtTime(800, now + 1.5);
+    gain1.gain.setValueAtTime(0.0001, now);
+    gain1.gain.exponentialRampToValueAtTime(0.2, now + 0.3);
+    gain1.gain.exponentialRampToValueAtTime(0.001, now + 1.5);
+    whoosh.connect(gain1).connect(ctx.destination);
+    whoosh.start(now);
+    whoosh.stop(now + 1.5);
 
-  // Light blob class
-  class Blob {
-    constructor(cx,cy,orbitR,size,hue,spd,dir,off){
-      this.cx=cx; this.cy=cy; this.orbitR=orbitR; this.size=size; this.hue=hue; this.spd=spd; this.dir=dir; this.off=off;
-    }
-    update(t){
-      const ang = this.off + this.dir * t * this.spd;
-      const x = this.cx + Math.cos(ang)*this.orbitR + Math.sin(t*this.spd*0.7)*18;
-      const y = this.cy + Math.sin(ang*0.9)*this.orbitR*0.6 + Math.cos(t*this.spd*0.6)*12;
-      const size = this.size * (1 + 0.12*Math.sin(ang*2 + t*0.8));
-      this.draw(x,y,size);
-    }
-    draw(x,y,size){
-      const g = ctx.createRadialGradient(x,y,0,x,y,size*1.6);
-      g.addColorStop(0, `hsla(${this.hue},100%,65%,1)`);
-      g.addColorStop(0.25, `hsla(${(this.hue+20)%360},100%,55%,0.85)`);
-      g.addColorStop(0.6, `hsla(${(this.hue+40)%360},90%,45%,0.45)`);
-      g.addColorStop(1, 'rgba(0,0,0,0)');
-      ctx.save();
-      ctx.globalCompositeOperation='screen';
-      ctx.fillStyle=g;
-      ctx.beginPath(); ctx.arc(x,y,size,0,Math.PI*2); ctx.fill();
-      ctx.globalCompositeOperation='lighter';
-      ctx.strokeStyle='rgba(255,240,200,0.06)';
-      ctx.lineWidth=Math.max(1, size*0.11);
-      ctx.beginPath(); ctx.arc(x,y,size*1.04,0,Math.PI*2); ctx.stroke();
-      ctx.restore();
-    }
+    // burst
+    const burst = ctx.createOscillator();
+    const gain2 = ctx.createGain();
+    burst.type = "triangle";
+    burst.frequency.setValueAtTime(80, now + 2.5);
+    gain2.gain.setValueAtTime(0.001, now + 2.5);
+    gain2.gain.exponentialRampToValueAtTime(0.3, now + 2.7);
+    gain2.gain.exponentialRampToValueAtTime(0.0001, now + 3);
+    burst.connect(gain2).connect(ctx.destination);
+    burst.start(now + 2.5);
+    burst.stop(now + 3);
   }
 
-  let blobs = [];
-  function createBlobs(){
-    blobs = [];
-    const w = canvas.width, h = canvas.height;
-    const centers = [{cx:w*0.25, cy:h*0.35},{cx:w*0.78, cy:h*0.65}];
-    const sets = [[40,24,12],[12,28,48]];
-    centers.forEach((c,i)=>{
-      sets[i].forEach((hue,j)=>{
-        blobs.push(new Blob(c.cx,c.cy, Math.min(w,h)*(0.12+0.06*j+Math.random()*0.04), 36+Math.random()*36, hue + Math.random()*6 -3, 0.55+Math.random()*0.7, Math.random()>0.5?1:-1, Math.random()*Math.PI*2));
-      });
-    });
-    for(let k=0;k<10;k++){
-      blobs.push(new Blob(w*0.5 + (Math.random()*w - w/2)*0.5, h*0.5 + (Math.random()*h - h/2)*0.35, 20 + Math.random()*160, 8 + Math.random()*20, 30 + Math.random()*40, 0.8+Math.random()*1.2, Math.random()>0.5?1:-1, Math.random()*Math.PI*2));
-    }
-  }
-  createBlobs();
+  // === Hiệu ứng burst & chuyển sang chat ===
+  window.onload = () => {
+    playIntroSound();
 
-  // DOM sparks
-  function spawnSparks(){
-    const count = Math.min(80, Math.max(30, Math.round(window.innerWidth/18)));
-    const container = introScreen;
-    for(let i=0;i<count;i++){
-      const el = document.createElement('div');
-      el.className='intro-spark';
-      el.style.left = (Math.random()*100)+'%';
-      el.style.top = (10 + Math.random()*70)+'%';
-      const scale = 0.6 + Math.random()*1.6;
-      el.style.width = (4*scale)+'px';
-      el.style.height = (4*scale)+'px';
-      el.style.opacity = (0.35 + Math.random()*0.8);
-      el.style.transition = `transform ${5+Math.random()*6}s ease-in-out, opacity ${6+Math.random()*4}s linear`;
-      container.appendChild(el);
-      setTimeout(()=> {
-        const dx = (Math.random()-0.5)*200;
-        const dy = (Math.random()-0.5)*120;
-        el.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
-        el.style.opacity = (0.1 + Math.random()*0.6);
-      }, 60 + Math.random()*400);
-      setTimeout(()=> el.remove(), 10000);
-    }
-  }
-  spawnSparks();
+    setTimeout(() => {
+      const burst = document.createElement("div");
+      burst.className = "burst";
+      document.body.appendChild(burst);
+      setTimeout(() => burst.remove(), 1000);
+    }, 3000); // burst sau khi logo ổn định
 
-  // draw loop
-  let start = performance.now();
-  let running = true;
-  function render(now){
-    if(!running) return;
-    const t = (now - start)/1000;
-    ctx.clearRect(0,0,canvas.width,canvas.height);
-    // dark base
-    const vg = ctx.createLinearGradient(0,0,canvas.width,canvas.height);
-    vg.addColorStop(0,'#030406'); vg.addColorStop(1,'#050406');
-    ctx.fillStyle = vg; ctx.fillRect(0,0,canvas.width,canvas.height);
-
-    for(const b of blobs) b.update(t);
-    ctx.globalCompositeOperation='lighter';
-    const cx = canvas.width*0.52, cy = canvas.height*0.45;
-    const largeG = ctx.createRadialGradient(cx,cy,0,cx,cy,Math.max(canvas.width,canvas.height)*0.6);
-    largeG.addColorStop(0,'rgba(255,220,140,0.035)'); largeG.addColorStop(1,'rgba(0,0,0,0)');
-    ctx.fillStyle = largeG; ctx.fillRect(0,0,canvas.width,canvas.height);
-    ctx.globalCompositeOperation='source-over';
-    requestAnimationFrame(render);
-  }
-  requestAnimationFrame(render);
-
-  // Web Audio burst sound
-  const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-  function playBurstSound(){
-    // short metallic impact with noise + pitch sweep
-    const master = audioCtx.createGain(); master.connect(audioCtx.destination);
-    master.gain.value = 0.9;
-
-    // tonal impact (saw-ish)
-    const osc = audioCtx.createOscillator();
-    const oscGain = audioCtx.createGain();
-    osc.type = 'sawtooth';
-    osc.frequency.setValueAtTime(160, audioCtx.currentTime);
-    osc.frequency.exponentialRampToValueAtTime(420, audioCtx.currentTime + 0.18);
-    oscGain.gain.setValueAtTime(0, audioCtx.currentTime);
-    oscGain.gain.linearRampToValueAtTime(0.9, audioCtx.currentTime + 0.01);
-    oscGain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.7);
-
-    // high metallic bell
-    const bell = audioCtx.createOscillator();
-    const bellGain = audioCtx.createGain();
-    bell.type = 'triangle';
-    bell.frequency.setValueAtTime(780, audioCtx.currentTime);
-    bell.frequency.exponentialRampToValueAtTime(1200, audioCtx.currentTime + 0.25);
-    bellGain.gain.setValueAtTime(0.0, audioCtx.currentTime);
-    bellGain.gain.linearRampToValueAtTime(0.35, audioCtx.currentTime + 0.01);
-    bellGain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 1.1);
-
-    // noise burst
-    const bufferSize = audioCtx.sampleRate * 0.5;
-    const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
-    const data = buffer.getChannelData(0);
-    for(let i=0;i<data.length;i++) data[i] = (Math.random()*2-1) * Math.exp(-3*i/bufferSize);
-    const noise = audioCtx.createBufferSource();
-    noise.buffer = buffer;
-    const noiseGain = audioCtx.createGain();
-    noiseGain.gain.setValueAtTime(0.8, audioCtx.currentTime);
-    noiseGain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.5);
-
-    // filter to add metallic sheen
-    const noiseFilter = audioCtx.createBiquadFilter();
-    noiseFilter.type = 'bandpass';
-    noiseFilter.frequency.setValueAtTime(1500, audioCtx.currentTime);
-    noiseFilter.Q.value = 0.9;
-
-    // connect
-    osc.connect(oscGain); oscGain.connect(master); osc.start();
-    bell.connect(bellGain); bellGain.connect(master); bell.start();
-    noise.connect(noiseFilter); noiseFilter.connect(noiseGain); noiseGain.connect(master); noise.start();
-
-    // stop nodes
-    setTimeout(()=>{ try{ osc.stop(); bell.stop(); noise.stop(); } catch(e){} }, 1200);
-  }
-
-  // Timing: 6s then burst
-  const VISIBLE = 6000;
-  setTimeout(()=> {
-    // logo zoom (small->big->glow)
-    logoEl.classList.remove('logo-small');
-    logoEl.classList.add('logo-zoom');
-
-    // short delay then burst
-    setTimeout(()=> {
-      // play sound (resume audio context if suspended)
-      if(audioCtx.state === 'suspended'){ audioCtx.resume().catch(()=>{}); }
-      playBurstSound();
-
-      burst.style.opacity = '1';
-      // intensify sparks outward
-      document.querySelectorAll('.intro-spark').forEach(s=>{
-        s.style.transitionDuration = (0.45 + Math.random()*0.6)+'s';
-        const dx = (Math.random()-0.5)*900; const dy=(Math.random()-0.5)*600;
-        s.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px)) scale(1.6)`;
-        s.style.opacity = '1';
-      });
-
-      // apply screen shake
-      document.body.classList.add('shake');
-      setTimeout(()=> document.body.classList.remove('shake'), 420);
-
-      // fade out after brief moment
-      setTimeout(()=>{
-        burst.style.transition = 'opacity .9s ease';
-        burst.style.opacity = '0';
-        introScreen.style.opacity = '0';
-        running = false;
-        // hide after fade
-        setTimeout(()=> {
-          introScreen.style.display = 'none';
-          mainApp.style.display = 'block';
-          appWrap.style.overflow = 'auto';
-          document.body.style.overflow = 'auto';
-          // inject greeting in English
-          window.APP && window.APP.postIntroReady && window.APP.postIntroReady();
-        }, 900);
-      }, 650);
-
-    }, 360); // slight delay after zoom
-  }, VISIBLE);
-
-})(); // end introModule
-
-
-/* ========= APP LOGIC ========= */
-document.addEventListener('DOMContentLoaded', () => {
-  // elements
-  const mainApp = document.getElementById('mainApp');
-  const chatBox = document.getElementById('chatBox');
-  const chatInput = document.getElementById('chatInput');
-  const sendBtn = document.getElementById('sendBtn');
-  const fileInput = document.getElementById('fileInput');
-  const pendingPreview = document.getElementById('pendingPreview');
-
-  const modeButtons = document.querySelectorAll('.mode-btn');
-  const hamburger = document.getElementById('hamburger');
-  const sideMenu = document.getElementById('side-menu');
-  const newChatBtn = document.getElementById('new-chat-btn');
-  const historyList = document.getElementById('history-list');
-
-  const settingsBtn = document.getElementById('settings-btn');
-  const settingsModal = document.getElementById('settings-modal');
-  const languageSelect = document.getElementById('language-select-top');
-
-  const sideFile = document.getElementById('sideFile');
-  const sideUploadBtn = document.getElementById('side-upload-btn');
-
-  // app state
-  const STORAGE_KEY = 'ai_assistant_history_v2';
-  let conversations = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
-  let currentConversation = { id: Date.now(), title: 'New chat', messages: [] };
-  window._pendingFile = null;
-  let activeModes = new Set(['chat']); // multi-select, chat active by default
-
-  function saveConversation(conv){
-    const idx = conversations.findIndex(c=>c.id===conv.id);
-    if(idx>=0) conversations[idx]=conv;
-    else conversations.unshift(conv);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(conversations));
-    renderHistory();
-  }
-  function renderHistory(){
-    historyList.innerHTML = '';
-    conversations.forEach(conv=>{
-      const div = document.createElement('div');
-      div.className = 'history-item';
-      div.textContent = conv.title || ('Chat ' + new Date(conv.id).toLocaleString());
-      div.onclick = ()=> { loadConversation(conv.id); sideMenu.classList.remove('open'); };
-      historyList.appendChild(div);
-    });
-  }
-  function newConversation(){
-    currentConversation = { id: Date.now(), title: 'New chat', messages: [] };
-    renderChat();
-  }
-  function loadConversation(id){
-    const conv = conversations.find(c=>c.id===id);
-    if(!conv) return;
-    currentConversation = JSON.parse(JSON.stringify(conv));
-    renderChat();
-  }
-  function renderChat(){
-    chatBox.innerHTML = '';
-    for(const m of currentConversation.messages){
-      const b = makeBubble(m.from, m.text, m.meta);
-      chatBox.appendChild(b);
-    }
-    chatBox.scrollTop = chatBox.scrollHeight;
-  }
-  function makeBubble(from, text, meta){
-    const div = document.createElement('div');
-    div.className = 'bubble ' + (from==='user' ? 'user-bubble' : 'ai-bubble');
-    if(from==='ai' && meta && meta.greeting){
-      const t = document.createElement('span');
-      t.className = 'title-large';
-      t.textContent = 'AI Assistant Pro';
-      div.appendChild(t);
-    }
-    const p = document.createElement('div');
-    p.innerHTML = text;
-    div.appendChild(p);
-    if(meta && meta.thumbnail){
-      const img = document.createElement('img');
-      img.className = 'thumbnail';
-      img.src = meta.thumbnail;
-      div.appendChild(img);
-    }
-    return div;
-  }
-
-  // init
-  renderHistory();
-  newConversation();
-
-  // post-intro hook
-  window.APP = window.APP || {};
-  window.APP.postIntroReady = function(){
-    const greeting = "Hello! I’m AI Assistant Pro — your intelligent companion.\nWhat would you like to explore today?";
-    const aiMsg = { from:'ai', text: greeting, meta:{ greeting:true } };
-    currentConversation.messages.push(aiMsg);
-    saveConversation(currentConversation);
-    renderChat();
+    // Hiển thị chat
+    setTimeout(() => {
+      document.getElementById("intro").style.display = "none";
+      document.getElementById("chat-container").style.display = "flex";
+    }, 4800);
   };
-
-  // modes multi-select
-  modeButtons.forEach(btn=>{
-    btn.addEventListener('click', ()=>{
-      const mode = btn.dataset.mode;
-      if(activeModes.has(mode)){
-        activeModes.delete(mode);
-        btn.classList.remove('active-multi');
-      } else {
-        activeModes.add(mode);
-        btn.classList.add('active-multi');
-      }
-      // ensure chat remains on if user deselects everything, force 'chat' on
-      if(activeModes.size === 0){
-        activeModes.add('chat');
-        document.querySelector('.mode-btn[data-mode="chat"]').classList.add('active-multi');
-      }
-      // update placeholder based on whether image or math is selected (prefer image if present)
-      if(activeModes.has('image')) chatInput.placeholder = 'Describe the image to create...';
-      else if(activeModes.has('video')) chatInput.placeholder = 'Describe the short video/gif to generate...';
-      else if(activeModes.has('math')) chatInput.placeholder = 'Enter the math problem...';
-      else chatInput.placeholder = 'Type a message...';
-    });
-  });
-
-  // hamburger toggle
-  hamburger.addEventListener('click', ()=> {
-    sideMenu.classList.toggle('open');
-  });
-  document.addEventListener('click', (e)=> {
-    if(!sideMenu.contains(e.target) && !hamburger.contains(e.target)){
-      sideMenu.classList.remove('open');
-    }
-  });
-
-  // new chat
-  newChatBtn.addEventListener('click', ()=> {
-    if(currentConversation.messages.length){
-      const firstUser = currentConversation.messages.find(m=>m.from==='user');
-      currentConversation.title = firstUser ? (firstUser.text.split('\n')[0].slice(0,40)) : ('Chat ' + new Date(currentConversation.id).toLocaleString());
-      saveConversation(currentConversation);
-    }
-    newConversation();
-    sideMenu.classList.remove('open');
-  });
-
-  // file upload
-  document.getElementById('uploadLabel').addEventListener('click', ()=> fileInput.click());
-  fileInput.addEventListener('change', (e)=>{
-    const f = e.target.files[0];
-    if(!f) return;
-    const reader = new FileReader();
-    reader.onload = ()=> {
-      pendingPreview.innerHTML = `<img src="${reader.result}" style="width:80px;height:80px;border-radius:8px;object-fit:cover;border:2px solid rgba(255,255,255,0.06);">`;
-      window._pendingFile = { name: f.name, data: reader.result };
-    };
-    reader.readAsDataURL(f);
-  });
-
-  // side upload
-  sideUploadBtn.addEventListener('click', ()=> sideFile.click());
-  sideFile.addEventListener('change', (e)=>{
-    const f = e.target.files[0]; if(!f) return;
-    const reader = new FileReader();
-    reader.onload = ()=> {
-      pendingPreview.innerHTML = `<img src="${reader.result}" style="width:80px;height:80px;border-radius:8px;object-fit:cover;border:2px solid rgba(255,255,255,0.06);">`;
-      window._pendingFile = { name: f.name, data: reader.result };
-      sideMenu.classList.remove('open');
-    };
-    reader.readAsDataURL(f);
-  });
-
-  // send action unified
-  async function sendAction(){
-    const text = chatInput.value.trim();
-    const pendingFile = window._pendingFile || null;
-    if(!text && !pendingFile) return;
-
-    // user bubble
-    let userMeta = {};
-    if(pendingFile) userMeta.thumbnail = pendingFile.data;
-    currentConversation.messages.push({ from:'user', text: text || ('[file: ' + (pendingFile?pendingFile.name:'') + ']'), meta: userMeta });
-    renderChat();
-
-    chatInput.value = '';
-    pendingPreview.innerHTML = '';
-    window._pendingFile = null;
-
-    // loading bubble
-    currentConversation.messages.push({ from:'ai', text: 'Processing...', meta:{} });
-    renderChat();
-
-    try {
-      let responseText = '';
-      let responseMeta = {};
-
-      // Determine behavior: if image mode selected -> create image; video selected -> create frames; math -> math; chat -> chat.
-      // Priority: image > video > math > chat (if multiple selected, run the highest-priority feature)
-      if(activeModes.has('image')){
-        const payload = { prompt: text || (pendingFile ? '[file uploaded]' : '') };
-        const r = await fetch('/api/pollinations-image', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
-        if(!r.ok) throw new Error('Server error: ' + r.statusText);
-        const data = await r.json();
-        responseText = data.caption || 'Image generated';
-        responseMeta.thumbnail = data.imageUrl || data.image || '';
-      } else if(activeModes.has('video')){
-        const payload = { prompt: text };
-        const r = await fetch('/api/pollinations-frames', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
-        if(!r.ok) throw new Error('Server error: ' + r.statusText);
-        const res = await r.json();
-        const frames = res.frames || [];
-        if(frames.length){
-          responseText = 'Generated video (GIF)';
-          const gif = new GIF({ workers:2, quality:10 });
-          const images = await Promise.all(frames.map(src => new Promise(resolve=>{
-            const img = new Image(); img.src = src; img.onload = ()=> resolve(img); img.onerror = ()=> resolve(null);
-          })));
-          images.filter(Boolean).forEach(img=> gif.addFrame(img, { delay:120 }));
-          const blob = await new Promise(resolve=>{
-            gif.on('finished', b => resolve(b));
-            gif.render();
-          });
-          responseMeta.thumbnail = URL.createObjectURL(blob);
-        } else responseText = 'No frames returned.';
-      } else if(activeModes.has('math')){
-        const payload = { question: text, file: pendingFile ? pendingFile.data : undefined };
-        const r = await fetch('/api/math', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
-        if(!r.ok) throw new Error('Server error: ' + r.statusText);
-        const d = await r.json();
-        responseText = d.response || d.solution || 'No solution.';
-      } else {
-        // chat
-        const payload = { message:text, language: languageSelect.value, file: pendingFile ? pendingFile.data : undefined };
-        const r = await fetch('/api/chat', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
-        if(!r.ok) throw new Error('Server error: ' + r.statusText);
-        const data = await r.json();
-        responseText = data.response || data.text || 'No response.';
-      }
-
-      // replace last loading
-      for(let i=currentConversation.messages.length-1;i>=0;i--){
-        if(currentConversation.messages[i].from==='ai' && currentConversation.messages[i].text==='Processing...'){
-          currentConversation.messages.splice(i,1);
-          break;
-        }
-      }
-      currentConversation.messages.push({ from:'ai', text: responseText, meta: responseMeta });
-      if(currentConversation.title === 'New chat' && text){
-        currentConversation.title = text.split('\n')[0].slice(0,50);
-      }
-      saveConversation(currentConversation);
-      renderChat();
-      if(window.MathJax) MathJax.typesetPromise().catch(()=>{});
-    } catch(err){
-      for(let i=currentConversation.messages.length-1;i>=0;i--){
-        if(currentConversation.messages[i].from==='ai' && currentConversation.messages[i].text==='Processing...'){
-          currentConversation.messages.splice(i,1);
-          break;
-        }
-      }
-      currentConversation.messages.push({ from:'ai', text: '❌ Error: ' + err.message, meta:{} });
-      saveConversation(currentConversation);
-      renderChat();
-    }
-  }
-
-  sendBtn.addEventListener('click', sendAction);
-  chatInput.addEventListener('keydown',(e)=>{ if(e.key==='Enter' && !e.shiftKey){ e.preventDefault(); sendAction(); } });
-
-  // settings modal toggles (show on click, hide on leave)
-  settingsBtn.addEventListener('click', (e)=> {
-    e.stopPropagation();
-    settingsModal.classList.toggle('show');
-  });
-  settingsModal.addEventListener('mouseleave', ()=> settingsModal.classList.remove('show'));
-  document.addEventListener('click', (e)=> {
-    if(!settingsModal.contains(e.target) && !settingsBtn.contains(e.target)) settingsModal.classList.remove('show');
-  });
-
-  // make sure app hidden initially (intro handles showing)
-  document.getElementById('mainApp').style.display = 'none';
-});
 </script>
+
 </body>
 </html>

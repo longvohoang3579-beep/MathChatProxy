@@ -4,665 +4,743 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>AI Assistant Pro</title>
-<link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet" />
 <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
-
 <style>
-  /* ====== Global ====== */
+  /* ========== GLOBAL ========== */
   :root{
     --bg:#0f0f13;
     --panel:#1a1c29;
-    --muted:#9aa0b0;
-    --gold:#ffd24d;
+    --muted:#aaa;
+    --accent:#facc15;
+    --bubble-user:#2563eb;
+    --bubble-ai:#374151;
   }
-  html,body { height:100%; margin:0; background:var(--bg); color:#fff; font-family:"Segoe UI",sans-serif; overflow:hidden; }
-
-  /* ====== INTRO STYLES ====== */
-  #intro-screen {
+  html,body{height:100%;margin:0;padding:0;background:var(--bg);color:#fff;font-family:"Segoe UI",sans-serif;overflow:hidden;}
+  /* ========== INTRO ========== */
+  #intro-screen{
     position:fixed; inset:0; z-index:2000;
-    background: linear-gradient(180deg,#050406 0%, #070507 60%, #000001 100%);
     display:flex; align-items:center; justify-content:center; flex-direction:column;
-    transition:opacity .9s ease;
-    overflow:hidden;
+    background:linear-gradient(180deg,#050405 0%, #060607 60%);
+    pointer-events:auto;
   }
-  canvas#intro-canvas { position:absolute; inset:0; width:100%; height:100%; display:block; }
+  /* canvas covers behind logo */
+  #intro-canvas{position:absolute; inset:0; width:100%; height:100%; display:block;}
+  #intro-content{position:relative; z-index:2010; text-align:center; pointer-events:none;}
+  #intro-logo{
+    font-weight:800; color:var(--accent);
+    font-size:3.0rem; letter-spacing:0.6px;
+    transform:scale(.6); opacity:0;
+    text-shadow:0 0 10px rgba(255,230,120,0.6);
+    display:inline-block;
+  }
+  /* shimmer overlay */
+  .shimmer{
+    position:relative; display:inline-block;
+  }
+  .shimmer::after{
+    content:''; position:absolute; left:-40%; top:0; height:100%; width:40%;
+    background:linear-gradient(90deg, rgba(255,255,255,0.0) 0%, rgba(255,255,255,0.8) 50%, rgba(255,255,255,0.0) 100%);
+    transform:skewX(-20deg);
+    pointer-events:none;
+    mix-blend-mode:overlay; opacity:0;
+  }
+  /* animations: scale-in -> glow -> shimmer */
+  .logo-appear{ animation: logoScale 0.9s cubic-bezier(.2,.9,.2,1) forwards; }
+  @keyframes logoScale{
+    0%{ transform:scale(.4); opacity:0; filter:blur(6px); text-shadow:none; }
+    60%{ transform:scale(1.12); opacity:1; filter:blur(0); text-shadow:0 0 24px rgba(255,220,100,0.9);}
+    100%{ transform:scale(1); opacity:1; filter:blur(0); text-shadow: 0 0 34px rgba(255,215,60,0.95); }
+  }
+  .logo-shimmer{ animation: shimmerMove 1.4s linear 0.25s forwards; }
+  @keyframes shimmerMove{
+    0%{ opacity:0; left:-40%; }
+    30%{ opacity:1; }
+    100%{ opacity:0; left:120%; }
+  }
 
-  #intro-content { position:relative; z-index:2010; text-align:center; pointer-events:none; }
-  #intro-text {
-    color:var(--gold); font-weight:800; font-size:3rem; letter-spacing:.6px;
-    text-shadow: 0 0 18px rgba(255,215,0,0.8), 0 0 44px rgba(255,140,0,0.35);
-    -webkit-background-clip: text; background-clip:text;
-    animation: shimmer 2.6s linear infinite;
+  /* shock effect (scale + ring) */
+  #shock-ring{
+    position:absolute; inset:0; pointer-events:none; z-index:2015;
+    background: radial-gradient(circle at 50% 45%, rgba(255,220,120,0.08), rgba(255,160,50,0.04) 12%, transparent 30%);
+    transform:scale(.98); opacity:0;
   }
-  @keyframes shimmer {
-    0%{ filter:brightness(1) saturate(1); text-shadow:0 0 14px rgba(255,220,120,0.6); }
-    50%{ filter:brightness(1.25) saturate(1.2); text-shadow:0 0 30px rgba(255,240,160,0.95); }
-    100%{ filter:brightness(1) saturate(1); text-shadow:0 0 14px rgba(255,220,120,0.6); }
-  }
-  #intro-subtext { color: #ffeecf; margin-top:.5rem; opacity:.9; pointer-events:none; }
 
-  #intro-burst {
-    position:absolute; inset:0; z-index:2020; pointer-events:none;
-    background: radial-gradient(circle at 50% 40%, rgba(255,230,140,0.98), rgba(255,180,80,0.85) 20%, rgba(255,100,40,0.3) 45%, transparent 60%);
+  /* burst overlay (full-screen golden flash) */
+  #intro-burst{
+    position:absolute; inset:0; z-index:2025; pointer-events:none;
+    background: radial-gradient(circle at 50% 40%, rgba(255,240,180,0.98), rgba(255,200,80,0.85) 18%, rgba(255,120,40,0.35) 45%, transparent 60%);
     opacity:0; mix-blend-mode:screen; transition:opacity .7s ease;
-    transform:scale(1);
   }
 
-  .intro-spark{
-    position:absolute; width:6px; height:6px; border-radius:50%;
-    box-shadow:0 0 10px rgba(255,210,120,0.9), 0 0 20px rgba(255,140,40,0.6);
-    pointer-events:none; opacity:0.95; transform:translate(-50%,-50%);
+  /* spark particles (dom elements) */
+  .intro-spark{ position:absolute; width:6px; height:6px; border-radius:50%;
+    box-shadow:0 0 8px rgba(255,210,120,0.9), 0 0 20px rgba(255,140,40,0.6);
+    pointer-events:none; transform:translate(-50%,-50%);
   }
 
-  /* shake class for strong explosion effect */
-  .shake {
-    animation: screenShake .45s cubic-bezier(.36,.07,.19,.97);
-  }
-  @keyframes screenShake {
-    10%, 90% { transform: translate3d(-1px, 0, 0); }
-    20%, 80% { transform: translate3d(2px, 0, 0); }
-    30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
-    40%, 60% { transform: translate3d(4px, 0, 0); }
-  }
+  /* ========== MAIN APP UI (KEPT) ========== */
+  .app-wrapper{ display:flex; height:100%; width:100%; align-items:center; justify-content:center; }
+  .container { max-width:900px; margin:2rem auto; background:var(--panel); border-radius:1.5rem; padding:1.5rem; box-shadow:0 15px 30px rgba(0,0,0,0.7); display:none; position:relative; }
+  .tabs{ display:flex; border-bottom:2px solid #333; margin-bottom:1rem; }
+  .tab-btn{ flex:1; text-align:center; padding:1rem; cursor:pointer; color:var(--muted); font-weight:bold; transition:all .15s; user-select:none; }
+  .tab-btn.active{ color:#fff; border-bottom:3px solid var(--accent); }
+  .tab-content{ display:none; }
+  .tab-content.active{ display:block; }
+  .chat-box{ background:#111827; border-radius:12px; padding:1rem; height:400px; overflow-y:auto; display:flex; flex-direction:column; scroll-behavior:smooth; }
+  .bubble{ max-width:80%; padding:10px 14px; border-radius:12px; margin-bottom:10px; line-height:1.5; word-wrap:break-word; white-space:pre-wrap; }
+  .user-bubble{ background:var(--bubble-user); align-self:flex-end; color:white; border-bottom-right-radius:2px; }
+  .ai-bubble{ background:var(--bubble-ai); align-self:flex-start; color:#e5e7eb; border-bottom-left-radius:2px; }
+  mark.highlight{ background-color:#fde047; color:black; font-weight:bold; padding:0 3px; border-radius:3px; }
+  textarea,input{ width:100%; padding:.75rem; border-radius:.75rem; background:#1e1e2a; border:1px solid #333; color:white; resize:none; outline:none; }
+  button{ padding:.75rem 1rem; border-radius:.75rem; font-weight:bold; cursor:pointer; transition:all .15s; border:none; }
+  #btnCreateImage{ background:#10b981; color:#111827; }
+  #btnCreateImage:hover{ background:#059669; }
+  .send-btn{ background:#6366f1; color:white; }
+  .send-btn:hover{ background:#4f46e5; }
+  img.generated-image, .generated-video{ border-radius:12px; max-width:100%; margin-top:1rem; display:block; max-height:400px; margin-left:auto; margin-right:auto; }
 
-  /* ====== App UI (kept original look) ====== */
-  .app-wrap { position:relative; width:100%; height:100%; display:flex; align-items:flex-start; justify-content:center; padding:28px; box-sizing:border-box; }
-  .container { width:900px; background:var(--panel); border-radius:16px; padding:20px; box-shadow:0 15px 30px rgba(0,0,0,.7); display:none; box-sizing:border-box; }
+  /* settings top-right */
+  #settings-btn{ position:absolute; top:1rem; right:1rem; font-size:1.5rem; cursor:pointer; color:var(--accent); z-index:120; }
+  #settings-modal{ position:absolute; top:3rem; right:1rem; width:220px; background:var(--panel); border:1px solid var(--accent); border-radius:.75rem; padding:1rem; display:none; z-index:121; }
 
-  /* top bar: hamburger + title + settings */
-  .topbar { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:12px; position:relative; }
-  .hamburger { display:flex; align-items:center; justify-content:center; width:44px; height:44px; background:#111217; border-radius:10px; cursor:pointer; }
-  .hamburger:hover{ box-shadow:0 6px 18px rgba(0,0,0,0.6); }
-  .logo-title { font-weight:700; font-size:1.1rem; color:var(--gold); text-shadow:0 0 8px rgba(255,200,80,0.25); }
-  #settings-btn { position:relative; cursor:pointer; width:44px; height:44px; display:flex; align-items:center; justify-content:center; border-radius:10px; background:#111217; }
-
-  /* slide menu */
-  #side-menu {
-    position:fixed; left:0; top:0; bottom:0; width:320px; background:linear-gradient(180deg,#0f1115,#0b0c0f);
-    transform:translateX(-110%); transition:transform .32s ease; z-index:2100; box-shadow: 6px 0 30px rgba(0,0,0,0.6);
-    padding:18px;
-  }
-  #side-menu.open { transform:translateX(0); }
-  #side-menu h3{ color:var(--gold); margin:4px 0 10px; }
-  .menu-btn{ display:block; padding:10px 12px; border-radius:8px; cursor:pointer; color:#dfe6f2; background:transparent; margin-bottom:8px; }
-  .menu-btn:hover{ background:rgba(255,255,255,0.02); }
-
-  /* tabs area: single chat with mode controls under input */
-  .chat-area { display:flex; flex-direction:column; gap:12px; }
-  .chat-box { background:#111827; border-radius:12px; padding:12px; height:420px; overflow:auto; display:flex; flex-direction:column; scroll-behavior:smooth; }
-  .bubble { max-width:80%; padding:10px 14px; border-radius:12px; margin-bottom:10px; line-height:1.4; white-space:pre-wrap; }
-  .user-bubble{ background:#2563eb; color:#fff; align-self:flex-end; border-bottom-right-radius:2px; }
-  .ai-bubble{ background:#374151; color:#e5e7eb; align-self:flex-start; border-bottom-left-radius:2px; }
-  .ai-bubble .title-large { display:block; font-size:1.05rem; font-weight:700; color:var(--gold); margin-bottom:6px; }
-  .thumbnail { width:84px; height:84px; object-fit:cover; border-radius:8px; border:2px solid rgba(255,255,255,0.06); margin-top:8px; display:block; }
-
-  .controls { display:flex; gap:8px; align-items:center; }
-  .input-row { display:flex; gap:8px; align-items:center; margin-top:6px; }
-  textarea { width:100%; min-height:46px; max-height:120px; resize:none; padding:10px; border-radius:10px; background:#1e1e2a; border:1px solid #333; color:#fff; }
-  .send-btn { background:#6366f1; color:#fff; padding:10px 12px; border-radius:12px; cursor:pointer; display:flex; align-items:center; justify-content:center; }
-
-  .mode-bar { margin-top:8px; display:flex; gap:8px; }
-  .mode-btn { padding:8px 12px; border-radius:999px; background:transparent; border:1px solid rgba(255,255,255,0.04); color:var(--gold); cursor:pointer; }
-  .mode-btn.active { background:linear-gradient(90deg,#ffdb7a,#ffb36a); color:#111; border:none; box-shadow:0 6px 18px rgba(255,180,60,0.12); }
-
-  /* small icons */
-  .icon-btn { width:40px; height:40px; border-radius:8px; background:#101217; display:flex; align-items:center; justify-content:center; cursor:pointer; }
-
-  /* pending preview */
-  .pending-preview{ display:flex; gap:8px; margin-top:6px; flex-wrap:wrap; }
-
-  /* settings popover */
-  #settings-modal { position:absolute; top:56px; right:4px; width:220px; background:var(--panel); border-radius:10px; padding:10px; border:1px solid rgba(250,200,21,0.12); display:none; z-index:2200; }
-  #settings-modal.show{ display:block; }
-
-  /* history list */
-  .history-item{ padding:10px; border-radius:8px; margin-bottom:8px; cursor:pointer; background:transparent; color:#dfe6f2; }
-  .history-item:hover{ background:rgba(255,255,255,0.02); }
+  /* hamburger sidebar */
+  #menu-btn{ position:absolute; top:1rem; left:1rem; font-size:1.4rem; cursor:pointer; color:var(--accent); z-index:120; }
+  #side-panel{ position:fixed; left:-320px; top:0; width:320px; height:100%; background:#0e1116; color:#fff; box-shadow: 4px 0 30px rgba(0,0,0,0.6); transition:left .28s cubic-bezier(.2,.9,.2,1); z-index:150; padding:1rem; }
+  #side-panel.open{ left:0; }
+  .side-header{ font-weight:800; color:var(--accent); font-size:1.1rem; margin-bottom:1rem; }
+  .side-list{ margin-top:1rem; }
+  .side-item{ padding:.6rem .6rem; border-radius:.5rem; cursor:pointer; color:#ddd; }
+  .side-item:hover{ background:rgba(255,255,255,0.02); }
 
   /* responsive */
-  @media (max-width:980px){ .container{ width:92%; } }
   @media (max-width:640px){
-    #intro-text{ font-size:1.6rem; }
-    .container{ width:95%; padding:12px; }
-    #side-menu{ width:86%; }
+    .container{ margin:1rem; }
+    #intro-logo{ font-size:2rem; }
+    #side-panel{ width:84%; }
   }
 </style>
 </head>
 <body>
+  <!-- INTRO -->
+  <div id="intro-screen" aria-hidden="false">
+    <canvas id="intro-canvas"></canvas>
 
-<!-- INTRO -->
-<div id="intro-screen" aria-hidden="false">
-  <canvas id="intro-canvas"></canvas>
-
-  <div id="intro-content">
-    <div id="intro-text">AI Assistant Pro</div>
-    <!-- no extra subtitle per request -->
-  </div>
-
-  <div id="intro-burst" aria-hidden="true"></div>
-  <!-- dynamic sparks appended via JS -->
-</div>
-
-<!-- APP WRAPPER -->
-<div class="app-wrap" aria-hidden="true">
-  <!-- side menu (history/new chat) -->
-  <div id="side-menu" aria-hidden="true">
-    <h3>Menu</h3>
-    <button class="menu-btn" id="new-chat-btn">🆕 New Chat</button>
-    <div style="margin-top:12px;color:#bfc8d6;margin-bottom:8px;font-weight:600;">History</div>
-    <div id="history-list" style="max-height:72vh; overflow:auto;"></div>
-  </div>
-
-  <!-- main container -->
-  <div class="container" id="mainApp" aria-hidden="true">
-    <div class="topbar">
-      <div style="display:flex;align-items:center;gap:12px;">
-        <div class="hamburger" id="hamburger" title="Menu (New chat & History)">
-          <!-- triple bars -->
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M4 7h16M4 12h16M4 17h16" stroke="#ffd24d" stroke-width="1.6" stroke-linecap="round"/></svg>
-        </div>
-        <div class="logo-title">AI Assistant Pro</div>
-      </div>
-
-      <div style="display:flex; gap:8px; align-items:center;">
-        <div id="settings-btn" title="Settings (language)">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 15.5A3.5 3.5 0 1 0 12 8.5a3.5 3.5 0 0 0 0 7z" stroke="#ffd24d" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06A2 2 0 0 1 3.3 17.8l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09c.64 0 1.19-.27 1.51-1a1.65 1.65 0 0 0-.33-1.82l-.06-.06A2 2 0 0 1 6.2 3.3l.06.06a1.65 1.65 0 0 0 1.82.33H8a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09c0 .64.27 1.19 1 1.51h.92a1.65 1.65 0 0 0 1.82-.33l.06-.06A2 2 0 0 1 20.7 6.2l-.06.06c-.38.38-.47 1.07-.33 1.82V9c0 .64.27 1.19 1 1.51H21a2 2 0 1 1 0 4h-.09c-.64 0-1.19.27-1.51 1z" stroke="#ffd24d" stroke-width="0.9" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        </div>
-
-        <div id="settings-modal">
-          <label style="color:#dfe6f2;font-weight:600;font-size:0.9rem;margin-bottom:8px;display:block;">Language</label>
-          <select id="language-select" style="width:100%;padding:8px;border-radius:8px;background:#0f1720;color:#fff;border:1px solid #2b3038;">
-            <option value="en">English</option>
-            <option value="vi">Tiếng Việt</option>
-            <option value="zh">中文</option>
-          </select>
-        </div>
-      </div>
+    <div id="intro-content" aria-hidden="true">
+      <div id="intro-logo" class="shimmer"><span id="intro-text">AI Assistant Pro</span></div>
     </div>
 
-    <!-- Chat area -->
-    <div class="chat-area">
-      <div class="chat-box" id="chatBox" aria-live="polite"></div>
+    <div id="shock-ring"></div>
+    <div id="intro-burst"></div>
+    <!-- sparks will be appended dynamically -->
+  </div>
 
-      <!-- pending preview (uploaded thumbnails) -->
-      <div class="pending-preview" id="pendingPreview"></div>
-
-      <!-- input row -->
-      <div class="input-row">
-        <label class="icon-btn" title="Upload image/file">
-          <input id="fileInput" type="file" accept="image/*,.pdf,.txt,.docx" style="display:none" />
-          <svg id="fileIcon" width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M7 7v10a2 2 0 0 0 2 2h6" stroke="#ffd24d" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M20 7l-8-5-8 5v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7z" stroke="#ffd24d" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        </label>
-
-        <textarea id="chatInput" placeholder="Type a message..."></textarea>
-
-        <button class="send-btn" id="sendBtn" title="Send">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M5 12l14 7-7-7 7-7-14 7z" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        </button>
-      </div>
-
-      <!-- mode controls -->
-      <div class="mode-bar" role="tablist" aria-label="Modes">
-        <button class="mode-btn active" data-mode="chat">Chat</button>
-        <button class="mode-btn" data-mode="image">Create Image</button>
-        <button class="mode-btn" data-mode="video">Create Video</button>
-        <button class="mode-btn" data-mode="math">Solve Math</button>
+  <!-- Side panel (hamburger menu) -->
+  <div id="side-panel" role="navigation" aria-hidden="true">
+    <div class="side-header">Menu</div>
+    <div class="side-list">
+      <div class="side-item" id="new-chat-btn">➕ New Chat</div>
+      <div style="height:10px"></div>
+      <div style="font-weight:700;color:#ddd;margin-bottom:6px">History</div>
+      <div id="history-list">
+        <!-- history items appended here -->
+        <div class="side-item">No history yet</div>
       </div>
     </div>
   </div>
-</div>
 
-<!-- GIF worker libs -->
-<script src="https://unpkg.com/gif.js@0.2.0/dist/gif.js"></script>
-<script src="https://unpkg.com/gif.js@0.2.0/dist/gif.worker.js"></script>
+  <!-- MAIN APP -->
+  <div class="app-wrapper">
+    <div class="container relative" id="mainApp" aria-hidden="true">
+      <div id="menu-btn">☰</div>
+      <div id="settings-btn">⚙️</div>
+
+      <div id="settings-modal" onmouseleave="this.style.display='none'">
+        <label class="block mb-2">Language:</label>
+        <select id="language-select" class="w-full p-2 rounded bg-gray-800 text-white">
+          <option value="en">English</option>
+          <option value="vi">Tiếng Việt</option>
+          <option value="zh-CN">简体中文</option>
+        </select>
+      </div>
+
+      <div class="tabs" role="tablist">
+        <div class="tab-btn active" data-tab="image">🖼️ Tạo Ảnh</div>
+        <div class="tab-btn" data-tab="chat">💬 Chat</div>
+        <div class="tab-btn" data-tab="math">🧮 Giải Toán</div>
+        <div class="tab-btn" data-tab="video">🎞️ Tạo Video</div>
+      </div>
+
+      <div class="tab-content active" id="image">
+        <div class="chat-box" id="imageBox"></div>
+        <textarea id="imagePrompt" rows="2" placeholder="Enter image prompt..."></textarea>
+        <button id="btnCreateImage" class="mt-2 w-full">Create Image</button>
+      </div>
+
+      <div class="tab-content" id="chat">
+        <div class="chat-box" id="chatBox"></div>
+        <div class="pending-preview" id="chatPreview"></div>
+        <div class="input-row" style="display:flex;align-items:center;gap:8px;margin-top:8px;">
+          <label class="icon-btn" for="chatFileInput" title="Upload image/file" style="cursor:pointer">📁</label>
+          <input type="file" id="chatFileInput" accept="image/*,.pdf,.txt,.docx" hidden />
+          <textarea id="chatInput" rows="1" placeholder="Type a message..."></textarea>
+          <button id="btnChat" class="send-btn" title="Send">➤</button>
+        </div>
+      </div>
+
+      <div class="tab-content" id="math">
+        <div class="chat-box" id="mathBox"></div>
+        <div class="pending-preview" id="mathPreview"></div>
+        <div class="input-row" style="display:flex;align-items:center;gap:8px;margin-top:8px;">
+          <label class="icon-btn" for="mathFileInput" title="Upload image/file" style="cursor:pointer">📁</label>
+          <input type="file" id="mathFileInput" accept="image/*,.pdf,.txt,.docx" hidden />
+          <textarea id="mathPrompt" rows="1" placeholder="Enter math problem..."></textarea>
+          <button id="btnMath" class="send-btn" title="Solve">➤</button>
+        </div>
+      </div>
+
+      <div class="tab-content" id="video">
+        <div class="chat-box" id="videoBox"></div>
+        <div class="pending-preview" id="videoPreview"></div>
+        <div class="input-row" style="display:flex;align-items:center;gap:8px;margin-top:8px;">
+          <textarea id="videoPrompt" rows="1" placeholder="Enter video description..."></textarea>
+          <button id="btnVideo" class="send-btn" title="Create Video">➤</button>
+        </div>
+      </div>
+    </div>
+  </div>
 
 <script>
-/* ========= INTRO CANVAS (light blobs) & TIMING ========= */
-(function introModule(){
+/* ================== INTRO VISUALS (Canvas light blobs + sparks) ================== */
+(function(){
   const canvas = document.getElementById('intro-canvas');
+  const ctx = canvas.getContext('2d');
   const introScreen = document.getElementById('intro-screen');
+  const introText = document.getElementById('intro-text');
+  const introLogo = document.getElementById('intro-logo');
+  const shockRing = document.getElementById('shock-ring');
   const burst = document.getElementById('intro-burst');
-  const appWrap = document.querySelector('.app-wrap');
   const mainApp = document.getElementById('mainApp');
 
-  const sparks = [];
   function resize(){
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
   }
   window.addEventListener('resize', resize);
   resize();
-  const ctx = canvas.getContext('2d');
 
-  // Light blob class - circular gradient moving on smooth orbits
-  class Blob {
-    constructor(cx,cy,orbitR,size,hue,spd,dir,off){
-      this.cx=cx; this.cy=cy; this.orbitR=orbitR; this.size=size;
-      this.hue=hue; this.spd=spd; this.dir=dir; this.off=off;
+  // LightBlob class (circular glowing)
+  class LightBlob {
+    constructor(opts){
+      this.cx = opts.cx; this.cy = opts.cy;
+      this.orbitR = opts.orbitR || 120;
+      this.phase = Math.random()*Math.PI*2;
+      this.speed = opts.speed || 0.6;
+      this.size = opts.size || 48;
+      this.hue = opts.hue || 40;
+      this.dir = opts.dir || 1;
+      this.offset = opts.offset || 0;
     }
     update(t){
-      const ang = this.off + this.dir * t * this.spd;
-      const x = this.cx + Math.cos(ang)*this.orbitR + Math.sin(t*this.spd*0.7)*18;
-      const y = this.cy + Math.sin(ang*0.9)*this.orbitR*0.6 + Math.cos(t*this.spd*0.6)*12;
-      const size = this.size * (1 + 0.1*Math.sin(ang*2 + t*0.8));
-      this.draw(x,y,size);
+      const ang = this.phase + this.dir*(t*this.speed) + this.offset;
+      const x = this.cx + Math.cos(ang)*this.orbitR + Math.sin(t*this.speed*0.7 + this.phase)*18;
+      const y = this.cy + Math.sin(ang*0.9)*(this.orbitR*0.5) + Math.cos(t*this.speed*0.6 + this.phase)*12;
+      const s = this.size * (1 + 0.12*Math.sin(ang*2 + t*0.8));
+      this.draw(x,y,s);
     }
-    draw(x,y,size){
-      const g = ctx.createRadialGradient(x,y,0,x,y,size*1.6);
+    draw(x,y,s){
+      const g = ctx.createRadialGradient(x,y,0,x,y,s*1.6);
       g.addColorStop(0, `hsla(${this.hue},100%,65%,1)`);
-      g.addColorStop(0.25, `hsla(${(this.hue+20)%360},100%,55%,0.85)`);
-      g.addColorStop(0.6, `hsla(${(this.hue+40)%360},90%,45%,0.45)`);
+      g.addColorStop(0.25, `hsla(${(this.hue+20)%360},100%,55%,0.9)`);
+      g.addColorStop(0.6, `hsla(${(this.hue+40)%360},85%,45%,0.45)`);
       g.addColorStop(1, 'rgba(0,0,0,0)');
       ctx.save();
-      ctx.globalCompositeOperation='screen';
-      ctx.fillStyle=g;
-      ctx.beginPath(); ctx.arc(x,y,size,0,Math.PI*2); ctx.fill();
-      ctx.globalCompositeOperation='lighter';
-      ctx.strokeStyle='rgba(255,240,200,0.06)';
-      ctx.lineWidth=Math.max(1, size*0.11);
-      ctx.beginPath(); ctx.arc(x,y,size*1.04,0,Math.PI*2); ctx.stroke();
+      ctx.globalCompositeOperation = 'screen';
+      ctx.fillStyle = g;
+      ctx.beginPath(); ctx.arc(x,y,s,0,Math.PI*2); ctx.fill();
+      ctx.globalCompositeOperation = 'lighter';
       ctx.restore();
     }
   }
 
-  let blobs=[];
-  function createBlobs(){
-    blobs=[];
-    const w=canvas.width, h=canvas.height;
-    const centers = [{cx:w*0.25, cy:h*0.35},{cx:w*0.78, cy:h*0.65}];
-    const sets = [[40,24,12],[12,28,48]];
+  // create blobs
+  let blobs = [];
+  function makeBlobs(){
+    blobs = [];
+    const w = canvas.width, h = canvas.height;
+    const centers = [
+      {cx: w*0.28, cy: h*0.33},
+      {cx: w*0.72, cy: h*0.65}
+    ];
+    const huesA = [40, 24, 12];
+    const huesB = [12, 28, 48];
     centers.forEach((c,i)=>{
-      sets[i].forEach((hue,j)=>{
-        blobs.push(new Blob(c.cx,c.cy, Math.min(w,h)*(0.12+0.06*j+Math.random()*0.04), 38+Math.random()*40, hue + Math.random()*8 -4, 0.55+Math.random()*0.75, Math.random()>0.5?1:-1, Math.random()*Math.PI*2));
+      const hues = i===0? huesA : huesB;
+      hues.forEach((hue, j)=>{
+        const orbitR = Math.min(w,h)*(0.12 + 0.06*j + Math.random()*0.04);
+        blobs.push(new LightBlob({cx:c.cx, cy:c.cy, orbitR, size:36 + Math.random()*44, hue: hue + Math.random()*8 - 4, speed:0.6 + Math.random()*0.6, dir: (Math.random()>0.5?1:-1)}));
       });
     });
-    // satellites
+    // small satellites
     for(let k=0;k<8;k++){
-      blobs.push(new Blob(w*0.5 + (Math.random()*w - w/2)*0.55, h*0.5 + (Math.random()*h - h/2)*0.35, 20 + Math.random()*180, 8 + Math.random()*18, 30 + Math.random()*40, 0.8+Math.random()*1.2, Math.random()>0.5?1:-1, Math.random()*Math.PI*2));
+      blobs.push(new LightBlob({cx: w*0.5 + (Math.random()*w - w/2)*0.55, cy: h*0.5 + (Math.random()*h - h/2)*0.35, orbitR: 20 + Math.random()*180, speed:0.8 + Math.random()*1.2, size:8 + Math.random()*18, hue: 30 + Math.random()*40, dir: Math.random()>0.5?1:-1}));
     }
   }
-  createBlobs();
+  makeBlobs();
 
-  // spawn tiny DOM sparks for metallic shimmer
+  // DOM sparks
   function spawnSparks(){
-    const count = Math.min(90, Math.max(30, Math.round(window.innerWidth/18)));
+    const count = Math.min(80, Math.max(30, Math.round(window.innerWidth/18)));
     for(let i=0;i<count;i++){
       const el = document.createElement('div');
-      el.className='intro-spark';
-      el.style.left = (Math.random()*100)+'%';
-      el.style.top = (10 + Math.random()*70)+'%';
-      const scale = 0.6 + Math.random()*1.6;
+      el.className = 'intro-spark';
+      const left = Math.random()*100;
+      const top = Math.random()*70 + 10;
+      el.style.left = left + '%';
+      el.style.top = top + '%';
+      const scale = 0.6 + Math.random()*1.4;
       el.style.width = (4*scale)+'px';
       el.style.height = (4*scale)+'px';
-      el.style.opacity = (0.35 + Math.random()*0.8);
+      el.style.opacity = (0.35 + Math.random()*0.8).toString();
       el.style.transition = `transform ${5+Math.random()*6}s ease-in-out, opacity ${6+Math.random()*4}s linear`;
       document.getElementById('intro-screen').appendChild(el);
       setTimeout(()=> {
-        const dx=(Math.random()-0.5)*240; const dy=(Math.random()-0.5)*120;
+        const dx = (Math.random()-0.5)*200; const dy = (Math.random()-0.5)*120;
         el.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
-        el.style.opacity = (0.1 + Math.random()*0.6);
+        el.style.opacity = (0.1 + Math.random()*0.6).toString();
       }, 60 + Math.random()*400);
-      // remove after max lifetime
-      setTimeout(()=> el.remove(), 11000);
-      sparks.push(el);
+      // remove later to keep DOM light
+      setTimeout(()=> el.remove(), 9000);
     }
   }
   spawnSparks();
 
   // render loop
-  let start = performance.now();
-  let running = true;
+  let start = performance.now(), running = true;
   function render(now){
     if(!running) return;
     const t = (now - start)/1000;
-    ctx.clearRect(0,0,canvas.width, canvas.height);
-    // subtle dark base
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    // base vignette
     const vg = ctx.createLinearGradient(0,0,canvas.width,canvas.height);
-    vg.addColorStop(0,'#050406'); vg.addColorStop(1,'#070507');
-    ctx.fillStyle=vg; ctx.fillRect(0,0,canvas.width,canvas.height);
-    // update blobs
-    for(const b of blobs) b.update(t);
-    // radial sheen
-    ctx.globalCompositeOperation='lighter';
+    vg.addColorStop(0, "#050406"); vg.addColorStop(1, "#070507");
+    ctx.fillStyle = vg; ctx.fillRect(0,0,canvas.width,canvas.height);
+
+    for(let b of blobs) b.update(t);
+
+    // soft radial sheen center
+    ctx.globalCompositeOperation = 'lighter';
     const cx = canvas.width*0.52, cy = canvas.height*0.45;
     const largeG = ctx.createRadialGradient(cx,cy,0,cx,cy,Math.max(canvas.width, canvas.height)*0.6);
-    largeG.addColorStop(0,'rgba(255,220,140,0.035)');
-    largeG.addColorStop(1,'rgba(0,0,0,0)');
-    ctx.fillStyle=largeG; ctx.fillRect(0,0,canvas.width,canvas.height);
-    ctx.globalCompositeOperation='source-over';
+    largeG.addColorStop(0, 'rgba(255,220,140,0.035)'); largeG.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = largeG; ctx.fillRect(0,0,canvas.width,canvas.height);
+    ctx.globalCompositeOperation = 'source-over';
     requestAnimationFrame(render);
   }
   requestAnimationFrame(render);
 
-  // TIMING: 6s visible then strong burst + shake then fade out
-  const VISIBLE = 6000;
-  setTimeout(()=> {
-    // show burst
-    burst.style.opacity='1';
-    // intensify sparks outward
-    document.querySelectorAll('.intro-spark').forEach(s=>{
-      s.style.transitionDuration = (0.45 + Math.random()*0.6)+'s';
-      const dx = (Math.random()-0.5)*900; const dy=(Math.random()-0.5)*600;
-      s.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px)) scale(1.6)`;
-      s.style.opacity = '1';
-    });
-
-    // apply strong shake to body/container for explosion
-    document.body.classList.add('shake');
-    setTimeout(()=> document.body.classList.remove('shake'), 420);
-
-    // keep burst briefly then fade everything
+  // TIMING: 6s visible, but we want shock -> logo -> shimmer -> burst
+  function doIntroSequence(){
+    // initial tiny shock (rumble)
     setTimeout(()=> {
-      burst.style.transition='opacity .9s ease';
-      burst.style.opacity='0';
-      introScreen.style.opacity='0';
-      running = false; // stop canvas loop
-      // hide after fade
+      // shock visual: brief ring + small scale bounce
+      shockRing.style.transition = 'opacity .18s ease, transform .18s ease';
+      shockRing.style.opacity = '1';
+      shockRing.style.transform = 'scale(1.06)';
+      setTimeout(()=> { shockRing.style.opacity = '0'; shockRing.style.transform = 'scale(1)'; }, 180);
+    }, 200);
+
+    // reveal logo (scale-in)
+    setTimeout(()=> {
+      introLogo.classList.add('logo-appear');
+      // also play whoosh sound timed
+      playWhoosh();
+    }, 420);
+
+    // shimmer effect pass (add DOM pseudo by creating shimmer element)
+    setTimeout(()=> {
+      // create shimmer element overlay (pseudo) by inserting ::after via adding class and using JS animation
+      const shimmerEl = document.createElement('div');
+      shimmerEl.style.position = 'absolute';
+      shimmerEl.style.inset = '0';
+      shimmerEl.style.pointerEvents = 'none';
+      // animate shimmer via CSS pseudo we already have but we use a real element
+      // create an element that will slide across the logo
+      const stripe = document.createElement('div');
+      stripe.style.position='absolute';
+      stripe.style.left='-40%';
+      stripe.style.top='0';
+      stripe.style.height='100%';
+      stripe.style.width='40%';
+      stripe.style.transform='skewX(-20deg)';
+      stripe.style.background='linear-gradient(90deg, rgba(255,255,255,0.0) 0%, rgba(255,255,255,0.95) 50%, rgba(255,255,255,0.0) 100%)';
+      stripe.style.mixBlendMode='overlay';
+      sparkleParent = document.getElementById('intro-content');
+      sparkleParent.appendChild(stripe);
+      // animate stripe
+      stripe.animate([{left:'-40%'},{left:'120%'}], {duration:1200, easing:'linear'});
+      // remove after
+      setTimeout(()=> stripe.remove(), 1500);
+    }, 1250);
+
+    // after total visible time - do burst + heavy sound
+    const VISIBLE_MS = 6000;
+    setTimeout(()=> {
+      // show burst overlay and play burst sound
+      burst.style.opacity = '1';
+      playBurst();
+
+      // quickly intensify small sparks
+      document.querySelectorAll('.intro-spark').forEach((s,i)=>{
+        s.style.transitionDuration = (0.4 + Math.random()*0.9) + 's';
+        const dx = (Math.random()-0.5)*600;
+        const dy = (Math.random()-0.5)*400;
+        s.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px)) scale(1.4)`;
+        s.style.opacity = '1';
+      });
+
+      // fade out after short time and reveal app
       setTimeout(()=> {
-        introScreen.style.display='none';
-        // show app
-        mainApp.style.display='block';
-        appWrap.style.overflow='auto';
-        document.body.style.overflow='auto';
-        // append welcome message (English) to chat
-        window.APP && window.APP.postIntroReady && window.APP.postIntroReady();
-      }, 900);
-    }, 650);
-
-  }, VISIBLE);
-
-  // Expose function to stop intro early (if needed)
-  window.runIntro = function(){ /* already running by default */ };
-
-})();
-
-/* ========= APP LOGIC: single chat area with modes, menu, history, upload, API stubs ========= */
-document.addEventListener('DOMContentLoaded', () => {
-  const mainApp = document.getElementById('mainApp');
-  const chatBox = document.getElementById('chatBox');
-  const chatInput = document.getElementById('chatInput');
-  const sendBtn = document.getElementById('sendBtn');
-  const fileInput = document.getElementById('fileInput');
-  const pendingPreview = document.getElementById('pendingPreview');
-
-  const modeButtons = document.querySelectorAll('.mode-btn');
-  let currentMode = 'chat'; // chat|image|video|math
-
-  const hamburger = document.getElementById('hamburger');
-  const sideMenu = document.getElementById('side-menu');
-  const newChatBtn = document.getElementById('new-chat-btn');
-  const historyList = document.getElementById('history-list');
-
-  const settingsBtn = document.getElementById('settings-btn');
-  const settingsModal = document.getElementById('settings-modal');
-  const languageSelect = document.getElementById('language-select');
-
-  // Simple app state: current conversation id & history store
-  const STORAGE_KEY = 'ai_assistant_history_v1';
-  let conversations = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
-  let currentConversation = { id: Date.now(), title: 'New chat', messages: [] };
-
-  function saveConversation(conv){
-    // if exists replace; else push
-    const idx = conversations.findIndex(c=>c.id===conv.id);
-    if(idx>=0) conversations[idx]=conv;
-    else conversations.unshift(conv);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(conversations));
-    renderHistory();
+        burst.style.transition = 'opacity .9s ease';
+        burst.style.opacity = '0';
+        introScreen.style.transition = 'opacity .9s ease';
+        introScreen.style.opacity = '0';
+        // stop animation loop to save CPU
+        running = false;
+        setTimeout(()=> {
+          introScreen.style.display = 'none';
+          document.getElementById('mainApp').style.display = 'block';
+          document.getElementById('mainApp').setAttribute('aria-hidden','false');
+          document.body.style.overflow = 'auto';
+          // initial welcome bubble in chat (English)
+          addWelcomeBubble();
+        }, 900);
+      }, 680);
+    }, VISIBLE_MS);
   }
 
-  function renderHistory(){
-    historyList.innerHTML = '';
-    conversations.forEach(conv=>{
-      const div = document.createElement('div');
-      div.className = 'history-item';
-      div.textContent = conv.title || ('Chat ' + new Date(conv.id).toLocaleString());
-      div.onclick = ()=> {
-        // load conversation into UI
-        loadConversation(conv.id);
-        sideMenu.classList.remove('open');
-      };
-      historyList.appendChild(div);
-    });
+  // start sequence
+  doIntroSequence();
+
+  /* ========== AUDIO: Web Audio API (whoosh + burst) ========== */
+  const AudioContext = window.AudioContext || window.webkitAudioContext;
+  const audioCtx = AudioContext ? new AudioContext() : null;
+
+  function playWhoosh(){
+    if(!audioCtx) return;
+    // whoosh: sweep filter on white noise + small sine sweep
+    const duration = 0.9;
+    const now = audioCtx.currentTime;
+    // white noise
+    const bufferSize = 2 * audioCtx.sampleRate;
+    const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for(let i=0;i<bufferSize;i++) data[i] = (Math.random()*2-1) * 0.25;
+    const noise = audioCtx.createBufferSource(); noise.buffer = buffer; noise.loop = false;
+    const noiseGain = audioCtx.createGain(); noiseGain.gain.setValueAtTime(0.0001, now);
+    noiseGain.gain.exponentialRampToValueAtTime(0.5, now + 0.05);
+    noiseGain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+
+    const filter = audioCtx.createBiquadFilter();
+    filter.type = 'lowpass'; filter.frequency.setValueAtTime(1200, now);
+    filter.frequency.exponentialRampToValueAtTime(2800, now + duration*0.9);
+
+    noise.connect(filter); filter.connect(noiseGain); noiseGain.connect(audioCtx.destination);
+    noise.start(now); noise.stop(now + duration);
+    // small rising sine for punch
+    const sine = audioCtx.createOscillator(); sine.type = 'sine';
+    const sineGain = audioCtx.createGain(); sineGain.gain.setValueAtTime(0.0001, now);
+    sine.frequency.setValueAtTime(120, now); sine.frequency.exponentialRampToValueAtTime(720, now + duration*0.85);
+    sineGain.gain.exponentialRampToValueAtTime(0.08, now + 0.06); sineGain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+    sine.connect(sineGain); sineGain.connect(audioCtx.destination);
+    sine.start(now); sine.stop(now + duration);
   }
 
-  function newConversation(){
-    currentConversation = { id: Date.now(), title: 'New chat', messages: [] };
-    renderChat();
+  function playBurst(){
+    if(!audioCtx) return;
+    const now = audioCtx.currentTime;
+    // burst: short burst white noise + bandpass
+    const bufferSize = 1 * audioCtx.sampleRate;
+    const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for(let i=0;i<bufferSize;i++) data[i] = (Math.random()*2-1) * 0.8;
+    const noise = audioCtx.createBufferSource(); noise.buffer = buffer;
+    const noiseGain = audioCtx.createGain(); noiseGain.gain.setValueAtTime(0.0001, now);
+    noiseGain.gain.linearRampToValueAtTime(1.0, now + 0.01);
+    noiseGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.35);
+
+    const bp = audioCtx.createBiquadFilter(); bp.type='bandpass';
+    bp.frequency.setValueAtTime(1200, now);
+    bp.Q.setValueAtTime(0.8, now);
+    noise.connect(bp); bp.connect(noiseGain); noiseGain.connect(audioCtx.destination);
+    noise.start(now); noise.stop(now + 0.45);
+
+    // low-frequency boom
+    const osc = audioCtx.createOscillator(); osc.type='sine';
+    const oscGain = audioCtx.createGain(); oscGain.gain.setValueAtTime(0.0001, now);
+    osc.frequency.setValueAtTime(50, now);
+    oscGain.gain.setValueAtTime(0.5, now);
+    oscGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.45);
+    osc.connect(oscGain); oscGain.connect(audioCtx.destination);
+    osc.start(now); osc.stop(now + 0.45);
   }
 
-  function loadConversation(id){
-    const conv = conversations.find(c=>c.id===id);
-    if(!conv) return;
-    currentConversation = JSON.parse(JSON.stringify(conv));
-    renderChat();
-  }
-
-  function renderChat(){
-    chatBox.innerHTML = '';
-    for(const m of currentConversation.messages){
-      const b = makeBubble(m.from, m.text, m.meta);
-      chatBox.appendChild(b);
-    }
-    // scroll
+  // add welcome bubble after intro
+  function addWelcomeBubble(){
+    const chatBox = document.getElementById('chatBox');
+    const bubble = document.createElement('div');
+    bubble.className = 'bubble ai-bubble';
+    bubble.innerHTML = `<div style="font-size:1.05rem;font-weight:700;color:#ffd26a">AI Assistant Pro</div>
+      <div style="margin-top:6px;color:#e9e6d8">Hello! What would you like to explore today?</div>`;
+    chatBox.appendChild(bubble);
     chatBox.scrollTop = chatBox.scrollHeight;
   }
 
-  function makeBubble(from, text, meta){
-    const div = document.createElement('div');
-    div.className = 'bubble ' + (from==='user' ? 'user-bubble' : 'ai-bubble');
-    if(from==='ai'){
-      // show greeting large title if meta.greeting
-      if(meta && meta.greeting){
-        const t = document.createElement('span');
-        t.className = 'title-large';
-        t.textContent = 'AI Assistant Pro';
-        div.appendChild(t);
-      }
-    }
-    const p = document.createElement('div');
-    p.innerHTML = text;
-    div.appendChild(p);
-    if(meta && meta.thumbnail){
-      const img = document.createElement('img');
-      img.className = 'thumbnail';
-      img.src = meta.thumbnail;
-      div.appendChild(img);
-    }
-    return div;
-  }
+})(); /* end intro IIFE */
 
-  // initial rendering
-  renderHistory();
-  newConversation();
+/* ================== MAIN APP SCRIPTS (tabs, upload thumbnails, API stubs) ================== */
+document.addEventListener('DOMContentLoaded', () => {
+  // ensure main app hidden initially
+  document.getElementById('mainApp').style.display = 'none';
 
-  // post-intro ready hook to send greeting
-  window.APP = window.APP || {};
-  window.APP.postIntroReady = function(){
-    // show greeting from AI in English
-    const greeting = "Hello! I’m AI Assistant Pro — your intelligent companion.\nWhat would you like to explore today?";
-    const aiMsg = { from:'ai', text: greeting, meta:{ greeting:true } };
-    currentConversation.messages.push(aiMsg);
-    saveConversation(currentConversation);
-    renderChat();
-  };
+  // Tabs
+  const tabs = document.querySelectorAll('.tab-btn');
+  const contents = document.querySelectorAll('.tab-content');
+  tabs.forEach(tab => tab.addEventListener('click', () => {
+    tabs.forEach(t=> t.classList.remove('active'));
+    contents.forEach(c=> c.classList.remove('active'));
+    tab.classList.add('active');
+    const id = tab.dataset.tab;
+    const el = document.getElementById(id);
+    if(el) el.classList.add('active');
+  }));
 
-  // Mode selection
-  modeButtons.forEach(btn=>{
-    btn.addEventListener('click', ()=> {
-      modeButtons.forEach(b=>b.classList.remove('active'));
-      btn.classList.add('active');
-      currentMode = btn.dataset.mode;
-      // subtle placeholder change
-      if(currentMode==='chat') chatInput.placeholder='Type a message...';
-      if(currentMode==='image') chatInput.placeholder='Describe the image to create...';
-      if(currentMode==='video') chatInput.placeholder='Describe the short video/gif to generate...';
-      if(currentMode==='math') chatInput.placeholder='Enter the math problem...';
-    });
+  // Side panel menu
+  const menuBtn = document.getElementById('menu-btn');
+  const sidePanel = document.getElementById('side-panel');
+  let sideOpen = false;
+  menuBtn.addEventListener('click', ()=> {
+    sideOpen = !sideOpen;
+    if(sideOpen){ sidePanel.classList.add('open'); sidePanel.setAttribute('aria-hidden','false'); }
+    else { sidePanel.classList.remove('open'); sidePanel.setAttribute('aria-hidden','true'); }
   });
+  // auto-close when mouse leaves panel
+  sidePanel.addEventListener('mouseleave', ()=> { sidePanel.classList.remove('open'); sideOpen=false; });
 
-  // Hamburger menu toggle
-  hamburger.addEventListener('click', ()=> {
-    sideMenu.classList.toggle('open');
-  });
-  // close menu when clicking outside
-  document.addEventListener('click', (e)=>{
-    if(!sideMenu.contains(e.target) && !hamburger.contains(e.target)){
-      sideMenu.classList.remove('open');
-    }
-  });
-
-  // new chat
-  newChatBtn.addEventListener('click', ()=> {
-    // save current with a simple title (first line or 'Session <date>')
-    if(currentConversation.messages.length){
-      // derive title from first user message or 'Chat <date>'
-      const firstUser = currentConversation.messages.find(m=>m.from==='user');
-      currentConversation.title = firstUser ? (firstUser.text.split('\n')[0].slice(0,40)) : ('Chat ' + new Date(currentConversation.id).toLocaleString());
-      saveConversation(currentConversation);
-    }
-    newConversation();
-    sideMenu.classList.remove('open');
-  });
-
-  // file upload handling
-  document.querySelector('.icon-btn').addEventListener('click', ()=> fileInput.click());
-  fileInput.addEventListener('change', (e)=>{
-    const f = e.target.files[0];
-    if(!f) return;
-    const reader = new FileReader();
-    reader.onload = ()=>{
-      // show thumbnail preview in pending area
-      pendingPreview.innerHTML = `<img src="${reader.result}" style="width:80px;height:80px;border-radius:8px;object-fit:cover; border:2px solid rgba(255,255,255,0.06);">`;
-      // also store as pending file in memory for next send
-      window._pendingFile = { name: f.name, data: reader.result };
-    };
-    reader.readAsDataURL(f);
-  });
-
-  // Send action - unified for modes
-  async function sendAction(){
-    const text = chatInput.value.trim();
-    const pendingFile = window._pendingFile || null;
-    if(!text && !pendingFile) return;
-    // append user bubble (with thumbnail if file)
-    let userMeta = {};
-    if(pendingFile) userMeta.thumbnail = pendingFile.data;
-    currentConversation.messages.push({ from:'user', text: text || ('[file: ' + (pendingFile?pendingFile.name:'') + ']'), meta: userMeta });
-    renderChat();
-    chatInput.value = '';
-    pendingPreview.innerHTML = ''; window._pendingFile = null;
-
-    // show loading bubble
-    const loading = { from:'ai', text: 'Processing...', meta:{} };
-    currentConversation.messages.push(loading);
-    renderChat();
-
-    // Decide endpoint / behavior based on currentMode
-    try {
-      let responseText = '';
-      let responseMeta = {};
-
-      if(currentMode === 'chat'){
-        // general chat endpoint: /api/chat
-        const payload = { message:text, language: languageSelect.value, file: pendingFile ? pendingFile.data : undefined };
-        const r = await fetch('/api/chat', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
-        if(!r.ok) throw new Error('Server error: ' + r.statusText);
-        const data = await r.json();
-        responseText = data.response || data.text || 'No response.';
-      } else if(currentMode === 'image'){
-        // image creation endpoint
-        const payload = { prompt: text || (pendingFile ? '[file uploaded]' : '' ) };
-        const r = await fetch('/api/pollinations-image', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
-        if(!r.ok) throw new Error('Server error: ' + r.statusText);
-        const data = await r.json();
-        // expected data.imageUrl
-        responseText = data.caption || 'Image generated';
-        responseMeta.thumbnail = data.imageUrl || data.image || '';
-      } else if(currentMode === 'video'){
-        // generate frames -> gif
-        const payload = { prompt: text };
-        const r = await fetch('/api/pollinations-frames', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
-        if(!r.ok) throw new Error('Server error: ' + r.statusText);
-        const res = await r.json();
-        const frames = res.frames || [];
-        if(frames.length){
-          // create gif client-side
-          responseText = 'Generated video (GIF)';
-          // create a temporary gif via gif.js
-          const gif = new GIF({ workers:2, quality:10 });
-          const images = await Promise.all(frames.map(src => new Promise(resolve=>{
-            const img = new Image(); img.src = src; img.onload = ()=> resolve(img); img.onerror = ()=> resolve(null);
-          })));
-          images.filter(Boolean).forEach(img=> gif.addFrame(img, { delay: 120 }));
-          const blob = await new Promise((resolve)=>{
-            gif.on('finished', b => resolve(b));
-            gif.render();
-          });
-          responseMeta.thumbnail = URL.createObjectURL(blob);
-        } else {
-          responseText = 'No frames returned.';
-        }
-      } else if(currentMode === 'math'){
-        const payload = { question: text, file: pendingFile ? pendingFile.data : undefined };
-        const r = await fetch('/api/math', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
-        if(!r.ok) throw new Error('Server error: ' + r.statusText);
-        const d = await r.json();
-        responseText = d.response || d.solution || 'No solution.';
-      }
-
-      // replace last loading entry (which is at end) with AI response
-      // remove loading
-      for(let i=currentConversation.messages.length-1;i>=0;i--){
-        if(currentConversation.messages[i].from==='ai' && currentConversation.messages[i].text==='Processing...'){
-          currentConversation.messages.splice(i,1);
-          break;
-        }
-      }
-      currentConversation.messages.push({ from:'ai', text: responseText, meta: responseMeta });
-      // set title if still New chat and user typed something (for history)
-      if(currentConversation.title === 'New chat' && text){
-        currentConversation.title = text.split('\n')[0].slice(0,50);
-      }
-      saveConversation(currentConversation);
-      renderChat();
-
-      // MathJax rendering if any LaTeX in response
-      if(window.MathJax) MathJax.typesetPromise().catch(()=>{});
-
-    } catch(err){
-      // replace loading with error
-      for(let i=currentConversation.messages.length-1;i>=0;i--){
-        if(currentConversation.messages[i].from==='ai' && currentConversation.messages[i].text==='Processing...'){
-          currentConversation.messages.splice(i,1);
-          break;
-        }
-      }
-      currentConversation.messages.push({ from:'ai', text: '❌ Error: ' + err.message, meta:{} });
-      saveConversation(currentConversation);
-      renderChat();
-    }
-  }
-
-  sendBtn.addEventListener('click', sendAction);
-  chatInput.addEventListener('keydown',(e)=>{ if(e.key==='Enter' && !e.shiftKey){ e.preventDefault(); sendAction(); } });
-
-  // Settings modal: show on click, hide on mouseleave
+  // settings button
+  const settingsBtn = document.getElementById('settings-btn');
+  const settingsModal = document.getElementById('settings-modal');
   settingsBtn.addEventListener('click', (e)=> {
     e.stopPropagation();
-    settingsModal.classList.toggle('show');
+    settingsModal.style.display = settingsModal.style.display === 'block' ? 'none' : 'block';
   });
-  settingsModal.addEventListener('mouseleave', ()=> settingsModal.classList.remove('show'));
+  // hide settings when clicking outside
+  document.addEventListener('click', (e) => {
+    if(!settingsModal.contains(e.target) && e.target !== settingsBtn) settingsModal.style.display = 'none';
+  });
+
+  // Grab elements
+  const imageBox = document.getElementById('imageBox');
+  const imagePrompt = document.getElementById('imagePrompt');
+  const btnCreateImage = document.getElementById('btnCreateImage');
+
+  const chatBox = document.getElementById('chatBox');
+  const chatInput = document.getElementById('chatInput');
+  const btnChat = document.getElementById('btnChat');
+  const chatFileInput = document.getElementById('chatFileInput');
+  const chatPreview = document.getElementById('chatPreview');
+
+  const mathBox = document.getElementById('mathBox');
+  const mathPrompt = document.getElementById('mathPrompt');
+  const btnMath = document.getElementById('btnMath');
+  const mathFileInput = document.getElementById('mathFileInput');
+  const mathPreview = document.getElementById('mathPreview');
+
+  const videoBox = document.getElementById('videoBox');
+  const videoPrompt = document.getElementById('videoPrompt');
+  const btnVideo = document.getElementById('btnVideo');
+
+  let uploadedFiles = { chat: null, math: null };
+
+  function appendMessage(box, content, type='ai'){
+    const bubble = document.createElement('div');
+    bubble.className = 'bubble ' + (type === 'user' ? 'user-bubble' : 'ai-bubble');
+    bubble.innerHTML = content;
+    box.appendChild(bubble);
+    box.scrollTop = box.scrollHeight;
+    return bubble;
+  }
+  function showLoading(box){ return appendMessage(box, 'Processing...', 'ai'); }
+
+  // File upload handlers (show thumbnail in chat bubble when user uploads and sends)
+  function handleFileUpload(event, type){
+    const file = event.target.files[0];
+    if(!file) return;
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      uploadedFiles[type] = reader.result;
+      const previewContainer = type === 'chat' ? chatPreview : mathPreview;
+      previewContainer.innerHTML = `<img src="${reader.result}" alt="preview" style="width:80px;height:80px;object-fit:cover;border-radius:8px;border:2px solid #475569">`;
+    };
+    reader.readAsDataURL(file);
+  }
+
+  chatFileInput.addEventListener('change', (e)=> handleFileUpload(e,'chat'));
+  mathFileInput.addEventListener('change', (e)=> handleFileUpload(e,'math'));
+
+  // Clicking upload label triggers file input (already via label)
+  // When user clicks Send, if uploadedFiles.chat present, show thumbnail bubble
+  async function handleChat(){
+    const message = chatInput.value.trim();
+    const image = uploadedFiles.chat;
+    if(!message && !image) return;
+    // if image present, show thumbnail in user bubble
+    if(image){
+      const userBubble = document.createElement('div'); userBubble.className='bubble user-bubble';
+      userBubble.innerHTML = `<div style="font-weight:700;margin-bottom:6px;color:#fff">You sent an image</div><img src="${image}" alt="thumb" style="max-width:160px;border-radius:8px">`;
+      chatBox.appendChild(userBubble);
+      chatBox.scrollTop = chatBox.scrollHeight;
+    }
+    if(message){
+      appendMessage(chatBox, message, 'user');
+    }
+    // clear inputs/previews
+    chatInput.value = ''; chatPreview.innerHTML = ''; uploadedFiles.chat = null;
+    // show processing bubble
+    const loading = showLoading(chatBox);
+    try{
+      // call your /api/chat - here we just simulate
+      // const resp = await fetch('/api/chat', {...});
+      await new Promise(r => setTimeout(r, 700));
+      loading.innerHTML = `This is a simulated response (English).`;
+    }catch(err){
+      loading.textContent = `❌ Error: ${err.message}`;
+    }
+  }
+  btnChat.addEventListener('click', handleChat);
+  chatInput.addEventListener('keydown', (e)=> { if(e.key === 'Enter' && !e.shiftKey){ e.preventDefault(); handleChat(); } });
+
+  // Create image (in image tab) - simulated API
+  btnCreateImage.addEventListener('click', async ()=>{
+    const prompt = imagePrompt.value.trim(); if(!prompt) return;
+    appendMessage(imageBox, prompt, 'user');
+    const loading = showLoading(imageBox);
+    imagePrompt.value='';
+    try{
+      // simulate API
+      await new Promise(r=> setTimeout(r,900));
+      // placeholder image (data URI small gradient)
+      const imgData = 'data:image/svg+xml;utf8,' + encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' width='512' height='320'><rect width='100%' height='100%' fill='#1e293b'/><text x='50%' y='50%' dominant-baseline='middle' text-anchor='middle' fill='#ffd26a' font-size='22'>Generated image for: ${prompt.slice(0,36)}</text></svg>`);
+      loading.innerHTML = `<img src="${imgData}" class="generated-image" alt="Generated">`;
+    }catch(err){ loading.textContent = `❌ Error: ${err.message}`; }
+  });
+
+  // Math handler
+  btnMath.addEventListener('click', async ()=>{
+    const q = mathPrompt.value.trim(); if(!q && !uploadedFiles.math) return;
+    appendMessage(mathBox, q, 'user');
+    const loading = showLoading(mathBox);
+    mathPrompt.value=''; mathPreview.innerHTML=''; uploadedFiles.math=null;
+    try{
+      await new Promise(r=> setTimeout(r,700));
+      loading.innerHTML = `Simulated solution (in English): Answer to "${q}"`;
+      if(window.MathJax) MathJax.typesetPromise([loading]).catch(()=>{});
+    }catch(err){ loading.textContent = `❌ Error: ${err.message}`; }
+  });
+
+  // Video (simulate frames -> gif)
+  btnVideo.addEventListener('click', async ()=>{
+    const p = videoPrompt.value.trim(); if(!p) return;
+    appendMessage(videoBox, p, 'user');
+    const loading = showLoading(videoBox);
+    videoPrompt.value='';
+    try{
+      await new Promise(r=> setTimeout(r,1200));
+      // simulation: small generated image shown
+      const imgData = 'data:image/svg+xml;utf8,' + encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' width='512' height='320'><rect width='100%' height='100%' fill='#0f172a'/><text x='50%' y='50%' dominant-baseline='middle' text-anchor='middle' fill='#ffd26a' font-size='22'>Simulated video for: ${p.slice(0,36)}</text></svg>`);
+      loading.innerHTML = `<img src="${imgData}" class="generated-video" alt="Generated Video">`;
+    }catch(err){ loading.textContent = `❌ Error: ${err.message}`; }
+  });
+
+  // New chat + history handling (simple in-memory)
+  const newChatBtn = document.getElementById('new-chat-btn');
+  const historyList = document.getElementById('history-list');
+  let histories = []; // {title, messages}
+  let currentChat = {title:'New Chat', messages:[]};
+
+  function saveCurrentChat(title){
+    // store a shallow copy
+    histories.unshift({title: title || currentChat.title, messages: currentChat.messages.slice()});
+    renderHistory();
+  }
+  function renderHistory(){
+    historyList.innerHTML = '';
+    if(histories.length===0) historyList.innerHTML = `<div class="side-item">No history yet</div>`;
+    histories.forEach((h, idx)=>{
+      const el = document.createElement('div');
+      el.className='side-item';
+      el.textContent = h.title;
+      el.addEventListener('click', ()=> {
+        // load history into chatBox
+        const cb = chatBox;
+        cb.innerHTML = '';
+        h.messages.forEach(m => {
+          appendMessage(cb, m.content, m.type);
+        });
+        // close panel
+        sidePanel.classList.remove('open');
+      });
+      historyList.appendChild(el);
+    });
+  }
+
+  // new chat: save current to history and clear chatBox
+  newChatBtn.addEventListener('click', ()=>{
+    const title = prompt('Save current chat under which title?', 'Conversation');
+    saveCurrentChat(title || 'Conversation');
+    // clear chat
+    chatBox.innerHTML = '';
+    currentChat = {title:'New Chat', messages:[]};
+    sidePanel.classList.remove('open');
+    // Add initial welcome AI message
+    appendMessage(chatBox, `<div style="font-size:1.05rem;font-weight:700;color:#ffd26a">AI Assistant Pro</div><div style="margin-top:6px;color:#e9e6d8">Hello! What would you like to explore today?</div>`, 'ai');
+  });
+
+  // intercept appendMessage to also record to currentChat
+  // Monkey patch: override appendMessage function declared earlier
+  (function(){
+    const orig = window.appendMessage || null;
+    window.appendMessage = function(box, content, type='ai'){ // replace global
+      const bubble = document.createElement('div');
+      bubble.className = 'bubble ' + (type === 'user' ? 'user-bubble' : 'ai-bubble');
+      bubble.innerHTML = content;
+      box.appendChild(bubble);
+      box.scrollTop = box.scrollHeight;
+      // record into currentChat messages if it's chatBox or mathBox etc.
+      const id = box.id;
+      const recType = (type === 'user' ? 'user' : 'ai');
+      if(id === 'chatBox' || id === 'mathBox' || id === 'imageBox' || id === 'videoBox'){
+        currentChat.messages.push({type: recType, content});
+      }
+      return bubble;
+    };
+  })();
+
+  // When user sends a chat message, also save to currentChat
+  // (handleChat already uses appendMessage earlier)
+
+  // ensure clicking upload label triggers input is done via label association in markup
+
+  // Close side panel if clicked outside
   document.addEventListener('click', (e)=>{
-    if(!settingsModal.contains(e.target) && !settingsBtn.contains(e.target)){
-      settingsModal.classList.remove('show');
+    const sp = document.getElementById('side-panel');
+    const mb = document.getElementById('menu-btn');
+    if(sp.classList.contains('open') && !sp.contains(e.target) && e.target !== mb){
+      sp.classList.remove('open');
     }
   });
 
-  // ensure app initially hidden until intro hides - but also allow skipping intro if needed
-  // mainApp.style.display = 'none'; // already handled in intro module
-
-});
+}); // end DOMContentLoaded
 </script>
 </body>
 </html>

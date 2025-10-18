@@ -1,4 +1,4 @@
-                                                       {
+{
   "name": "ai-assistant-pro-proxy",
   "version": "1.0.0",
   "description": "AI proxy server (Gemini + Pollinations) for Chat, Math, Image, and Video Generation.",
@@ -17,4 +17,4 @@
   "engines": {
     "node": ">=18.0.0"
   }
-} 
+} đây là mã package. Bạn hãy sửa lỗi và viết lại hoàn chinhe

@@ -5,117 +5,99 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>AI Assistant Pro</title>
   <style>
-    /* 🌑 Giao diện tổng thể */
+    /* ====== TOÀN BỘ NỀN & FONT ====== */
     body {
       margin: 0;
       padding: 0;
+      overflow: hidden;
+      font-family: "Poppins", sans-serif;
       background: radial-gradient(circle at center, #0a0a0a 60%, #000);
       color: #f5c542;
-      font-family: "Poppins", sans-serif;
-      height: 100vh;
-      overflow: hidden;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: space-between;
     }
 
-    /* 🌟 Thanh tiêu đề */
+    /* ====== INTRO ====== */
+    #intro {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: radial-gradient(circle at center, #000, #1a1a1a 80%);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+      z-index: 9999;
+      animation: introFade 6s forwards;
+    }
+
+    @keyframes introFade {
+      0% { opacity: 1; }
+      90% { opacity: 1; }
+      100% { opacity: 0; visibility: hidden; }
+    }
+
+    .intro-logo {
+      font-size: 3em;
+      color: gold;
+      text-shadow: 0 0 25px gold;
+      animation: pulseLogo 3s ease-in-out infinite alternate;
+    }
+
+    @keyframes pulseLogo {
+      0% { transform: scale(0.9); text-shadow: 0 0 10px #ffde6b; }
+      100% { transform: scale(1.2); text-shadow: 0 0 40px #ffe8a3; }
+    }
+
+    .burst {
+      position: absolute;
+      width: 300px;
+      height: 300px;
+      background: radial-gradient(circle, rgba(255,215,0,0.8) 0%, rgba(255,215,0,0) 70%);
+      border-radius: 50%;
+      opacity: 0;
+      animation: burstAnim 6s ease-out forwards;
+    }
+
+    @keyframes burstAnim {
+      0% { transform: scale(0); opacity: 0; }
+      40% { transform: scale(1.2); opacity: 1; }
+      80% { transform: scale(5); opacity: 0; }
+      100% { opacity: 0; }
+    }
+
+    /* ====== CHAT CONTAINER ====== */
+    #chat-container {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      height: 100vh;
+      max-width: 900px;
+      margin: 0 auto;
+      opacity: 0;
+      transition: opacity 1s ease;
+    }
+
+    body.loaded #chat-container {
+      opacity: 1;
+    }
+
+    /* ===== HEADER ===== */
     header {
-      width: 100%;
-      background: linear-gradient(90deg, #1a1a1a, #000);
-      padding: 14px 24px;
-      box-shadow: 0 2px 15px rgba(255, 215, 0, 0.2);
+      background: linear-gradient(90deg, #111, #000);
+      color: #f5c542;
+      padding: 12px 20px;
       display: flex;
       justify-content: space-between;
       align-items: center;
+      box-shadow: 0 2px 12px rgba(255, 215, 0, 0.2);
     }
 
     header h1 {
-      color: #f5c542;
       font-size: 1.4em;
       font-weight: 700;
-      letter-spacing: 1px;
       text-shadow: 0 0 12px rgba(255, 230, 128, 0.6);
     }
 
-    .menu-icon {
-      cursor: pointer;
-      font-size: 1.6em;
-      color: #f5c542;
-    }
-
-    /* 🧭 Sidebar menu */
-    #sidebar {
-      position: fixed;
-      top: 0;
-      left: -320px;
-      width: 280px;
-      height: 100vh;
-      background: rgba(10, 10, 10, 0.98);
-      box-shadow: 4px 0 25px rgba(255, 230, 128, 0.2);
-      color: #f5c542;
-      transition: left 0.4s ease;
-      z-index: 10;
-      display: flex;
-      flex-direction: column;
-    }
-
-    #sidebar.active {
-      left: 0;
-    }
-
-    #sidebar h2 {
-      text-align: center;
-      margin: 24px 0;
-      text-shadow: 0 0 8px rgba(255, 215, 0, 0.7);
-    }
-
-    .chat-history {
-      flex: 1;
-      overflow-y: auto;
-      padding: 0 16px;
-    }
-
-    .chat-history-item {
-      padding: 10px 8px;
-      margin: 6px 0;
-      border-bottom: 1px solid rgba(255, 215, 0, 0.15);
-      cursor: pointer;
-      transition: 0.2s;
-    }
-
-    .chat-history-item:hover {
-      background: rgba(255, 215, 0, 0.08);
-    }
-
-    .new-chat-btn {
-      background: #f5c542;
-      color: #000;
-      font-weight: 600;
-      border: none;
-      margin: 16px;
-      padding: 12px;
-      border-radius: 12px;
-      cursor: pointer;
-      transition: 0.3s;
-    }
-
-    .new-chat-btn:hover {
-      background: #ffe480;
-    }
-
-    /* 💬 Khung chat chính */
-    #chat-container {
-      flex: 1;
-      width: 100%;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      padding: 12px;
-      overflow: hidden;
-    }
-
+    /* ===== CHAT BOX ===== */
     #chat-box {
       flex: 1;
       overflow-y: auto;
@@ -123,24 +105,22 @@
       display: flex;
       flex-direction: column;
       gap: 10px;
+      background: rgba(15, 15, 15, 0.9);
     }
 
-    /* Bong bóng chat */
     .chat-bubble {
       max-width: 75%;
       padding: 12px 18px;
       border-radius: 16px;
-      box-shadow: 0 0 12px rgba(255, 215, 0, 0.1);
       line-height: 1.5;
-      animation: fadeInUp 0.3s ease;
-      white-space: pre-wrap;
+      box-shadow: 0 0 8px rgba(255, 215, 0, 0.1);
+      animation: fadeIn 0.3s ease;
     }
 
     .user-bubble {
       align-self: flex-end;
       background: linear-gradient(135deg, #f5c542, #d4a017);
       color: #000;
-      border-bottom-right-radius: 4px;
     }
 
     .bot-bubble {
@@ -148,39 +128,20 @@
       background: rgba(30, 30, 30, 0.95);
       border: 1px solid rgba(255, 215, 0, 0.3);
       color: #f5c542;
-      border-bottom-left-radius: 4px;
     }
 
-    @keyframes fadeInUp {
-      from {
-        opacity: 0;
-        transform: translateY(15px);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
     }
 
-    /* 📤 Thanh nhập tin nhắn */
+    /* ===== INPUT AREA ===== */
     #input-area {
+      background: rgba(20, 20, 20, 0.95);
+      border-top: 1px solid rgba(255, 215, 0, 0.2);
+      padding: 10px 18px;
       display: flex;
       align-items: center;
-      padding: 10px 18px;
-      background: rgba(15, 15, 15, 0.95);
-      box-shadow: 0 -2px 10px rgba(255, 215, 0, 0.1);
-      border-top: 1px solid rgba(255, 215, 0, 0.2);
-    }
-
-    #file-input {
-      display: none;
-    }
-
-    .upload-icon {
-      font-size: 1.6em;
-      margin-right: 12px;
-      cursor: pointer;
-      color: #f5c542;
     }
 
     #message-input {
@@ -202,7 +163,7 @@
       color: #000;
       font-weight: 700;
       cursor: pointer;
-      box-shadow: 0 0 12px rgba(255, 215, 0, 0.3);
+      margin-left: 10px;
       transition: transform 0.2s;
     }
 
@@ -210,51 +171,105 @@
       transform: scale(1.1);
     }
 
-    /* Ảnh thumbnail */
-    .chat-image {
-      max-width: 220px;
-      border-radius: 12px;
-      border: 1px solid rgba(255, 215, 0, 0.3);
-      box-shadow: 0 0 12px rgba(255, 215, 0, 0.2);
+    /* ===== TOOL BUTTONS ===== */
+    .tools {
+      display: flex;
+      justify-content: space-around;
+      padding: 8px 0;
+      background: #0a0a0a;
+      border-top: 1px solid rgba(255, 215, 0, 0.2);
+    }
+
+    .tool-btn {
+      background: transparent;
+      border: none;
+      color: #f5c542;
+      font-size: 0.9em;
+      font-weight: 600;
+      cursor: pointer;
+      transition: color 0.3s, transform 0.2s;
+    }
+
+    .tool-btn:hover {
+      color: #ffe480;
+      transform: scale(1.05);
     }
 
   </style>
 </head>
 <body>
-  <header>
-    <span class="menu-icon" onclick="toggleSidebar()">☰</span>
-    <h1>AI Assistant Pro</h1>
-  </header>
 
-  <!-- Sidebar menu -->
-  <div id="sidebar">
-    <h2>🧠 Lịch sử Chat</h2>
-    <div class="chat-history" id="history-list"></div>
-    <button class="new-chat-btn" onclick="newChat()">+ New Chat</button>
+  <!-- ✨ INTRO -->
+  <div id="intro">
+    <div class="burst"></div>
+    <div class="intro-logo">AI Assistant Pro</div>
   </div>
 
-  <!-- Chat container -->
+  <!-- 💬 CHAT -->
   <div id="chat-container">
+    <header>
+      <h1>AI Assistant Pro</h1>
+    </header>
+
     <div id="chat-box"></div>
+
     <div id="input-area">
-      <label for="file-input" class="upload-icon">📎</label>
-      <input type="file" id="file-input" accept="image/*,application/pdf" />
       <input type="text" id="message-input" placeholder="Nhập tin nhắn..." />
       <button id="send-btn">➤</button>
+    </div>
+
+    <div class="tools">
+      <button class="tool-btn">💬 Chat</button>
+      <button class="tool-btn">🧮 Giải toán</button>
+      <button class="tool-btn">🖼️ Tạo ảnh</button>
+      <button class="tool-btn">🎬 Tạo video</button>
     </div>
   </div>
 
   <script>
-    // 🎛 Toggle sidebar
-    function toggleSidebar() {
-      document.getElementById('sidebar').classList.toggle('active');
+    // 🌟 Intro logic + âm thanh chấn động
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+
+    function playBurstSound() {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = "sawtooth";
+      osc.frequency.setValueAtTime(100, ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(40, ctx.currentTime + 0.6);
+      gain.gain.setValueAtTime(0.4, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.8);
+      osc.connect(gain).connect(ctx.destination);
+      osc.start();
+      osc.stop(ctx.currentTime + 1);
     }
 
-    // ✨ New chat
-    function newChat() {
-      document.getElementById("chat-box").innerHTML = "";
-      document.getElementById("history-list").innerHTML += `<div class='chat-history-item'>Chat mới</div>`;
-      toggleSidebar();
+    window.addEventListener("load", () => {
+      setTimeout(() => {
+        playBurstSound();
+        document.body.classList.add("loaded");
+      }, 5500);
+    });
+
+    // 💬 Chat cơ bản
+    const chatBox = document.getElementById("chat-box");
+    const sendBtn = document.getElementById("send-btn");
+    const input = document.getElementById("message-input");
+
+    sendBtn.onclick = () => sendMessage();
+    input.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") sendMessage();
+    });
+
+    function sendMessage() {
+      const msg = input.value.trim();
+      if (!msg) return;
+      chatBox.innerHTML += `<div class='chat-bubble user-bubble'>${msg}</div>`;
+      input.value = "";
+
+      setTimeout(() => {
+        chatBox.innerHTML += `<div class='chat-bubble bot-bubble'>🤖 Tôi đã nhận: "${msg}"</div>`;
+        chatBox.scrollTop = chatBox.scrollHeight;
+      }, 500);
     }
   </script>
 </body>

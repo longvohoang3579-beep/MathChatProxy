@@ -1,746 +1,261 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="vi">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>AI Assistant Pro</title>
-<link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet" />
-<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
-<style>
-  /* ========== GLOBAL ========== */
-  :root{
-    --bg:#0f0f13;
-    --panel:#1a1c29;
-    --muted:#aaa;
-    --accent:#facc15;
-    --bubble-user:#2563eb;
-    --bubble-ai:#374151;
-  }
-  html,body{height:100%;margin:0;padding:0;background:var(--bg);color:#fff;font-family:"Segoe UI",sans-serif;overflow:hidden;}
-  /* ========== INTRO ========== */
-  #intro-screen{
-    position:fixed; inset:0; z-index:2000;
-    display:flex; align-items:center; justify-content:center; flex-direction:column;
-    background:linear-gradient(180deg,#050405 0%, #060607 60%);
-    pointer-events:auto;
-  }
-  /* canvas covers behind logo */
-  #intro-canvas{position:absolute; inset:0; width:100%; height:100%; display:block;}
-  #intro-content{position:relative; z-index:2010; text-align:center; pointer-events:none;}
-  #intro-logo{
-    font-weight:800; color:var(--accent);
-    font-size:3.0rem; letter-spacing:0.6px;
-    transform:scale(.6); opacity:0;
-    text-shadow:0 0 10px rgba(255,230,120,0.6);
-    display:inline-block;
-  }
-  /* shimmer overlay */
-  .shimmer{
-    position:relative; display:inline-block;
-  }
-  .shimmer::after{
-    content:''; position:absolute; left:-40%; top:0; height:100%; width:40%;
-    background:linear-gradient(90deg, rgba(255,255,255,0.0) 0%, rgba(255,255,255,0.8) 50%, rgba(255,255,255,0.0) 100%);
-    transform:skewX(-20deg);
-    pointer-events:none;
-    mix-blend-mode:overlay; opacity:0;
-  }
-  /* animations: scale-in -> glow -> shimmer */
-  .logo-appear{ animation: logoScale 0.9s cubic-bezier(.2,.9,.2,1) forwards; }
-  @keyframes logoScale{
-    0%{ transform:scale(.4); opacity:0; filter:blur(6px); text-shadow:none; }
-    60%{ transform:scale(1.12); opacity:1; filter:blur(0); text-shadow:0 0 24px rgba(255,220,100,0.9);}
-    100%{ transform:scale(1); opacity:1; filter:blur(0); text-shadow: 0 0 34px rgba(255,215,60,0.95); }
-  }
-  .logo-shimmer{ animation: shimmerMove 1.4s linear 0.25s forwards; }
-  @keyframes shimmerMove{
-    0%{ opacity:0; left:-40%; }
-    30%{ opacity:1; }
-    100%{ opacity:0; left:120%; }
-  }
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI Assistant Pro</title>
+  <style>
+    /* 🌑 Giao diện tổng thể */
+    body {
+      margin: 0;
+      padding: 0;
+      background: radial-gradient(circle at center, #0a0a0a 60%, #000);
+      color: #f5c542;
+      font-family: "Poppins", sans-serif;
+      height: 100vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-between;
+    }
 
-  /* shock effect (scale + ring) */
-  #shock-ring{
-    position:absolute; inset:0; pointer-events:none; z-index:2015;
-    background: radial-gradient(circle at 50% 45%, rgba(255,220,120,0.08), rgba(255,160,50,0.04) 12%, transparent 30%);
-    transform:scale(.98); opacity:0;
-  }
+    /* 🌟 Thanh tiêu đề */
+    header {
+      width: 100%;
+      background: linear-gradient(90deg, #1a1a1a, #000);
+      padding: 14px 24px;
+      box-shadow: 0 2px 15px rgba(255, 215, 0, 0.2);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
 
-  /* burst overlay (full-screen golden flash) */
-  #intro-burst{
-    position:absolute; inset:0; z-index:2025; pointer-events:none;
-    background: radial-gradient(circle at 50% 40%, rgba(255,240,180,0.98), rgba(255,200,80,0.85) 18%, rgba(255,120,40,0.35) 45%, transparent 60%);
-    opacity:0; mix-blend-mode:screen; transition:opacity .7s ease;
-  }
+    header h1 {
+      color: #f5c542;
+      font-size: 1.4em;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-shadow: 0 0 12px rgba(255, 230, 128, 0.6);
+    }
 
-  /* spark particles (dom elements) */
-  .intro-spark{ position:absolute; width:6px; height:6px; border-radius:50%;
-    box-shadow:0 0 8px rgba(255,210,120,0.9), 0 0 20px rgba(255,140,40,0.6);
-    pointer-events:none; transform:translate(-50%,-50%);
-  }
+    .menu-icon {
+      cursor: pointer;
+      font-size: 1.6em;
+      color: #f5c542;
+    }
 
-  /* ========== MAIN APP UI (KEPT) ========== */
-  .app-wrapper{ display:flex; height:100%; width:100%; align-items:center; justify-content:center; }
-  .container { max-width:900px; margin:2rem auto; background:var(--panel); border-radius:1.5rem; padding:1.5rem; box-shadow:0 15px 30px rgba(0,0,0,0.7); display:none; position:relative; }
-  .tabs{ display:flex; border-bottom:2px solid #333; margin-bottom:1rem; }
-  .tab-btn{ flex:1; text-align:center; padding:1rem; cursor:pointer; color:var(--muted); font-weight:bold; transition:all .15s; user-select:none; }
-  .tab-btn.active{ color:#fff; border-bottom:3px solid var(--accent); }
-  .tab-content{ display:none; }
-  .tab-content.active{ display:block; }
-  .chat-box{ background:#111827; border-radius:12px; padding:1rem; height:400px; overflow-y:auto; display:flex; flex-direction:column; scroll-behavior:smooth; }
-  .bubble{ max-width:80%; padding:10px 14px; border-radius:12px; margin-bottom:10px; line-height:1.5; word-wrap:break-word; white-space:pre-wrap; }
-  .user-bubble{ background:var(--bubble-user); align-self:flex-end; color:white; border-bottom-right-radius:2px; }
-  .ai-bubble{ background:var(--bubble-ai); align-self:flex-start; color:#e5e7eb; border-bottom-left-radius:2px; }
-  mark.highlight{ background-color:#fde047; color:black; font-weight:bold; padding:0 3px; border-radius:3px; }
-  textarea,input{ width:100%; padding:.75rem; border-radius:.75rem; background:#1e1e2a; border:1px solid #333; color:white; resize:none; outline:none; }
-  button{ padding:.75rem 1rem; border-radius:.75rem; font-weight:bold; cursor:pointer; transition:all .15s; border:none; }
-  #btnCreateImage{ background:#10b981; color:#111827; }
-  #btnCreateImage:hover{ background:#059669; }
-  .send-btn{ background:#6366f1; color:white; }
-  .send-btn:hover{ background:#4f46e5; }
-  img.generated-image, .generated-video{ border-radius:12px; max-width:100%; margin-top:1rem; display:block; max-height:400px; margin-left:auto; margin-right:auto; }
+    /* 🧭 Sidebar menu */
+    #sidebar {
+      position: fixed;
+      top: 0;
+      left: -320px;
+      width: 280px;
+      height: 100vh;
+      background: rgba(10, 10, 10, 0.98);
+      box-shadow: 4px 0 25px rgba(255, 230, 128, 0.2);
+      color: #f5c542;
+      transition: left 0.4s ease;
+      z-index: 10;
+      display: flex;
+      flex-direction: column;
+    }
 
-  /* settings top-right */
-  #settings-btn{ position:absolute; top:1rem; right:1rem; font-size:1.5rem; cursor:pointer; color:var(--accent); z-index:120; }
-  #settings-modal{ position:absolute; top:3rem; right:1rem; width:220px; background:var(--panel); border:1px solid var(--accent); border-radius:.75rem; padding:1rem; display:none; z-index:121; }
+    #sidebar.active {
+      left: 0;
+    }
 
-  /* hamburger sidebar */
-  #menu-btn{ position:absolute; top:1rem; left:1rem; font-size:1.4rem; cursor:pointer; color:var(--accent); z-index:120; }
-  #side-panel{ position:fixed; left:-320px; top:0; width:320px; height:100%; background:#0e1116; color:#fff; box-shadow: 4px 0 30px rgba(0,0,0,0.6); transition:left .28s cubic-bezier(.2,.9,.2,1); z-index:150; padding:1rem; }
-  #side-panel.open{ left:0; }
-  .side-header{ font-weight:800; color:var(--accent); font-size:1.1rem; margin-bottom:1rem; }
-  .side-list{ margin-top:1rem; }
-  .side-item{ padding:.6rem .6rem; border-radius:.5rem; cursor:pointer; color:#ddd; }
-  .side-item:hover{ background:rgba(255,255,255,0.02); }
+    #sidebar h2 {
+      text-align: center;
+      margin: 24px 0;
+      text-shadow: 0 0 8px rgba(255, 215, 0, 0.7);
+    }
 
-  /* responsive */
-  @media (max-width:640px){
-    .container{ margin:1rem; }
-    #intro-logo{ font-size:2rem; }
-    #side-panel{ width:84%; }
-  }
-</style>
+    .chat-history {
+      flex: 1;
+      overflow-y: auto;
+      padding: 0 16px;
+    }
+
+    .chat-history-item {
+      padding: 10px 8px;
+      margin: 6px 0;
+      border-bottom: 1px solid rgba(255, 215, 0, 0.15);
+      cursor: pointer;
+      transition: 0.2s;
+    }
+
+    .chat-history-item:hover {
+      background: rgba(255, 215, 0, 0.08);
+    }
+
+    .new-chat-btn {
+      background: #f5c542;
+      color: #000;
+      font-weight: 600;
+      border: none;
+      margin: 16px;
+      padding: 12px;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+
+    .new-chat-btn:hover {
+      background: #ffe480;
+    }
+
+    /* 💬 Khung chat chính */
+    #chat-container {
+      flex: 1;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 12px;
+      overflow: hidden;
+    }
+
+    #chat-box {
+      flex: 1;
+      overflow-y: auto;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    /* Bong bóng chat */
+    .chat-bubble {
+      max-width: 75%;
+      padding: 12px 18px;
+      border-radius: 16px;
+      box-shadow: 0 0 12px rgba(255, 215, 0, 0.1);
+      line-height: 1.5;
+      animation: fadeInUp 0.3s ease;
+      white-space: pre-wrap;
+    }
+
+    .user-bubble {
+      align-self: flex-end;
+      background: linear-gradient(135deg, #f5c542, #d4a017);
+      color: #000;
+      border-bottom-right-radius: 4px;
+    }
+
+    .bot-bubble {
+      align-self: flex-start;
+      background: rgba(30, 30, 30, 0.95);
+      border: 1px solid rgba(255, 215, 0, 0.3);
+      color: #f5c542;
+      border-bottom-left-radius: 4px;
+    }
+
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(15px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    /* 📤 Thanh nhập tin nhắn */
+    #input-area {
+      display: flex;
+      align-items: center;
+      padding: 10px 18px;
+      background: rgba(15, 15, 15, 0.95);
+      box-shadow: 0 -2px 10px rgba(255, 215, 0, 0.1);
+      border-top: 1px solid rgba(255, 215, 0, 0.2);
+    }
+
+    #file-input {
+      display: none;
+    }
+
+    .upload-icon {
+      font-size: 1.6em;
+      margin-right: 12px;
+      cursor: pointer;
+      color: #f5c542;
+    }
+
+    #message-input {
+      flex: 1;
+      background: transparent;
+      border: none;
+      outline: none;
+      color: #fff;
+      font-size: 1em;
+      padding: 8px;
+    }
+
+    #send-btn {
+      background: linear-gradient(135deg, #f5c542, #d4a017);
+      border: none;
+      border-radius: 50%;
+      width: 44px;
+      height: 44px;
+      color: #000;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 0 12px rgba(255, 215, 0, 0.3);
+      transition: transform 0.2s;
+    }
+
+    #send-btn:hover {
+      transform: scale(1.1);
+    }
+
+    /* Ảnh thumbnail */
+    .chat-image {
+      max-width: 220px;
+      border-radius: 12px;
+      border: 1px solid rgba(255, 215, 0, 0.3);
+      box-shadow: 0 0 12px rgba(255, 215, 0, 0.2);
+    }
+
+  </style>
 </head>
 <body>
-  <!-- INTRO -->
-  <div id="intro-screen" aria-hidden="false">
-    <canvas id="intro-canvas"></canvas>
+  <header>
+    <span class="menu-icon" onclick="toggleSidebar()">☰</span>
+    <h1>AI Assistant Pro</h1>
+  </header>
 
-    <div id="intro-content" aria-hidden="true">
-      <div id="intro-logo" class="shimmer"><span id="intro-text">AI Assistant Pro</span></div>
-    </div>
-
-    <div id="shock-ring"></div>
-    <div id="intro-burst"></div>
-    <!-- sparks will be appended dynamically -->
+  <!-- Sidebar menu -->
+  <div id="sidebar">
+    <h2>🧠 Lịch sử Chat</h2>
+    <div class="chat-history" id="history-list"></div>
+    <button class="new-chat-btn" onclick="newChat()">+ New Chat</button>
   </div>
 
-  <!-- Side panel (hamburger menu) -->
-  <div id="side-panel" role="navigation" aria-hidden="true">
-    <div class="side-header">Menu</div>
-    <div class="side-list">
-      <div class="side-item" id="new-chat-btn">➕ New Chat</div>
-      <div style="height:10px"></div>
-      <div style="font-weight:700;color:#ddd;margin-bottom:6px">History</div>
-      <div id="history-list">
-        <!-- history items appended here -->
-        <div class="side-item">No history yet</div>
-      </div>
+  <!-- Chat container -->
+  <div id="chat-container">
+    <div id="chat-box"></div>
+    <div id="input-area">
+      <label for="file-input" class="upload-icon">📎</label>
+      <input type="file" id="file-input" accept="image/*,application/pdf" />
+      <input type="text" id="message-input" placeholder="Nhập tin nhắn..." />
+      <button id="send-btn">➤</button>
     </div>
   </div>
 
-  <!-- MAIN APP -->
-  <div class="app-wrapper">
-    <div class="container relative" id="mainApp" aria-hidden="true">
-      <div id="menu-btn">☰</div>
-      <div id="settings-btn">⚙️</div>
-
-      <div id="settings-modal" onmouseleave="this.style.display='none'">
-        <label class="block mb-2">Language:</label>
-        <select id="language-select" class="w-full p-2 rounded bg-gray-800 text-white">
-          <option value="en">English</option>
-          <option value="vi">Tiếng Việt</option>
-          <option value="zh-CN">简体中文</option>
-        </select>
-      </div>
-
-      <div class="tabs" role="tablist">
-        <div class="tab-btn active" data-tab="image">🖼️ Tạo Ảnh</div>
-        <div class="tab-btn" data-tab="chat">💬 Chat</div>
-        <div class="tab-btn" data-tab="math">🧮 Giải Toán</div>
-        <div class="tab-btn" data-tab="video">🎞️ Tạo Video</div>
-      </div>
-
-      <div class="tab-content active" id="image">
-        <div class="chat-box" id="imageBox"></div>
-        <textarea id="imagePrompt" rows="2" placeholder="Enter image prompt..."></textarea>
-        <button id="btnCreateImage" class="mt-2 w-full">Create Image</button>
-      </div>
-
-      <div class="tab-content" id="chat">
-        <div class="chat-box" id="chatBox"></div>
-        <div class="pending-preview" id="chatPreview"></div>
-        <div class="input-row" style="display:flex;align-items:center;gap:8px;margin-top:8px;">
-          <label class="icon-btn" for="chatFileInput" title="Upload image/file" style="cursor:pointer">📁</label>
-          <input type="file" id="chatFileInput" accept="image/*,.pdf,.txt,.docx" hidden />
-          <textarea id="chatInput" rows="1" placeholder="Type a message..."></textarea>
-          <button id="btnChat" class="send-btn" title="Send">➤</button>
-        </div>
-      </div>
-
-      <div class="tab-content" id="math">
-        <div class="chat-box" id="mathBox"></div>
-        <div class="pending-preview" id="mathPreview"></div>
-        <div class="input-row" style="display:flex;align-items:center;gap:8px;margin-top:8px;">
-          <label class="icon-btn" for="mathFileInput" title="Upload image/file" style="cursor:pointer">📁</label>
-          <input type="file" id="mathFileInput" accept="image/*,.pdf,.txt,.docx" hidden />
-          <textarea id="mathPrompt" rows="1" placeholder="Enter math problem..."></textarea>
-          <button id="btnMath" class="send-btn" title="Solve">➤</button>
-        </div>
-      </div>
-
-      <div class="tab-content" id="video">
-        <div class="chat-box" id="videoBox"></div>
-        <div class="pending-preview" id="videoPreview"></div>
-        <div class="input-row" style="display:flex;align-items:center;gap:8px;margin-top:8px;">
-          <textarea id="videoPrompt" rows="1" placeholder="Enter video description..."></textarea>
-          <button id="btnVideo" class="send-btn" title="Create Video">➤</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-<script>
-/* ================== INTRO VISUALS (Canvas light blobs + sparks) ================== */
-(function(){
-  const canvas = document.getElementById('intro-canvas');
-  const ctx = canvas.getContext('2d');
-  const introScreen = document.getElementById('intro-screen');
-  const introText = document.getElementById('intro-text');
-  const introLogo = document.getElementById('intro-logo');
-  const shockRing = document.getElementById('shock-ring');
-  const burst = document.getElementById('intro-burst');
-  const mainApp = document.getElementById('mainApp');
-
-  function resize(){
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
-  }
-  window.addEventListener('resize', resize);
-  resize();
-
-  // LightBlob class (circular glowing)
-  class LightBlob {
-    constructor(opts){
-      this.cx = opts.cx; this.cy = opts.cy;
-      this.orbitR = opts.orbitR || 120;
-      this.phase = Math.random()*Math.PI*2;
-      this.speed = opts.speed || 0.6;
-      this.size = opts.size || 48;
-      this.hue = opts.hue || 40;
-      this.dir = opts.dir || 1;
-      this.offset = opts.offset || 0;
+  <script>
+    // 🎛 Toggle sidebar
+    function toggleSidebar() {
+      document.getElementById('sidebar').classList.toggle('active');
     }
-    update(t){
-      const ang = this.phase + this.dir*(t*this.speed) + this.offset;
-      const x = this.cx + Math.cos(ang)*this.orbitR + Math.sin(t*this.speed*0.7 + this.phase)*18;
-      const y = this.cy + Math.sin(ang*0.9)*(this.orbitR*0.5) + Math.cos(t*this.speed*0.6 + this.phase)*12;
-      const s = this.size * (1 + 0.12*Math.sin(ang*2 + t*0.8));
-      this.draw(x,y,s);
+
+    // ✨ New chat
+    function newChat() {
+      document.getElementById("chat-box").innerHTML = "";
+      document.getElementById("history-list").innerHTML += `<div class='chat-history-item'>Chat mới</div>`;
+      toggleSidebar();
     }
-    draw(x,y,s){
-      const g = ctx.createRadialGradient(x,y,0,x,y,s*1.6);
-      g.addColorStop(0, `hsla(${this.hue},100%,65%,1)`);
-      g.addColorStop(0.25, `hsla(${(this.hue+20)%360},100%,55%,0.9)`);
-      g.addColorStop(0.6, `hsla(${(this.hue+40)%360},85%,45%,0.45)`);
-      g.addColorStop(1, 'rgba(0,0,0,0)');
-      ctx.save();
-      ctx.globalCompositeOperation = 'screen';
-      ctx.fillStyle = g;
-      ctx.beginPath(); ctx.arc(x,y,s,0,Math.PI*2); ctx.fill();
-      ctx.globalCompositeOperation = 'lighter';
-      ctx.restore();
-    }
-  }
-
-  // create blobs
-  let blobs = [];
-  function makeBlobs(){
-    blobs = [];
-    const w = canvas.width, h = canvas.height;
-    const centers = [
-      {cx: w*0.28, cy: h*0.33},
-      {cx: w*0.72, cy: h*0.65}
-    ];
-    const huesA = [40, 24, 12];
-    const huesB = [12, 28, 48];
-    centers.forEach((c,i)=>{
-      const hues = i===0? huesA : huesB;
-      hues.forEach((hue, j)=>{
-        const orbitR = Math.min(w,h)*(0.12 + 0.06*j + Math.random()*0.04);
-        blobs.push(new LightBlob({cx:c.cx, cy:c.cy, orbitR, size:36 + Math.random()*44, hue: hue + Math.random()*8 - 4, speed:0.6 + Math.random()*0.6, dir: (Math.random()>0.5?1:-1)}));
-      });
-    });
-    // small satellites
-    for(let k=0;k<8;k++){
-      blobs.push(new LightBlob({cx: w*0.5 + (Math.random()*w - w/2)*0.55, cy: h*0.5 + (Math.random()*h - h/2)*0.35, orbitR: 20 + Math.random()*180, speed:0.8 + Math.random()*1.2, size:8 + Math.random()*18, hue: 30 + Math.random()*40, dir: Math.random()>0.5?1:-1}));
-    }
-  }
-  makeBlobs();
-
-  // DOM sparks
-  function spawnSparks(){
-    const count = Math.min(80, Math.max(30, Math.round(window.innerWidth/18)));
-    for(let i=0;i<count;i++){
-      const el = document.createElement('div');
-      el.className = 'intro-spark';
-      const left = Math.random()*100;
-      const top = Math.random()*70 + 10;
-      el.style.left = left + '%';
-      el.style.top = top + '%';
-      const scale = 0.6 + Math.random()*1.4;
-      el.style.width = (4*scale)+'px';
-      el.style.height = (4*scale)+'px';
-      el.style.opacity = (0.35 + Math.random()*0.8).toString();
-      el.style.transition = `transform ${5+Math.random()*6}s ease-in-out, opacity ${6+Math.random()*4}s linear`;
-      document.getElementById('intro-screen').appendChild(el);
-      setTimeout(()=> {
-        const dx = (Math.random()-0.5)*200; const dy = (Math.random()-0.5)*120;
-        el.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
-        el.style.opacity = (0.1 + Math.random()*0.6).toString();
-      }, 60 + Math.random()*400);
-      // remove later to keep DOM light
-      setTimeout(()=> el.remove(), 9000);
-    }
-  }
-  spawnSparks();
-
-  // render loop
-  let start = performance.now(), running = true;
-  function render(now){
-    if(!running) return;
-    const t = (now - start)/1000;
-    ctx.clearRect(0,0,canvas.width,canvas.height);
-    // base vignette
-    const vg = ctx.createLinearGradient(0,0,canvas.width,canvas.height);
-    vg.addColorStop(0, "#050406"); vg.addColorStop(1, "#070507");
-    ctx.fillStyle = vg; ctx.fillRect(0,0,canvas.width,canvas.height);
-
-    for(let b of blobs) b.update(t);
-
-    // soft radial sheen center
-    ctx.globalCompositeOperation = 'lighter';
-    const cx = canvas.width*0.52, cy = canvas.height*0.45;
-    const largeG = ctx.createRadialGradient(cx,cy,0,cx,cy,Math.max(canvas.width, canvas.height)*0.6);
-    largeG.addColorStop(0, 'rgba(255,220,140,0.035)'); largeG.addColorStop(1, 'rgba(0,0,0,0)');
-    ctx.fillStyle = largeG; ctx.fillRect(0,0,canvas.width,canvas.height);
-    ctx.globalCompositeOperation = 'source-over';
-    requestAnimationFrame(render);
-  }
-  requestAnimationFrame(render);
-
-  // TIMING: 6s visible, but we want shock -> logo -> shimmer -> burst
-  function doIntroSequence(){
-    // initial tiny shock (rumble)
-    setTimeout(()=> {
-      // shock visual: brief ring + small scale bounce
-      shockRing.style.transition = 'opacity .18s ease, transform .18s ease';
-      shockRing.style.opacity = '1';
-      shockRing.style.transform = 'scale(1.06)';
-      setTimeout(()=> { shockRing.style.opacity = '0'; shockRing.style.transform = 'scale(1)'; }, 180);
-    }, 200);
-
-    // reveal logo (scale-in)
-    setTimeout(()=> {
-      introLogo.classList.add('logo-appear');
-      // also play whoosh sound timed
-      playWhoosh();
-    }, 420);
-
-    // shimmer effect pass (add DOM pseudo by creating shimmer element)
-    setTimeout(()=> {
-      // create shimmer element overlay (pseudo) by inserting ::after via adding class and using JS animation
-      const shimmerEl = document.createElement('div');
-      shimmerEl.style.position = 'absolute';
-      shimmerEl.style.inset = '0';
-      shimmerEl.style.pointerEvents = 'none';
-      // animate shimmer via CSS pseudo we already have but we use a real element
-      // create an element that will slide across the logo
-      const stripe = document.createElement('div');
-      stripe.style.position='absolute';
-      stripe.style.left='-40%';
-      stripe.style.top='0';
-      stripe.style.height='100%';
-      stripe.style.width='40%';
-      stripe.style.transform='skewX(-20deg)';
-      stripe.style.background='linear-gradient(90deg, rgba(255,255,255,0.0) 0%, rgba(255,255,255,0.95) 50%, rgba(255,255,255,0.0) 100%)';
-      stripe.style.mixBlendMode='overlay';
-      sparkleParent = document.getElementById('intro-content');
-      sparkleParent.appendChild(stripe);
-      // animate stripe
-      stripe.animate([{left:'-40%'},{left:'120%'}], {duration:1200, easing:'linear'});
-      // remove after
-      setTimeout(()=> stripe.remove(), 1500);
-    }, 1250);
-
-    // after total visible time - do burst + heavy sound
-    const VISIBLE_MS = 6000;
-    setTimeout(()=> {
-      // show burst overlay and play burst sound
-      burst.style.opacity = '1';
-      playBurst();
-
-      // quickly intensify small sparks
-      document.querySelectorAll('.intro-spark').forEach((s,i)=>{
-        s.style.transitionDuration = (0.4 + Math.random()*0.9) + 's';
-        const dx = (Math.random()-0.5)*600;
-        const dy = (Math.random()-0.5)*400;
-        s.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px)) scale(1.4)`;
-        s.style.opacity = '1';
-      });
-
-      // fade out after short time and reveal app
-      setTimeout(()=> {
-        burst.style.transition = 'opacity .9s ease';
-        burst.style.opacity = '0';
-        introScreen.style.transition = 'opacity .9s ease';
-        introScreen.style.opacity = '0';
-        // stop animation loop to save CPU
-        running = false;
-        setTimeout(()=> {
-          introScreen.style.display = 'none';
-          document.getElementById('mainApp').style.display = 'block';
-          document.getElementById('mainApp').setAttribute('aria-hidden','false');
-          document.body.style.overflow = 'auto';
-          // initial welcome bubble in chat (English)
-          addWelcomeBubble();
-        }, 900);
-      }, 680);
-    }, VISIBLE_MS);
-  }
-
-  // start sequence
-  doIntroSequence();
-
-  /* ========== AUDIO: Web Audio API (whoosh + burst) ========== */
-  const AudioContext = window.AudioContext || window.webkitAudioContext;
-  const audioCtx = AudioContext ? new AudioContext() : null;
-
-  function playWhoosh(){
-    if(!audioCtx) return;
-    // whoosh: sweep filter on white noise + small sine sweep
-    const duration = 0.9;
-    const now = audioCtx.currentTime;
-    // white noise
-    const bufferSize = 2 * audioCtx.sampleRate;
-    const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
-    const data = buffer.getChannelData(0);
-    for(let i=0;i<bufferSize;i++) data[i] = (Math.random()*2-1) * 0.25;
-    const noise = audioCtx.createBufferSource(); noise.buffer = buffer; noise.loop = false;
-    const noiseGain = audioCtx.createGain(); noiseGain.gain.setValueAtTime(0.0001, now);
-    noiseGain.gain.exponentialRampToValueAtTime(0.5, now + 0.05);
-    noiseGain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
-
-    const filter = audioCtx.createBiquadFilter();
-    filter.type = 'lowpass'; filter.frequency.setValueAtTime(1200, now);
-    filter.frequency.exponentialRampToValueAtTime(2800, now + duration*0.9);
-
-    noise.connect(filter); filter.connect(noiseGain); noiseGain.connect(audioCtx.destination);
-    noise.start(now); noise.stop(now + duration);
-    // small rising sine for punch
-    const sine = audioCtx.createOscillator(); sine.type = 'sine';
-    const sineGain = audioCtx.createGain(); sineGain.gain.setValueAtTime(0.0001, now);
-    sine.frequency.setValueAtTime(120, now); sine.frequency.exponentialRampToValueAtTime(720, now + duration*0.85);
-    sineGain.gain.exponentialRampToValueAtTime(0.08, now + 0.06); sineGain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
-    sine.connect(sineGain); sineGain.connect(audioCtx.destination);
-    sine.start(now); sine.stop(now + duration);
-  }
-
-  function playBurst(){
-    if(!audioCtx) return;
-    const now = audioCtx.currentTime;
-    // burst: short burst white noise + bandpass
-    const bufferSize = 1 * audioCtx.sampleRate;
-    const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
-    const data = buffer.getChannelData(0);
-    for(let i=0;i<bufferSize;i++) data[i] = (Math.random()*2-1) * 0.8;
-    const noise = audioCtx.createBufferSource(); noise.buffer = buffer;
-    const noiseGain = audioCtx.createGain(); noiseGain.gain.setValueAtTime(0.0001, now);
-    noiseGain.gain.linearRampToValueAtTime(1.0, now + 0.01);
-    noiseGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.35);
-
-    const bp = audioCtx.createBiquadFilter(); bp.type='bandpass';
-    bp.frequency.setValueAtTime(1200, now);
-    bp.Q.setValueAtTime(0.8, now);
-    noise.connect(bp); bp.connect(noiseGain); noiseGain.connect(audioCtx.destination);
-    noise.start(now); noise.stop(now + 0.45);
-
-    // low-frequency boom
-    const osc = audioCtx.createOscillator(); osc.type='sine';
-    const oscGain = audioCtx.createGain(); oscGain.gain.setValueAtTime(0.0001, now);
-    osc.frequency.setValueAtTime(50, now);
-    oscGain.gain.setValueAtTime(0.5, now);
-    oscGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.45);
-    osc.connect(oscGain); oscGain.connect(audioCtx.destination);
-    osc.start(now); osc.stop(now + 0.45);
-  }
-
-  // add welcome bubble after intro
-  function addWelcomeBubble(){
-    const chatBox = document.getElementById('chatBox');
-    const bubble = document.createElement('div');
-    bubble.className = 'bubble ai-bubble';
-    bubble.innerHTML = `<div style="font-size:1.05rem;font-weight:700;color:#ffd26a">AI Assistant Pro</div>
-      <div style="margin-top:6px;color:#e9e6d8">Hello! What would you like to explore today?</div>`;
-    chatBox.appendChild(bubble);
-    chatBox.scrollTop = chatBox.scrollHeight;
-  }
-
-})(); /* end intro IIFE */
-
-/* ================== MAIN APP SCRIPTS (tabs, upload thumbnails, API stubs) ================== */
-document.addEventListener('DOMContentLoaded', () => {
-  // ensure main app hidden initially
-  document.getElementById('mainApp').style.display = 'none';
-
-  // Tabs
-  const tabs = document.querySelectorAll('.tab-btn');
-  const contents = document.querySelectorAll('.tab-content');
-  tabs.forEach(tab => tab.addEventListener('click', () => {
-    tabs.forEach(t=> t.classList.remove('active'));
-    contents.forEach(c=> c.classList.remove('active'));
-    tab.classList.add('active');
-    const id = tab.dataset.tab;
-    const el = document.getElementById(id);
-    if(el) el.classList.add('active');
-  }));
-
-  // Side panel menu
-  const menuBtn = document.getElementById('menu-btn');
-  const sidePanel = document.getElementById('side-panel');
-  let sideOpen = false;
-  menuBtn.addEventListener('click', ()=> {
-    sideOpen = !sideOpen;
-    if(sideOpen){ sidePanel.classList.add('open'); sidePanel.setAttribute('aria-hidden','false'); }
-    else { sidePanel.classList.remove('open'); sidePanel.setAttribute('aria-hidden','true'); }
-  });
-  // auto-close when mouse leaves panel
-  sidePanel.addEventListener('mouseleave', ()=> { sidePanel.classList.remove('open'); sideOpen=false; });
-
-  // settings button
-  const settingsBtn = document.getElementById('settings-btn');
-  const settingsModal = document.getElementById('settings-modal');
-  settingsBtn.addEventListener('click', (e)=> {
-    e.stopPropagation();
-    settingsModal.style.display = settingsModal.style.display === 'block' ? 'none' : 'block';
-  });
-  // hide settings when clicking outside
-  document.addEventListener('click', (e) => {
-    if(!settingsModal.contains(e.target) && e.target !== settingsBtn) settingsModal.style.display = 'none';
-  });
-
-  // Grab elements
-  const imageBox = document.getElementById('imageBox');
-  const imagePrompt = document.getElementById('imagePrompt');
-  const btnCreateImage = document.getElementById('btnCreateImage');
-
-  const chatBox = document.getElementById('chatBox');
-  const chatInput = document.getElementById('chatInput');
-  const btnChat = document.getElementById('btnChat');
-  const chatFileInput = document.getElementById('chatFileInput');
-  const chatPreview = document.getElementById('chatPreview');
-
-  const mathBox = document.getElementById('mathBox');
-  const mathPrompt = document.getElementById('mathPrompt');
-  const btnMath = document.getElementById('btnMath');
-  const mathFileInput = document.getElementById('mathFileInput');
-  const mathPreview = document.getElementById('mathPreview');
-
-  const videoBox = document.getElementById('videoBox');
-  const videoPrompt = document.getElementById('videoPrompt');
-  const btnVideo = document.getElementById('btnVideo');
-
-  let uploadedFiles = { chat: null, math: null };
-
-  function appendMessage(box, content, type='ai'){
-    const bubble = document.createElement('div');
-    bubble.className = 'bubble ' + (type === 'user' ? 'user-bubble' : 'ai-bubble');
-    bubble.innerHTML = content;
-    box.appendChild(bubble);
-    box.scrollTop = box.scrollHeight;
-    return bubble;
-  }
-  function showLoading(box){ return appendMessage(box, 'Processing...', 'ai'); }
-
-  // File upload handlers (show thumbnail in chat bubble when user uploads and sends)
-  function handleFileUpload(event, type){
-    const file = event.target.files[0];
-    if(!file) return;
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      uploadedFiles[type] = reader.result;
-      const previewContainer = type === 'chat' ? chatPreview : mathPreview;
-      previewContainer.innerHTML = `<img src="${reader.result}" alt="preview" style="width:80px;height:80px;object-fit:cover;border-radius:8px;border:2px solid #475569">`;
-    };
-    reader.readAsDataURL(file);
-  }
-
-  chatFileInput.addEventListener('change', (e)=> handleFileUpload(e,'chat'));
-  mathFileInput.addEventListener('change', (e)=> handleFileUpload(e,'math'));
-
-  // Clicking upload label triggers file input (already via label)
-  // When user clicks Send, if uploadedFiles.chat present, show thumbnail bubble
-  async function handleChat(){
-    const message = chatInput.value.trim();
-    const image = uploadedFiles.chat;
-    if(!message && !image) return;
-    // if image present, show thumbnail in user bubble
-    if(image){
-      const userBubble = document.createElement('div'); userBubble.className='bubble user-bubble';
-      userBubble.innerHTML = `<div style="font-weight:700;margin-bottom:6px;color:#fff">You sent an image</div><img src="${image}" alt="thumb" style="max-width:160px;border-radius:8px">`;
-      chatBox.appendChild(userBubble);
-      chatBox.scrollTop = chatBox.scrollHeight;
-    }
-    if(message){
-      appendMessage(chatBox, message, 'user');
-    }
-    // clear inputs/previews
-    chatInput.value = ''; chatPreview.innerHTML = ''; uploadedFiles.chat = null;
-    // show processing bubble
-    const loading = showLoading(chatBox);
-    try{
-      // call your /api/chat - here we just simulate
-      // const resp = await fetch('/api/chat', {...});
-      await new Promise(r => setTimeout(r, 700));
-      loading.innerHTML = `This is a simulated response (English).`;
-    }catch(err){
-      loading.textContent = `❌ Error: ${err.message}`;
-    }
-  }
-  btnChat.addEventListener('click', handleChat);
-  chatInput.addEventListener('keydown', (e)=> { if(e.key === 'Enter' && !e.shiftKey){ e.preventDefault(); handleChat(); } });
-
-  // Create image (in image tab) - simulated API
-  btnCreateImage.addEventListener('click', async ()=>{
-    const prompt = imagePrompt.value.trim(); if(!prompt) return;
-    appendMessage(imageBox, prompt, 'user');
-    const loading = showLoading(imageBox);
-    imagePrompt.value='';
-    try{
-      // simulate API
-      await new Promise(r=> setTimeout(r,900));
-      // placeholder image (data URI small gradient)
-      const imgData = 'data:image/svg+xml;utf8,' + encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' width='512' height='320'><rect width='100%' height='100%' fill='#1e293b'/><text x='50%' y='50%' dominant-baseline='middle' text-anchor='middle' fill='#ffd26a' font-size='22'>Generated image for: ${prompt.slice(0,36)}</text></svg>`);
-      loading.innerHTML = `<img src="${imgData}" class="generated-image" alt="Generated">`;
-    }catch(err){ loading.textContent = `❌ Error: ${err.message}`; }
-  });
-
-  // Math handler
-  btnMath.addEventListener('click', async ()=>{
-    const q = mathPrompt.value.trim(); if(!q && !uploadedFiles.math) return;
-    appendMessage(mathBox, q, 'user');
-    const loading = showLoading(mathBox);
-    mathPrompt.value=''; mathPreview.innerHTML=''; uploadedFiles.math=null;
-    try{
-      await new Promise(r=> setTimeout(r,700));
-      loading.innerHTML = `Simulated solution (in English): Answer to "${q}"`;
-      if(window.MathJax) MathJax.typesetPromise([loading]).catch(()=>{});
-    }catch(err){ loading.textContent = `❌ Error: ${err.message}`; }
-  });
-
-  // Video (simulate frames -> gif)
-  btnVideo.addEventListener('click', async ()=>{
-    const p = videoPrompt.value.trim(); if(!p) return;
-    appendMessage(videoBox, p, 'user');
-    const loading = showLoading(videoBox);
-    videoPrompt.value='';
-    try{
-      await new Promise(r=> setTimeout(r,1200));
-      // simulation: small generated image shown
-      const imgData = 'data:image/svg+xml;utf8,' + encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' width='512' height='320'><rect width='100%' height='100%' fill='#0f172a'/><text x='50%' y='50%' dominant-baseline='middle' text-anchor='middle' fill='#ffd26a' font-size='22'>Simulated video for: ${p.slice(0,36)}</text></svg>`);
-      loading.innerHTML = `<img src="${imgData}" class="generated-video" alt="Generated Video">`;
-    }catch(err){ loading.textContent = `❌ Error: ${err.message}`; }
-  });
-
-  // New chat + history handling (simple in-memory)
-  const newChatBtn = document.getElementById('new-chat-btn');
-  const historyList = document.getElementById('history-list');
-  let histories = []; // {title, messages}
-  let currentChat = {title:'New Chat', messages:[]};
-
-  function saveCurrentChat(title){
-    // store a shallow copy
-    histories.unshift({title: title || currentChat.title, messages: currentChat.messages.slice()});
-    renderHistory();
-  }
-  function renderHistory(){
-    historyList.innerHTML = '';
-    if(histories.length===0) historyList.innerHTML = `<div class="side-item">No history yet</div>`;
-    histories.forEach((h, idx)=>{
-      const el = document.createElement('div');
-      el.className='side-item';
-      el.textContent = h.title;
-      el.addEventListener('click', ()=> {
-        // load history into chatBox
-        const cb = chatBox;
-        cb.innerHTML = '';
-        h.messages.forEach(m => {
-          appendMessage(cb, m.content, m.type);
-        });
-        // close panel
-        sidePanel.classList.remove('open');
-      });
-      historyList.appendChild(el);
-    });
-  }
-
-  // new chat: save current to history and clear chatBox
-  newChatBtn.addEventListener('click', ()=>{
-    const title = prompt('Save current chat under which title?', 'Conversation');
-    saveCurrentChat(title || 'Conversation');
-    // clear chat
-    chatBox.innerHTML = '';
-    currentChat = {title:'New Chat', messages:[]};
-    sidePanel.classList.remove('open');
-    // Add initial welcome AI message
-    appendMessage(chatBox, `<div style="font-size:1.05rem;font-weight:700;color:#ffd26a">AI Assistant Pro</div><div style="margin-top:6px;color:#e9e6d8">Hello! What would you like to explore today?</div>`, 'ai');
-  });
-
-  // intercept appendMessage to also record to currentChat
-  // Monkey patch: override appendMessage function declared earlier
-  (function(){
-    const orig = window.appendMessage || null;
-    window.appendMessage = function(box, content, type='ai'){ // replace global
-      const bubble = document.createElement('div');
-      bubble.className = 'bubble ' + (type === 'user' ? 'user-bubble' : 'ai-bubble');
-      bubble.innerHTML = content;
-      box.appendChild(bubble);
-      box.scrollTop = box.scrollHeight;
-      // record into currentChat messages if it's chatBox or mathBox etc.
-      const id = box.id;
-      const recType = (type === 'user' ? 'user' : 'ai');
-      if(id === 'chatBox' || id === 'mathBox' || id === 'imageBox' || id === 'videoBox'){
-        currentChat.messages.push({type: recType, content});
-      }
-      return bubble;
-    };
-  })();
-
-  // When user sends a chat message, also save to currentChat
-  // (handleChat already uses appendMessage earlier)
-
-  // ensure clicking upload label triggers input is done via label association in markup
-
-  // Close side panel if clicked outside
-  document.addEventListener('click', (e)=>{
-    const sp = document.getElementById('side-panel');
-    const mb = document.getElementById('menu-btn');
-    if(sp.classList.contains('open') && !sp.contains(e.target) && e.target !== mb){
-      sp.classList.remove('open');
-    }
-  });
-
-}); // end DOMContentLoaded
-</script>
+  </script>
 </body>
 </html>

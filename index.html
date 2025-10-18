@@ -10,16 +10,15 @@
         /* Import font chữ hiện đại từ Google */
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap');
 
-        /* ======== CẢI THIỆN MÀU SẮC CHO SANG TRỌNG ======== */
         :root {
-            --primary-yellow: #ffb800; /* Vàng đậm và sáng hơn */
-            --dark-bg: #0d0d10; /* Nền tối hơn nữa */
-            --main-bg: #1a1a1e; /* Nền chính */
-            --input-bg: #222228; /* Nền ô nhập liệu */
-            --bubble-ai-bg: #2d2d33; 
-            --bubble-user-bg: linear-gradient(135deg, #7b68ee, #4a90e2); /* Bubble User - Màu Tím-Xanh Cao cấp */
-            --text-primary: #f0f0f5; /* Trắng sáng */
-            --text-secondary: #b0b0bb; /* Xám ấm */
+            --primary-yellow: #facc15;
+            --dark-bg: #0a0a0c; /* Nền tối hơn */
+            --main-bg: #141417; /* Nền chính */
+            --input-bg: #1f1f23; /* Nền ô nhập liệu */
+            --bubble-ai-bg: #2d2d33; /* Bubble AI */
+            --bubble-user-bg: linear-gradient(135deg, #5e5ce6, #2563eb); /* Bubble User Gradient */
+            --text-primary: #e4e4e7;
+            --text-secondary: #a1a1aa;
         }
         
         /* ======== SCROLLBAR THEME DARK ======== */
@@ -30,115 +29,80 @@
 
         body {
             background-color: var(--dark-bg);
-            /* Giảm bớt độ sáng của chấm lưới để nền tinh tế hơn */
-            background-image: radial-gradient(circle at 1% 1%, rgba(255, 255, 255, 0.02) 1px, transparent 0),
-                              radial-gradient(circle at 99% 99%, rgba(255, 255, 255, 0.02) 1px, transparent 0);
+            background-image: radial-gradient(circle at 1% 1%, rgba(255, 255, 255, 0.04) 1px, transparent 0),
+                              radial-gradient(circle at 99% 99%, rgba(255, 255, 255, 0.04) 1px, transparent 0);
             background-size: 50px 50px;
             color: var(--text-primary);
-            font-family: 'Inter', sans-serif;
+            font-family: 'Inter', sans-serif; /* Sử dụng font Inter */
             margin: 0; padding: 0; overflow: hidden;
         }
         
+        /* Intro giữ nguyên vì đã đẹp */
+        #intro-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100vh; background: var(--dark-bg); display: flex; align-items: center; justify-content: center; z-index: 2000; opacity: 1; transition: opacity 1s ease-in-out 6s; }
+        .intro-container { position: relative; display: flex; align-items: center; justify-content: center; }
+        #intro-yellow-flash { position: absolute; width: 100vw; height: 100vh; background-color: var(--primary-yellow); animation: yellowFlash 2s ease-in-out forwards; }
+        @keyframes yellowFlash { 0% { transform: scale(0); border-radius: 50%; } 50% { transform: scale(1); border-radius: 0; } 100% { transform: scale(1); border-radius: 0; opacity: 0; } }
+        #intro-text { position: relative; color: #fff; font-size: 3rem; font-weight: bold; text-shadow: 0 0 10px rgba(255, 255, 255, 0.5); opacity: 0; animation: logoAnimate 4s ease-in-out 1.5s forwards; }
+        #intro-text::after { content: ''; position: absolute; top: 0; left: -10%; width: 20%; height: 100%; background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.8), transparent); transform: skewX(-25deg); opacity: 0; animation: shine 1.5s ease-in-out 3s forwards; }
+        #intro-burst { position: absolute; width: 1px; height: 1px; background: white; border-radius: 50%; opacity: 0; animation: burst 1s ease-out 5s forwards; }
+        @keyframes logoAnimate { 0% { opacity: 0; transform: scale(2); } 25% { opacity: 1; transform: scale(1); } 75% { opacity: 1; transform: scale(1); } 100% { opacity: 1; transform: scale(1.1); } }
+        @keyframes shine { 0% { left: -10%; opacity: 1; } 100% { left: 110%; opacity: 1; } }
+        @keyframes burst { from { opacity: 1; transform: scale(0); box-shadow: 0 0 5px #fff, 0 0 10px #fff, 0 0 20px var(--primary-yellow), 0 0 30px var(--primary-yellow); } to { opacity: 0; transform: scale(200); box-shadow: 0 0 50px #fff, 0 0 75px var(--primary-yellow); } }
+        mark.highlight { background-color: var(--primary-yellow); color: black; font-weight: bold; padding: 2px 5px; border-radius: 4px; }
+        
+        /* ======== MAIN LAYOUT SANG TRỌNG HƠN ======== */
+        #app-wrapper { display: flex; height: 100vh; opacity: 0; transition: opacity 0.5s ease-in; }
+        
         /* Sidebar */
-        #sidebar { 
-            background-color: var(--main-bg); /* Sidebar dùng nền chính */
-            border-right: 1px solid #333333; /* Đường viền tối hơn */
-        }
-
-        /* Highlight */
-        mark.highlight { 
-            background-color: var(--primary-yellow); 
-            color: black; 
-            font-weight: bold; 
-            padding: 2px 5px; 
-            border-radius: 4px; 
-        }
-
-        /* ======== KHUNG CHAT SANG TRỌNG HƠN ======== */
+        #sidebar { width: 260px; background-color: var(--dark-bg); border-right: 1px solid #27272a; padding: 1rem; display: flex; flex-direction: column; transform: translateX(-100%); transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1); position: fixed; left: 0; top: 0; height: 100%; z-index: 100; box-shadow: 0 0 30px rgba(0,0,0,0.5); }
+        #sidebar.open { transform: translateX(0); }
+        #new-chat-btn { background-color: transparent; border: 1px solid var(--primary-yellow); color: var(--primary-yellow); width: 100%; text-align: center; transition: all 0.2s ease; }
+        #new-chat-btn:hover { background-color: var(--primary-yellow); color: var(--dark-bg); }
+        #chat-history { margin-top: 1.5rem; overflow-y: auto; flex-grow: 1; }
+        .history-item { padding: 0.75rem; border-radius: 0.5rem; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text-secondary); transition: all 0.2s; border-left: 3px solid transparent; }
+        .history-item:hover { background-color: var(--main-bg); color: var(--text-primary); }
+        .history-item.active { background-color: #27272a; color: white; font-weight: 500; border-left-color: var(--primary-yellow); }
+        
+        /* Main Chat Container */
+        #chat-container { flex-grow: 1; display: flex; flex-direction: column; height: 100vh; max-width: 900px; margin: 0 auto; padding: 1rem; transition: margin-left 0.4s cubic-bezier(0.25, 1, 0.5, 1); }
+        #sidebar.open ~ #chat-container { margin-left: 260px; }
+        
+        /* Header */
+        .header { display: flex; justify-content: space-between; align-items: center; padding: 0 0.5rem; }
+        .menu-btn { font-size: 1.8rem; cursor: pointer; color: var(--primary-yellow); z-index: 101; transition: transform 0.2s; }
+        .menu-btn:hover { transform: scale(1.1); }
+        #settings-btn { font-size: 1.5rem; cursor: pointer; color: var(--primary-yellow); transition: transform 0.2s; }
+        #settings-btn:hover { transform: scale(1.1) rotate(15deg); }
+        
+        /* ======== KHUNG CHAT MỚI ======== */
         @keyframes fadeInBubble { from { opacity: 0; transform: translateY(10px) scale(0.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
-        
-        .bubble { 
-            max-width: 85%; 
-            padding: 12px 18px; 
-            border-radius: 18px; 
-            margin-bottom: 12px; 
-            line-height: 1.6; 
-            word-wrap: break-word; 
-            white-space: pre-wrap; 
-            animation: fadeInBubble 0.3s ease-out forwards; 
-            /* Tăng cường bóng đổ cho cảm giác nổi và 3D hơn */
-            box-shadow: 0 6px 20px rgba(0,0,0,0.3); 
-            border: 1px solid rgba(255, 255, 255, 0.05);
-        }
-        .user-bubble { 
-            background: var(--bubble-user-bg); 
-            color: white; 
-            border-bottom-right-radius: 6px; 
-            box-shadow: 0 6px 20px rgba(74, 144, 226, 0.2); 
-        }
-        .ai-bubble { 
-            background: var(--input-bg); /* Dùng màu input cho bubble AI để đồng bộ */
-            color: var(--text-primary); 
-            border-bottom-left-radius: 6px; 
-            border: 1px solid #333333; /* Viền mỏng */
-        }
+        .chat-box { background: transparent; padding: 1rem; flex-grow: 1; overflow-y: auto; display: flex; flex-direction: column; scroll-behavior: smooth; margin-top: 1rem; }
+        .bubble { max-width: 85%; padding: 12px 18px; border-radius: 18px; margin-bottom: 12px; line-height: 1.6; word-wrap: break-word; white-space: pre-wrap; animation: fadeInBubble 0.3s ease-out forwards; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
+        .user-bubble { background: var(--bubble-user-bg); align-self: flex-end; color: white; border-bottom-right-radius: 4px; }
+        .ai-bubble { background: var(--bubble-ai-bg); align-self: flex-start; color: var(--text-primary); border-bottom-left-radius: 4px; }
+        .ai-bubble p, .ai-bubble li { margin-bottom: 0.5rem; } /* Khoảng cách giữa các đoạn */
 
-        /* ======== KHU VỰC INPUT NÂNG CẤP ======== */
-        .input-area { 
-            margin-top: 1rem; 
-            padding: 0.5rem; 
-            /* Đổi nền thành màu tối trong suốt, tạo hiệu ứng mờ ảo */
-            background: rgba(26, 26, 30, 0.85); 
-            backdrop-filter: blur(8px); 
-            -webkit-backdrop-filter: blur(8px);
-            border-radius: 1rem; 
-            box-shadow: 0 -5px 20px rgba(0,0,0,0.5); 
-            border: 1px solid #333333; /* Viền tinh tế */
-        }
-
-        .mode-btn {
-            background: #222228; /* Màu nền mode button */
-            border: 1px solid #333333;
-            font-size: 0.85rem;
-        }
-        .mode-btn.active {
-            background-color: var(--primary-yellow);
-            color: var(--dark-bg);
-            font-weight: 700;
-            border-color: var(--primary-yellow);
-        }
-        .mode-btn.active:hover {
-            background: #ffc433;
-        }
+        /* ======== KHU VỰC INPUT MỚI ======== */
+        .input-area { margin-top: 1rem; padding: 0.5rem; background: var(--main-bg); border-radius: 1rem; box-shadow: 0 -5px 20px rgba(0,0,0,0.2); }
+        .mode-selector { display: flex; gap: 0.5rem; margin-bottom: 0.75rem; justify-content: center; }
+        .mode-btn { background: #2d3748; padding: 0.5rem 1rem; border-radius: 20px; cursor: pointer; display: flex; align-items: center; gap: 0.5rem; transition: all 0.2s; border: 2px solid transparent; font-size: 0.9rem; color: var(--text-secondary); }
+        .mode-btn:hover { background: #4a5568; color: var(--text-primary); }
+        .mode-btn.active { border-color: var(--primary-yellow); background-color: #374151; color: var(--primary-yellow); font-weight: 500; }
         
-        .input-row { 
-            background: transparent; /* Loại bỏ nền input-row */
-            border: none; /* Loại bỏ viền input-row */
-            padding: 0; /* Loại bỏ padding input-row */
-        }
+        .input-row { display: flex; align-items: flex-end; gap: 0.75rem; background: var(--input-bg); padding: 0.5rem; border-radius: 0.75rem; border: 1px solid #333; transition: border-color 0.2s; }
+        .input-row:focus-within { border-color: var(--primary-yellow); }
+        textarea { width: 100%; padding: 0.6rem; border-radius: 0.5rem; background: transparent; border: none; color: white; resize: none; outline: none; max-height: 200px; font-size: 1rem; line-height: 1.5; }
+        .icon-btn, .send-btn { background: transparent; padding: 10px; border-radius: 8px; cursor: pointer; transition: all 0.2s; border: none; color: var(--text-secondary); flex-shrink: 0; }
+        .icon-btn:hover { color: var(--primary-yellow); background: #374151; }
+        .send-btn { background: var(--primary-yellow); color: var(--dark-bg); }
+        .send-btn:hover { transform: scale(1.1); }
         
-        textarea { 
-            font-size: 1.05rem; /* Tăng nhẹ font size */
-            padding: 10px 12px;
-        }
+        /* Other styles */
+        .pending-preview { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 6px; padding: 0.5rem; }
+        .pending-preview img { width: 60px; height: 60px; object-fit: cover; border-radius: 8px; border: 2px solid #475569; }
+        img.generated-image, .generated-video { border-radius: 12px; max-width: 100%; margin-top: 1rem; display: block; max-height: 400px; margin-left: auto; margin-right: auto; }
+        #settings-modal { position: absolute; top: 3rem; right: 1rem; width: 200px; background: var(--main-bg); border: 1px solid var(--primary-yellow); border-radius: 0.75rem; padding: 1rem; display: none; z-index: 100; }
         
-        .send-btn { 
-            /* Thay đổi send-btn thành hình tròn và lớn hơn */
-            background: var(--primary-yellow); 
-            color: var(--dark-bg);
-            width: 44px;
-            height: 44px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 0;
-            box-shadow: 0 4px 15px rgba(255, 184, 0, 0.4); /* Bóng vàng nổi bật */
-        }
-        .send-btn:hover { 
-            transform: scale(1.05);
-        }
-
         /* Responsive */
         @media (max-width: 768px) {
             #sidebar { transform: translateX(-100%); }
@@ -310,11 +274,7 @@
             activeChatId = chatId;
             chatBox.innerHTML = '';
             chatHistory[chatId].messages.forEach(msg => {
-                const bubble = appendMessage(chatBox, msg.content, msg.type, false);
-                // Bắt buộc chạy MathJax khi tải lịch sử
-                if (msg.type === 'ai' && msg.content.includes('$')) {
-                    MathJax.typesetPromise([bubble]);
-                }
+                appendMessage(chatBox, msg.content, msg.type, false); // Don't save again
             });
             renderChatHistory();
         }
@@ -333,33 +293,27 @@
                 if (chatId === activeChatId) {
                     historyItem.classList.add('active');
                 }
-                historyItem.addEventListener('click', () => {
-                    loadChat(chatId);
-                    // Tự động đóng sidebar trên mobile khi load chat mới
-                    if(window.innerWidth <= 768) {
-                        sidebar.classList.remove('open');
-                        chatContainer.style.filter = 'none';
-                    }
-                });
+                historyItem.addEventListener('click', () => loadChat(chatId));
                 chatHistoryContainer.appendChild(historyItem);
             });
         }
         
         function updateChatTitle(firstUserMessage) {
-            if (chatHistory[activeChatId] && chatHistory[activeChatId].messages.length <= 2) { 
+            if (chatHistory[activeChatId] && chatHistory[activeChatId].messages.length <= 2) {
+                 // only update if it's the first exchange
                 const newTitle = firstUserMessage.substring(0, 30) + (firstUserMessage.length > 30 ? '...' : '');
-                chatHistory[activeChatId].title = newTitle || "Ảnh đã gửi";
+                chatHistory[activeChatId].title = newTitle;
                 renderChatHistory();
                 saveHistoryToStorage();
             }
         }
 
         newChatBtn.addEventListener('click', () => {
-            startNewChat();
-            if(sidebar.classList.contains('open')) {
-                sidebar.classList.remove('open');
-                if(window.innerWidth <= 768) chatContainer.style.filter = 'none';
-            }
+             startNewChat();
+             if(sidebar.classList.contains('open')) {
+                 sidebar.classList.remove('open');
+                 if(window.innerWidth <= 768) chatContainer.style.filter = 'none';
+             }
         });
 
 
@@ -370,7 +324,7 @@
         // Sidebar toggle
         menuBtn.addEventListener('click', () => {
             sidebar.classList.toggle('open');
-            if(window.innerWidth <= 768 && sidebar.classList.contains('open')) {
+             if(window.innerWidth <= 768 && sidebar.classList.contains('open')) {
                 chatContainer.style.filter = 'blur(5px) brightness(0.6)';
             } else {
                 chatContainer.style.filter = 'none';
@@ -379,7 +333,7 @@
         
         // Close sidebar when clicking outside
         document.addEventListener('click', (e) => {
-            if (window.innerWidth <= 768 && sidebar.classList.contains('open') && !sidebar.contains(e.target) && e.target !== menuBtn) {
+            if (sidebar.classList.contains('open') && !sidebar.contains(e.target) && e.target !== menuBtn) {
                 sidebar.classList.remove('open');
                 chatContainer.style.filter = 'none';
             }
@@ -401,8 +355,7 @@
                 modeButtons.forEach(btn => btn.classList.remove('active'));
                 button.classList.add('active');
                 currentChatMode = button.dataset.mode;
-                const modeText = button.querySelector('span').textContent;
-                mainInput.placeholder = `Nhập mô tả để ${modeText.toLowerCase()}...`;
+                mainInput.placeholder = `Nhập mô tả để ${button.querySelector('span').textContent}...`;
             });
         });
 
@@ -414,7 +367,7 @@
             const reader = new FileReader();
             reader.onloadend = () => {
                 uploadedFile = reader.result;
-                previewContainer.innerHTML = `<img src="${reader.result}" style="border: 2px solid var(--primary-yellow);" alt="preview">`;
+                previewContainer.innerHTML = `<img src="${reader.result}" alt="preview">`;
             };
             reader.readAsDataURL(file);
         });
@@ -428,11 +381,11 @@
 
             let userMessageContent = prompt;
             if (image) {
-                userMessageContent = `<img src="${image}" style="max-height: 100px; border-radius: 8px; margin-bottom: 5px; display: block; border: 1px solid #4a90e2;" alt="uploaded image"><br>${prompt}`;
+                userMessageContent = `<img src="${image}" style="max-height: 100px; border-radius: 8px; margin-bottom: 5px; display: block;" alt="uploaded image"><br>${prompt}`;
             }
 
             appendMessage(chatBox, userMessageContent, 'user');
-            if(chatHistory[activeChatId].messages.length === 1) { 
+            if(chatHistory[activeChatId].messages.length === 1) { // First user message
                 updateChatTitle(prompt || "Phân tích ảnh");
             }
             
@@ -440,49 +393,39 @@
 
             // Clear inputs
             mainInput.value = '';
-            mainInput.style.height = 'auto'; // Reset textarea height
             previewContainer.innerHTML = '';
             uploadedFile = null;
-            fileInput.value = '';
+            fileInput.value = ''; // Reset file input
 
             try {
                 let responseData;
-                let finalContent = ''; 
-
                 switch (currentChatMode) {
                     case 'image':
                         responseData = await callApi('/api/pollinations-image', { prompt });
-                        if (!responseData.imageUrl) throw new Error("Server không trả về URL ảnh.");
-                        finalContent = `<img src="${responseData.imageUrl}" class="generated-image" alt="Generated Image">`;
+                        loadingBubble.innerHTML = `<img src="${responseData.imageUrl}" class="generated-image" alt="Generated Image">`;
                         break;
                     case 'video':
                         loadingBubble.textContent = 'Đang tải các khung hình (bước 1/2)...';
                         const frameData = await callApi('/api/pollinations-frames', { prompt });
-                        if (!frameData.frames || frameData.frames.length < 8) throw new Error(`Chỉ nhận được ${frameData.frames.length || 0} khung hình. Không đủ để tạo video.`);
+                        if (!frameData.frames || frameData.frames.length === 0) throw new Error('Không nhận được khung hình nào.');
                         
-                        loadingBubble.textContent = `Đang render GIF từ ${frameData.frames.length} khung hình (bước 2/2)...`;
+                        loadingBubble.textContent = `Đang render video từ ${frameData.frames.length} khung hình (bước 2/2)...`;
                         const videoUrl = await createGifFromFrames(frameData.frames);
-                        finalContent = `<img src="${videoUrl}" class="generated-video" alt="Generated Video">`;
+                        loadingBubble.innerHTML = `<img src="${videoUrl}" class="generated-video" alt="Generated Video">`;
                         break;
                     case 'math':
                         responseData = await callApi('/api/math', { question: prompt, image });
-                        finalContent = responseData.response || 'Không có phản hồi toán học.';
+                        loadingBubble.innerHTML = responseData.response;
+                        MathJax.typesetPromise([loadingBubble]);
                         break;
                     case 'chat':
                     default:
                         responseData = await callApi('/api/chat', { message: prompt, image, language: languageSelect.value, history: [] });
-                        finalContent = responseData.response || 'Không có phản hồi chat.';
+                        loadingBubble.innerHTML = responseData.response;
                         break;
                 }
                 
-                loadingBubble.innerHTML = finalContent;
-                
-                // Bắt buộc chạy MathJax sau khi nội dung đã được chèn vào DOM cho mode Math
-                if (currentChatMode === 'math' && loadingBubble.innerHTML.includes('$')) {
-                    MathJax.typesetPromise([loadingBubble]);
-                }
-
-                // Lưu AI response vào history
+                // Save AI response to history
                 if (loadingBubble.innerHTML) {
                     chatHistory[activeChatId].messages.push({ type: 'ai', content: loadingBubble.innerHTML });
                     saveHistoryToStorage();
@@ -522,8 +465,8 @@
             box.scrollTop = box.scrollHeight;
 
             if (save && activeChatId && chatHistory[activeChatId]) {
-                chatHistory[activeChatId].messages.push({ type, content });
-                saveHistoryToStorage();
+                 chatHistory[activeChatId].messages.push({ type, content });
+                 saveHistoryToStorage();
             }
             return bubble;
         }
@@ -533,43 +476,22 @@
             return appendMessage(box, 'Đang xử lý...', 'ai', false); // Don't save loading message
         }
         
-        // Generic API call wrapper (Cải tiến xử lý lỗi)
+        // Generic API call wrapper
         async function callApi(endpoint, body) {
+            // Thay 'http://localhost:3000' bằng URL server của bạn khi deploy
             const serverUrl = window.location.origin;
             const response = await fetch(`${serverUrl}${endpoint}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(body),
             });
-
             if (!response.ok) {
-                // Thử đọc chi tiết lỗi từ body
-                let errorDetail = await response.text();
-                let errorStatus = response.status;
-
-                try {
-                    const errorJson = JSON.parse(errorDetail);
-                    errorDetail = errorJson.message || errorJson.response || errorDetail;
-                } catch (e) {
-                    // response không phải JSON, dùng text
-                }
-                
-                if(errorStatus === 400 || errorDetail.includes('API Key')) {
-                    throw new Error(`Lỗi API Key/Tham số (${errorStatus}): ${errorDetail}`);
-                }
-                if(errorStatus === 404) {
-                     throw new Error(`Endpoint không tìm thấy (${endpoint}). Vui lòng kiểm tra Server.`);
-                }
-                
-                throw new Error(`Lỗi từ Server (${errorStatus}): ${errorDetail}`);
+                throw new Error(`Lỗi từ server: ${response.status} ${response.statusText}`);
             }
-            
-            // Xử lý response rỗng (Pollinations Image có thể trả về 200 OK rỗng)
-            const text = await response.text();
-            return text ? JSON.parse(text) : {};
+            return response.json();
         }
 
-        // GIF creation logic (Giữ nguyên)
+        // GIF creation logic
         function createGifFromFrames(frames) {
              return new Promise((resolve, reject) => {
                 const gif = new GIF({
@@ -582,10 +504,10 @@
                 const imagePromises = frames.map(frameData => {
                     return new Promise(resolveImg => {
                         const img = new Image();
-                        img.crossOrigin = "anonymous";
+                        img.crossOrigin = "anonymous"; // Important for external images
                         img.src = frameData;
                         img.onload = () => resolveImg(img);
-                        img.onerror = () => resolveImg(null); 
+                        img.onerror = () => resolveImg(null); // Handle broken image links
                     });
                 });
 
@@ -601,13 +523,9 @@
                         const videoUrl = URL.createObjectURL(blob);
                         resolve(videoUrl);
                     });
-                    
-                    gif.on('error', function(err) {
-                        reject(new Error("Lỗi khi render GIF: " + err.message));
-                    });
 
                     gif.render();
-                }).catch(reject);
+                });
              });
         }
         

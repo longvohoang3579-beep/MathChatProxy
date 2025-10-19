@@ -7,37 +7,21 @@
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet" />
     <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     <style>
-        /* Import font chữ hiện đại từ Google */
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap');
-
         :root {
-            --primary-yellow: #facc15;
-            --dark-bg: #0a0a0c; /* Nền tối hơn */
-            --main-bg: #141417; /* Nền chính */
-            --input-bg: #1f1f23; /* Nền ô nhập liệu */
-            --bubble-ai-bg: #2d2d33; /* Bubble AI */
-            --bubble-user-bg: linear-gradient(135deg, #5e5ce6, #2563eb); /* Bubble User Gradient */
-            --text-primary: #e4e4e7;
-            --text-secondary: #a1a1aa;
+            --primary-yellow: #facc15; --dark-bg: #0a0a0c; --main-bg: #141417;
+            --input-bg: #1f1f23; --bubble-ai-bg: #2d2d33;
+            --bubble-user-bg: linear-gradient(135deg, #5e5ce6, #2563eb);
+            --text-primary: #e4e4e7; --text-secondary: #a1a1aa;
         }
-        
-        /* ======== SCROLLBAR THEME DARK ======== */
         ::-webkit-scrollbar { width: 8px; }
         ::-webkit-scrollbar-track { background: var(--main-bg); }
         ::-webkit-scrollbar-thumb { background-color: #4a4a52; border-radius: 10px; border: 2px solid var(--main-bg); }
-        ::-webkit-scrollbar-thumb:hover { background-color: #6b6b75; }
-
         body {
             background-color: var(--dark-bg);
-            background-image: radial-gradient(circle at 1% 1%, rgba(255, 255, 255, 0.04) 1px, transparent 0),
-                              radial-gradient(circle at 99% 99%, rgba(255, 255, 255, 0.04) 1px, transparent 0);
-            background-size: 50px 50px;
-            color: var(--text-primary);
-            font-family: 'Inter', sans-serif; /* Sử dụng font Inter */
-            margin: 0; padding: 0; overflow: hidden;
+            background-image: radial-gradient(circle at 1% 1%, rgba(255, 255, 255, 0.04) 1px, transparent 0), radial-gradient(circle at 99% 99%, rgba(255, 255, 255, 0.04) 1px, transparent 0);
+            background-size: 50px 50px; color: var(--text-primary); font-family: 'Inter', sans-serif; margin: 0; padding: 0; overflow: hidden;
         }
-        
-        /* Intro giữ nguyên vì đã đẹp */
         #intro-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100vh; background: var(--dark-bg); display: flex; align-items: center; justify-content: center; z-index: 2000; opacity: 1; transition: opacity 1s ease-in-out 6s; }
         .intro-container { position: relative; display: flex; align-items: center; justify-content: center; }
         #intro-yellow-flash { position: absolute; width: 100vw; height: 100vh; background-color: var(--primary-yellow); animation: yellowFlash 2s ease-in-out forwards; }
@@ -49,46 +33,44 @@
         @keyframes shine { 0% { left: -10%; opacity: 1; } 100% { left: 110%; opacity: 1; } }
         @keyframes burst { from { opacity: 1; transform: scale(0); box-shadow: 0 0 5px #fff, 0 0 10px #fff, 0 0 20px var(--primary-yellow), 0 0 30px var(--primary-yellow); } to { opacity: 0; transform: scale(200); box-shadow: 0 0 50px #fff, 0 0 75px var(--primary-yellow); } }
         mark.highlight { background-color: var(--primary-yellow); color: black; font-weight: bold; padding: 2px 5px; border-radius: 4px; }
-        
-        /* ======== MAIN LAYOUT SANG TRỌNG HƠN ======== */
         #app-wrapper { display: flex; height: 100vh; opacity: 0; transition: opacity 0.5s ease-in; }
-        
-        /* Sidebar */
         #sidebar { width: 260px; background-color: var(--dark-bg); border-right: 1px solid #27272a; padding: 1rem; display: flex; flex-direction: column; transform: translateX(-100%); transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1); position: fixed; left: 0; top: 0; height: 100%; z-index: 100; box-shadow: 0 0 30px rgba(0,0,0,0.5); }
         #sidebar.open { transform: translateX(0); }
         #new-chat-btn { background-color: transparent; border: 1px solid var(--primary-yellow); color: var(--primary-yellow); width: 100%; text-align: center; transition: all 0.2s ease; }
         #new-chat-btn:hover { background-color: var(--primary-yellow); color: var(--dark-bg); }
-        #chat-history { margin-top: 1.5rem; overflow-y: auto; flex-grow: 1; }
         .history-item { padding: 0.75rem; border-radius: 0.5rem; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text-secondary); transition: all 0.2s; border-left: 3px solid transparent; }
         .history-item:hover { background-color: var(--main-bg); color: var(--text-primary); }
         .history-item.active { background-color: #27272a; color: white; font-weight: 500; border-left-color: var(--primary-yellow); }
-        
-        /* Main Chat Container */
         #chat-container { flex-grow: 1; display: flex; flex-direction: column; height: 100vh; max-width: 900px; margin: 0 auto; padding: 1rem; transition: margin-left 0.4s cubic-bezier(0.25, 1, 0.5, 1); }
         #sidebar.open ~ #chat-container { margin-left: 260px; }
-        
-        /* Header */
         .header { display: flex; justify-content: space-between; align-items: center; padding: 0 0.5rem; }
-        .menu-btn { font-size: 1.8rem; cursor: pointer; color: var(--primary-yellow); z-index: 101; transition: transform 0.2s; }
-        .menu-btn:hover { transform: scale(1.1); }
-        #settings-btn { font-size: 1.5rem; cursor: pointer; color: var(--primary-yellow); transition: transform 0.2s; }
-        #settings-btn:hover { transform: scale(1.1) rotate(15deg); }
-        
-        /* ======== KHUNG CHAT MỚI ======== */
+        .menu-btn, #settings-btn { font-size: 1.8rem; cursor: pointer; color: var(--primary-yellow); z-index: 101; transition: transform 0.2s; }
+        .menu-btn:hover, #settings-btn:hover { transform: scale(1.1); }
+        .chat-box { background: transparent; padding: 1rem; flex-grow: 1; overflow-y: auto; display: flex; flex-direction: column; scroll-behavior: smooth; margin-top: 1rem; gap: 1rem; }
+        .message-group { display: flex; gap: 12px; max-width: 90%; }
+        .message-group.user { align-self: flex-end; flex-direction: row-reverse; }
+        .message-group.ai { align-self: flex-start; }
+        .avatar { width: 32px; height: 32px; border-radius: 50%; background: #444; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-weight: bold; margin-top: 4px; }
+        .avatar-user { background: #5e5ce6; }
+        .avatar-ai { background: var(--primary-yellow); color: #111; }
         @keyframes fadeInBubble { from { opacity: 0; transform: translateY(10px) scale(0.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
-        .chat-box { background: transparent; padding: 1rem; flex-grow: 1; overflow-y: auto; display: flex; flex-direction: column; scroll-behavior: smooth; margin-top: 1rem; }
-        .bubble { max-width: 85%; padding: 12px 18px; border-radius: 18px; margin-bottom: 12px; line-height: 1.6; word-wrap: break-word; white-space: pre-wrap; animation: fadeInBubble 0.3s ease-out forwards; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
-        .user-bubble { background: var(--bubble-user-bg); align-self: flex-end; color: white; border-bottom-right-radius: 4px; }
-        .ai-bubble { background: var(--bubble-ai-bg); align-self: flex-start; color: var(--text-primary); border-bottom-left-radius: 4px; }
-        .ai-bubble p, .ai-bubble li { margin-bottom: 0.5rem; } /* Khoảng cách giữa các đoạn */
-
-        /* ======== KHU VỰC INPUT MỚI ======== */
+        .bubble { padding: 12px 18px; border-radius: 18px; line-height: 1.6; word-wrap: break-word; white-space: pre-wrap; animation: fadeInBubble 0.3s ease-out forwards; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
+        .user .bubble { background: var(--bubble-user-bg); color: white; border-bottom-right-radius: 4px; }
+        .ai .bubble { background: var(--bubble-ai-bg); color: var(--text-primary); border-bottom-left-radius: 4px; }
+        .welcome-message { text-align: center; color: var(--text-secondary); padding: 2rem 1rem; animation: fadeInBubble 0.5s ease; }
+        .welcome-message h2 { font-size: 1.8rem; font-weight: bold; color: var(--text-primary); }
+        .typing-indicator { display: flex; align-items: center; gap: 5px; }
+        .typing-indicator span { width: 8px; height: 8px; background-color: #777; border-radius: 50%; animation: typing 1s infinite; }
+        .typing-indicator span:nth-child(2) { animation-delay: 0.2s; }
+        .typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
+        @keyframes typing { 0%, 80%, 100% { transform: scale(0); } 40% { transform: scale(1.0); } }
+        pre { background-color: #0d1117; color: #c9d1d9; padding: 1rem; border-radius: 8px; overflow-x: auto; border: 1px solid #30363d; font-size: 0.9em; }
+        code { font-family: 'Courier New', Courier, monospace; }
         .input-area { margin-top: 1rem; padding: 0.5rem; background: var(--main-bg); border-radius: 1rem; box-shadow: 0 -5px 20px rgba(0,0,0,0.2); }
         .mode-selector { display: flex; gap: 0.5rem; margin-bottom: 0.75rem; justify-content: center; }
         .mode-btn { background: #2d3748; padding: 0.5rem 1rem; border-radius: 20px; cursor: pointer; display: flex; align-items: center; gap: 0.5rem; transition: all 0.2s; border: 2px solid transparent; font-size: 0.9rem; color: var(--text-secondary); }
         .mode-btn:hover { background: #4a5568; color: var(--text-primary); }
         .mode-btn.active { border-color: var(--primary-yellow); background-color: #374151; color: var(--primary-yellow); font-weight: 500; }
-        
         .input-row { display: flex; align-items: flex-end; gap: 0.75rem; background: var(--input-bg); padding: 0.5rem; border-radius: 0.75rem; border: 1px solid #333; transition: border-color 0.2s; }
         .input-row:focus-within { border-color: var(--primary-yellow); }
         textarea { width: 100%; padding: 0.6rem; border-radius: 0.5rem; background: transparent; border: none; color: white; resize: none; outline: none; max-height: 200px; font-size: 1rem; line-height: 1.5; }
@@ -96,14 +78,10 @@
         .icon-btn:hover { color: var(--primary-yellow); background: #374151; }
         .send-btn { background: var(--primary-yellow); color: var(--dark-bg); }
         .send-btn:hover { transform: scale(1.1); }
-        
-        /* Other styles */
         .pending-preview { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 6px; padding: 0.5rem; }
         .pending-preview img { width: 60px; height: 60px; object-fit: cover; border-radius: 8px; border: 2px solid #475569; }
         img.generated-image, .generated-video { border-radius: 12px; max-width: 100%; margin-top: 1rem; display: block; max-height: 400px; margin-left: auto; margin-right: auto; }
         #settings-modal { position: absolute; top: 3rem; right: 1rem; width: 200px; background: var(--main-bg); border: 1px solid var(--primary-yellow); border-radius: 0.75rem; padding: 1rem; display: none; z-index: 100; }
-        
-        /* Responsive */
         @media (max-width: 768px) {
             #sidebar { transform: translateX(-100%); }
             #sidebar.open { width: 100%; }
@@ -113,7 +91,6 @@
     <script src="https://unpkg.com/gif.js@0.2.0/dist/gif.js"></script>
 </head>
 <body>
-    
     <div id="intro-screen">
         <div class="intro-container">
             <div id="intro-yellow-flash"></div>
@@ -123,12 +100,10 @@
     </div>
     
     <div id="app-wrapper">
-        
         <aside id="sidebar">
-            <button id="new-chat-btn" class="p-3 rounded-lg font-bold">＋ Cuộc trò chuyện mới</button>
-            <h2 class="text-gray-400 text-sm font-bold mt-6 mb-2 uppercase">Lịch sử</h2>
-            <div id="chat-history">
-                </div>
+            <button id="new-chat-btn" class="p-3 rounded-lg font-bold">＋ New Conversation</button>
+            <h2 class="text-gray-400 text-sm font-bold mt-6 mb-2 uppercase">History</h2>
+            <div id="chat-history"></div>
         </aside>
         
         <main id="chat-container">
@@ -136,7 +111,7 @@
                 <div id="menu-btn" class="menu-btn">☰</div>
                 <div id="settings-btn">⚙️</div>
                 <div id="settings-modal">
-                    <label class="block mb-2">Ngôn ngữ chat:</label>
+                    <label class="block mb-2">Chat Language:</label>
                     <select id="language-select" class="w-full p-2 rounded bg-gray-800 text-white">
                         <option value="vi">Tiếng Việt</option>
                         <option value="en">English</option>
@@ -145,396 +120,148 @@
                 </div>
             </div>
             
-            <div class="chat-box" id="chatBox">
-                </div>
+            <div class="chat-box" id="chatBox"></div>
             
             <div class="input-area">
                 <div class="mode-selector">
-                    <button class="mode-btn active" data-mode="chat" title="Trò chuyện thông thường">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M0 2a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-2.5a1 1 0 0 0-.8.4l-1.9 2.533a1 1 0 0 1-1.6 0L5.3 12.4a1 1 0 0 0-.8-.4H2a2 2 0 0 1-2-2V2zm3.5 1a.5.5 0 0 0 0 1h9a.5.5 0 0 0 0-1h-9zm0 2.5a.5.5 0 0 0 0 1h9a.5.5 0 0 0 0-1h-9zm0 2.5a.5.5 0 0 0 0 1h5a.5.5 0 0 0 0-1h-5z"/></svg>
-                        <span>Chat</span>
-                    </button>
-                    <button class="mode-btn" data-mode="image" title="Tạo ảnh từ mô tả">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M6.002 5.5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0z"/><path d="M2.002 1a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V3a2 2 0 0 0-2-2h-12zm12 1a1 1 0 0 1 1 1v6.5l-3.777-1.947a.5.5 0 0 0-.577.093l-3.71 3.71-2.66-1.772a.5.5 0 0 0-.63.062L1.002 12V3a1 1 0 0 1 1-1h12z"/></svg>
-                        <span>Tạo Ảnh</span>
-                    </button>
-                    <button class="mode-btn" data-mode="math" title="Giải bài toán">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M4 1.5a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 0 1h-7a.5.5 0 0 1-.5-.5zM4 13.5a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 0 1h-7a.5.5 0 0 1-.5-.5zM12 2H4a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V3a1 1 0 0 0-1-1zM6.646 9.646a.5.5 0 0 1 .708 0l1 1a.5.5 0 0 1-.708.708l-1-1a.5.5 0 0 1 0-.708zm2-3a.5.5 0 0 1 0 .708l-1 1a.5.5 0 0 1-.708-.708l1-1a.5.5 0 0 1 .708 0zM5 6.5a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5z"/></svg>
-                        <span>Giải Toán</span>
-                    </button>
-                    <button class="mode-btn" data-mode="video" title="Tạo video/GIF ngắn">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M0 1a1 1 0 0 1 1-1h14a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H1a1 1 0 0 1-1-1V1zm4 0v6h8V1H4zm8 8H4v6h8V9zM1 1v2h2V1H1zm2 3H1v2h2V4zM1 7v2h2V7H1zm2 3H1v2h2v-2zm-2 3v2h2v-2H1zM15 1h-2v2h2V1zm-2 3v2h2V4h-2zm2 3h-2v2h2V7zm-2 3v2h2v-2h-2zm2 3h-2v2h2v-2z"/></svg>
-                        <span>Tạo Video</span>
-                    </button>
+                    <button class="mode-btn active" data-mode="chat" title="Trò chuyện"><span>Chat</span></button>
+                    <button class="mode-btn" data-mode="image" title="Tạo ảnh"><span>Tạo Ảnh</span></button>
+                    <button class="mode-btn" data-mode="math" title="Giải toán"><span>Giải Toán</span></button>
+                    <button class="mode-btn" data-mode="video" title="Tạo video"><span>Tạo Video</span></button>
                 </div>
-
                 <div class="pending-preview" id="previewContainer"></div>
-
                 <div class="input-row">
-                    <label class="icon-btn" for="fileInput" title="Tải ảnh hoặc file">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="currentColor" viewBox="0 0 16 16"><path d="M4.5 3a.5.5 0 0 1 .5.5v9a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1-.5-.5v-9a.5.5 0 0 1 .5-.5h2z"/><path d="M6.5 1h3a.5.5 0 0 1 .5.5v14a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-14a.5.5 0 0 1 .5-.5z"/><path d="M11.5 5a.5.5 0 0 1 .5.5v5a.5.5 0 0 1-.5-.5h-2a.5.5 0 0 1-.5-.5v-5a.5.5 0 0 1 .5-.5h2z"/></svg>
+                    <label class="icon-btn" for="fileInput" title="Tải ảnh">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="currentColor" viewBox="0 0 16 16"><path d="M6.5 12.5a.5.5 0 0 0 0 1h3a.5.5 0 0 0 0-1h-3zM3 3.5a.5.5 0 0 1 .5-.5h9a.5.5 0 0 1 0 1h-9a.5.5 0 0 1-.5-.5zM.5 4.5A.5.5 0 0 1 1 4h14a.5.5 0 0 1 0 1H1a.5.5 0 0 1-.5-.5zM3 8.5a.5.5 0 0 1 .5-.5h9a.5.5 0 0 1 0 1h-9A.5.5 0 0 1 3 8.5z"/></svg>
                     </label>
                     <input type="file" id="fileInput" accept="image/*" hidden />
-                    <textarea id="mainInput" rows="1" placeholder="Nhập tin nhắn..."></textarea>
+                    <textarea id="mainInput" rows="1" placeholder="Ask me anything..."></textarea>
                     <button id="sendBtn" class="send-btn" title="Gửi">
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" stroke-width="2" width="22" height="22" viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" width="22" height="22" viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
                     </button>
                 </div>
             </div>
-            
         </main>
     </div>
     
     <script>
     document.addEventListener('DOMContentLoaded', () => {
+        const introScreen = document.getElementById('intro-screen'), appWrapper = document.getElementById('app-wrapper'), sidebar = document.getElementById('sidebar'), menuBtn = document.getElementById('menu-btn'), chatContainer = document.getElementById('chat-container'), chatBox = document.getElementById('chatBox'), mainInput = document.getElementById('mainInput'), sendBtn = document.getElementById('sendBtn'), fileInput = document.getElementById('fileInput'), previewContainer = document.getElementById('previewContainer'), languageSelect = document.getElementById('language-select'), settingsBtn = document.getElementById('settings-btn'), settingsModal = document.getElementById('settings-modal'), newChatBtn = document.getElementById('new-chat-btn'), chatHistoryContainer = document.getElementById('chat-history'), modeButtons = document.querySelectorAll('.mode-btn');
+        let currentChatMode = 'chat', uploadedFile = null, chatHistory = {}, activeChatId = null;
 
-        // =======================================================
-        // === DOM ELEMENTS & STATE MANAGEMENT
-        // =======================================================
-        const introScreen = document.getElementById('intro-screen');
-        const appWrapper = document.getElementById('app-wrapper');
-        const sidebar = document.getElementById('sidebar');
-        const menuBtn = document.getElementById('menu-btn');
-        const chatContainer = document.getElementById('chat-container');
-        const chatBox = document.getElementById('chatBox');
-        const mainInput = document.getElementById('mainInput');
-        const sendBtn = document.getElementById('sendBtn');
-        const fileInput = document.getElementById('fileInput');
-        const previewContainer = document.getElementById('previewContainer');
-        const languageSelect = document.getElementById('language-select');
-        const settingsBtn = document.getElementById('settings-btn');
-        const settingsModal = document.getElementById('settings-modal');
-        const newChatBtn = document.getElementById('new-chat-btn');
-        const chatHistoryContainer = document.getElementById('chat-history');
-        const modeButtons = document.querySelectorAll('.mode-btn');
-
-        let currentChatMode = 'chat'; // 'chat', 'image', 'math', 'video'
-        let uploadedFile = null; // Stores uploaded file as base64
-        let chatHistory = {}; // { chatId: { title: '...', messages: [] } }
-        let activeChatId = null;
-
-
-        // =======================================================
-        // === INITIALIZATION & INTRO
-        // =======================================================
-        function playIntro() {
-            setTimeout(() => {
-                introScreen.style.opacity = '0';
-                setTimeout(() => {
-                    introScreen.style.display = 'none';
-                    appWrapper.style.opacity = '1';
-                    document.body.style.overflow = 'auto';
-                }, 1000); // Wait for fade-out to finish
-            }, 6000); // Total intro duration
-        }
+        function playIntro() { setTimeout(() => { introScreen.style.opacity = '0'; setTimeout(() => { introScreen.style.display = 'none'; appWrapper.style.opacity = '1'; document.body.style.overflow = 'auto'; }, 1000); }, 6000); }
+        function initializeApp() { playIntro(); loadHistoryFromStorage(); if (Object.keys(chatHistory).length === 0) { startNewChat(); } else { const latestChatId = Object.keys(chatHistory).sort().pop(); loadChat(latestChatId); } renderChatHistory(); }
+        function saveHistoryToStorage() { localStorage.setItem('ai_assistant_pro_history', JSON.stringify(chatHistory)); }
+        function loadHistoryFromStorage() { const storedHistory = localStorage.getItem('ai_assistant_pro_history'); if (storedHistory) { chatHistory = JSON.parse(storedHistory); } }
         
-        function initializeApp() {
-            playIntro();
-            loadHistoryFromStorage();
-            if (Object.keys(chatHistory).length === 0) {
-                startNewChat();
-            } else {
-                // Load the most recent chat
-                const latestChatId = Object.keys(chatHistory).sort().pop();
-                loadChat(latestChatId);
-            }
-            renderChatHistory();
-        }
-
-        initializeApp();
-
-        // =======================================================
-        // === CHAT HISTORY MANAGEMENT
-        // =======================================================
-        function saveHistoryToStorage() {
-            localStorage.setItem('ai_assistant_pro_history', JSON.stringify(chatHistory));
-        }
-
-        function loadHistoryFromStorage() {
-            const storedHistory = localStorage.getItem('ai_assistant_pro_history');
-            if (storedHistory) {
-                chatHistory = JSON.parse(storedHistory);
-            }
-        }
-
         function startNewChat() {
-            const newId = `chat_${Date.now()}`;
-            activeChatId = newId;
-            chatHistory[activeChatId] = {
-                title: 'Cuộc trò chuyện mới',
-                messages: []
-            };
-            chatBox.innerHTML = '';
-            renderChatHistory();
-            saveHistoryToStorage();
+            const newId = `chat_${Date.now()}`; activeChatId = newId;
+            chatHistory[activeChatId] = { title: 'New Conversation', messages: [] };
+            chatBox.innerHTML = `<div class="welcome-message"><h2>Welcome to AI Assistant Pro</h2><p>How can I help you today?</p></div>`;
+            renderChatHistory(); saveHistoryToStorage();
         }
         
         function loadChat(chatId) {
             if (!chatHistory[chatId]) return;
-            activeChatId = chatId;
-            chatBox.innerHTML = '';
-            chatHistory[chatId].messages.forEach(msg => {
-                appendMessage(chatBox, msg.content, msg.type, false); // Don't save again
-            });
+            activeChatId = chatId; chatBox.innerHTML = '';
+            const messages = chatHistory[chatId].messages;
+            if (messages.length === 0) {
+                 chatBox.innerHTML = `<div class="welcome-message"><h2>Welcome back!</h2><p>Continue your conversation or start a new one.</p></div>`;
+            } else {
+                messages.forEach(msg => appendMessage(msg.content, msg.type, false));
+            }
             renderChatHistory();
         }
 
         function renderChatHistory() {
             chatHistoryContainer.innerHTML = '';
-            // Sort chats by date, newest first
             const sortedChatIds = Object.keys(chatHistory).sort((a, b) => b.localeCompare(a));
-
             sortedChatIds.forEach(chatId => {
                 const chat = chatHistory[chatId];
                 const historyItem = document.createElement('div');
-                historyItem.className = 'history-item';
-                historyItem.textContent = chat.title;
-                historyItem.dataset.chatId = chatId;
-                if (chatId === activeChatId) {
-                    historyItem.classList.add('active');
-                }
+                historyItem.className = 'history-item'; historyItem.textContent = chat.title; historyItem.dataset.chatId = chatId;
+                if (chatId === activeChatId) historyItem.classList.add('active');
                 historyItem.addEventListener('click', () => loadChat(chatId));
                 chatHistoryContainer.appendChild(historyItem);
             });
         }
         
         function updateChatTitle(firstUserMessage) {
-            if (chatHistory[activeChatId] && chatHistory[activeChatId].messages.length <= 2) {
-                 // only update if it's the first exchange
+            const currentChat = chatHistory[activeChatId];
+            if (currentChat && currentChat.title === 'New Conversation') {
                 const newTitle = firstUserMessage.substring(0, 30) + (firstUserMessage.length > 30 ? '...' : '');
-                chatHistory[activeChatId].title = newTitle;
-                renderChatHistory();
-                saveHistoryToStorage();
+                currentChat.title = newTitle; renderChatHistory(); saveHistoryToStorage();
             }
         }
 
-        newChatBtn.addEventListener('click', () => {
-             startNewChat();
-             if(sidebar.classList.contains('open')) {
-                 sidebar.classList.remove('open');
-                 if(window.innerWidth <= 768) chatContainer.style.filter = 'none';
-             }
-        });
-
-
-        // =======================================================
-        // === CORE UI & EVENT LISTENERS
-        // =======================================================
+        newChatBtn.addEventListener('click', () => { startNewChat(); if(sidebar.classList.contains('open')) { sidebar.classList.remove('open'); if(window.innerWidth <= 768) chatContainer.style.filter = 'none'; } });
+        menuBtn.addEventListener('click', () => { sidebar.classList.toggle('open'); chatContainer.style.filter = (window.innerWidth <= 768 && sidebar.classList.contains('open')) ? 'blur(5px) brightness(0.6)' : 'none'; });
+        document.addEventListener('click', (e) => { if (sidebar.classList.contains('open') && !sidebar.contains(e.target) && e.target !== menuBtn) { sidebar.classList.remove('open'); chatContainer.style.filter = 'none'; } });
+        settingsBtn.addEventListener('click', () => { settingsModal.style.display = settingsModal.style.display === 'block' ? 'none' : 'block'; });
+        document.addEventListener('click', (e) => { if (!settingsModal.contains(e.target) && !settingsBtn.contains(e.target)) { settingsModal.style.display = 'none'; } });
+        modeButtons.forEach(button => { button.addEventListener('click', () => { modeButtons.forEach(btn => btn.classList.remove('active')); button.classList.add('active'); currentChatMode = button.dataset.mode; mainInput.placeholder = `Ask me anything about ${button.dataset.mode}...`; }); });
+        fileInput.addEventListener('change', (event) => { const file = event.target.files[0]; if (!file) return; const reader = new FileReader(); reader.onloadend = () => { uploadedFile = reader.result; previewContainer.innerHTML = `<img src="${reader.result}" alt="preview">`; }; reader.readAsDataURL(file); });
         
-        // Sidebar toggle
-        menuBtn.addEventListener('click', () => {
-            sidebar.classList.toggle('open');
-             if(window.innerWidth <= 768 && sidebar.classList.contains('open')) {
-                chatContainer.style.filter = 'blur(5px) brightness(0.6)';
-            } else {
-                chatContainer.style.filter = 'none';
-            }
-        });
-        
-        // Close sidebar when clicking outside
-        document.addEventListener('click', (e) => {
-            if (sidebar.classList.contains('open') && !sidebar.contains(e.target) && e.target !== menuBtn) {
-                sidebar.classList.remove('open');
-                chatContainer.style.filter = 'none';
-            }
-        });
-
-        // Settings modal toggle
-        settingsBtn.addEventListener('click', () => {
-            settingsModal.style.display = settingsModal.style.display === 'block' ? 'none' : 'block';
-        });
-        document.addEventListener('click', (e) => {
-            if (!settingsModal.contains(e.target) && !settingsBtn.contains(e.target)) {
-                settingsModal.style.display = 'none';
-            }
-        });
-
-        // Mode selection
-        modeButtons.forEach(button => {
-            button.addEventListener('click', () => {
-                modeButtons.forEach(btn => btn.classList.remove('active'));
-                button.classList.add('active');
-                currentChatMode = button.dataset.mode;
-                mainInput.placeholder = `Nhập mô tả để ${button.querySelector('span').textContent}...`;
-            });
-        });
-
-        // File upload handling
-        fileInput.addEventListener('change', (event) => {
-            const file = event.target.files[0];
-            if (!file) return;
-
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                uploadedFile = reader.result;
-                previewContainer.innerHTML = `<img src="${reader.result}" alt="preview">`;
-            };
-            reader.readAsDataURL(file);
-        });
-
-        // Send message handler
         const handleSendMessage = async () => {
-            const prompt = mainInput.value.trim();
-            const image = uploadedFile;
-
+            const prompt = mainInput.value.trim(); const image = uploadedFile;
             if (!prompt && !image) return;
-
+            if (document.querySelector('.welcome-message')) document.querySelector('.welcome-message').remove();
             let userMessageContent = prompt;
-            if (image) {
-                userMessageContent = `<img src="${image}" style="max-height: 100px; border-radius: 8px; margin-bottom: 5px; display: block;" alt="uploaded image"><br>${prompt}`;
-            }
-
-            appendMessage(chatBox, userMessageContent, 'user');
-            if(chatHistory[activeChatId].messages.length === 1) { // First user message
-                updateChatTitle(prompt || "Phân tích ảnh");
-            }
-            
-            const loadingBubble = showLoading(chatBox);
-
-            // Clear inputs
-            mainInput.value = '';
-            previewContainer.innerHTML = '';
-            uploadedFile = null;
-            fileInput.value = ''; // Reset file input
-
+            if (image) { userMessageContent = `<img src="${image}" style="max-height: 100px; border-radius: 8px; display:block; margin-bottom: 5px;" alt="uploaded image"><p>${prompt}</p>`; }
+            appendMessage(userMessageContent, 'user');
+            updateChatTitle(prompt || "Image Analysis");
+            const loadingBubble = showLoading();
+            mainInput.value = ''; previewContainer.innerHTML = ''; uploadedFile = null; fileInput.value = '';
             try {
                 let responseData;
                 switch (currentChatMode) {
-                    case 'image':
-                        responseData = await callApi('/api/pollinations-image', { prompt });
-                        loadingBubble.innerHTML = `<img src="${responseData.imageUrl}" class="generated-image" alt="Generated Image">`;
-                        break;
-                    case 'video':
-                        loadingBubble.textContent = 'Đang tải các khung hình (bước 1/2)...';
-                        const frameData = await callApi('/api/pollinations-frames', { prompt });
-                        if (!frameData.frames || frameData.frames.length === 0) throw new Error('Không nhận được khung hình nào.');
-                        
-                        loadingBubble.textContent = `Đang render video từ ${frameData.frames.length} khung hình (bước 2/2)...`;
-                        const videoUrl = await createGifFromFrames(frameData.frames);
-                        loadingBubble.innerHTML = `<img src="${videoUrl}" class="generated-video" alt="Generated Video">`;
-                        break;
-                    case 'math':
-                        responseData = await callApi('/api/math', { question: prompt, image });
-                        loadingBubble.innerHTML = responseData.response;
-                        MathJax.typesetPromise([loadingBubble]);
-                        break;
-                    case 'chat':
-                    default:
-                        responseData = await callApi('/api/chat', { message: prompt, image, language: languageSelect.value, history: [] });
-                        loadingBubble.innerHTML = responseData.response;
-                        break;
+                    case 'image': responseData = await callApi('/api/pollinations-image', { prompt }); loadingBubble.innerHTML = `<div class="bubble"><img src="${responseData.imageUrl}" class="generated-image" alt="Generated Image"></div>`; break;
+                    case 'video': loadingBubble.querySelector('.bubble').textContent = 'Loading frames...'; const frameData = await callApi('/api/pollinations-frames', { prompt }); if (!frameData.frames || frameData.frames.length === 0) throw new Error('No frames received.'); loadingBubble.querySelector('.bubble').textContent = `Rendering video from ${frameData.frames.length} frames...`; const videoUrl = await createGifFromFrames(frameData.frames); loadingBubble.innerHTML = `<div class="bubble"><img src="${videoUrl}" class="generated-video" alt="Generated Video"></div>`; break;
+                    case 'math': responseData = await callApi('/api/math', { question: prompt, image }); loadingBubble.querySelector('.bubble').innerHTML = responseData.response; MathJax.typesetPromise([loadingBubble]); break;
+                    default: responseData = await callApi('/api/chat', { message: prompt, image, language: languageSelect.value }); loadingBubble.querySelector('.bubble').innerHTML = responseData.response; break;
                 }
-                
-                // Save AI response to history
-                if (loadingBubble.innerHTML) {
-                    chatHistory[activeChatId].messages.push({ type: 'ai', content: loadingBubble.innerHTML });
-                    saveHistoryToStorage();
-                }
-
-                // Reset mode to chat for convenience
-                document.querySelector('.mode-btn[data-mode="chat"]').click();
-
-
-            } catch (error) {
-                const errorMessage = `❌ Lỗi: ${error.message}`;
-                loadingBubble.textContent = errorMessage;
-                chatHistory[activeChatId].messages.push({ type: 'ai', content: errorMessage });
-                saveHistoryToStorage();
-            }
+                saveMessage(loadingBubble.querySelector('.bubble').innerHTML, 'ai');
+            } catch (error) { const errorMessage = `❌ Error: ${error.message}`; loadingBubble.querySelector('.bubble').textContent = errorMessage; saveMessage(errorMessage, 'ai'); }
         };
-
         sendBtn.addEventListener('click', handleSendMessage);
-        mainInput.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                handleSendMessage();
-            }
-        });
-
-
-        // =======================================================
-        // === HELPER & UTILITY FUNCTIONS
-        // =======================================================
-
-        // Appends a message bubble to a chat box
-        function appendMessage(box, content, type, save = true) {
+        mainInput.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSendMessage(); } });
+        
+        function appendMessage(content, type, save = true) {
+            const group = document.createElement('div');
+            group.className = `message-group ${type}`;
+            const avatar = document.createElement('div');
+            avatar.className = `avatar avatar-${type}`;
+            avatar.textContent = type === 'user' ? 'U' : 'AI';
             const bubble = document.createElement('div');
-            bubble.classList.add('bubble', type === 'user' ? 'user-bubble' : 'ai-bubble');
+            bubble.className = 'bubble';
             bubble.innerHTML = content;
-            box.appendChild(bubble);
-            box.scrollTop = box.scrollHeight;
+            group.appendChild(avatar); group.appendChild(bubble);
+            chatBox.appendChild(group);
+            chatBox.scrollTop = chatBox.scrollHeight;
+            if (save) saveMessage(content, type);
+            return group;
+        }
+        function saveMessage(content, type) { if (activeChatId && chatHistory[activeChatId]) { chatHistory[activeChatId].messages.push({ type, content }); saveHistoryToStorage(); } }
 
-            if (save && activeChatId && chatHistory[activeChatId]) {
-                 chatHistory[activeChatId].messages.push({ type, content });
-                 saveHistoryToStorage();
-            }
-            return bubble;
+        function showLoading() {
+            const group = document.createElement('div');
+            group.className = 'message-group ai';
+            const avatar = document.createElement('div');
+            avatar.className = 'avatar avatar-ai';
+            avatar.textContent = 'AI';
+            const bubble = document.createElement('div');
+            bubble.className = 'bubble';
+            bubble.innerHTML = `<div class="typing-indicator"><span></span><span></span><span></span></div>`;
+            group.appendChild(avatar); group.appendChild(bubble);
+            chatBox.appendChild(group);
+            chatBox.scrollTop = chatBox.scrollHeight;
+            return group;
         }
 
-        // Shows a loading bubble
-        function showLoading(box) {
-            return appendMessage(box, 'Đang xử lý...', 'ai', false); // Don't save loading message
-        }
-        
-        // Generic API call wrapper
-        async function callApi(endpoint, body) {
-            // Thay 'http://localhost:3000' bằng URL server của bạn khi deploy
-            const serverUrl = window.location.origin;
-            const response = await fetch(`${serverUrl}${endpoint}`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(body),
-            });
-            if (!response.ok) {
-                throw new Error(`Lỗi từ server: ${response.status} ${response.statusText}`);
-            }
-            return response.json();
-        }
-
-        // GIF creation logic
-        function createGifFromFrames(frames) {
-             return new Promise((resolve, reject) => {
-                const gif = new GIF({
-                    workers: 2,
-                    quality: 10,
-                    width: 512,
-                    height: 512,
-                });
-
-                const imagePromises = frames.map(frameData => {
-                    return new Promise(resolveImg => {
-                        const img = new Image();
-                        img.crossOrigin = "anonymous"; // Important for external images
-                        img.src = frameData;
-                        img.onload = () => resolveImg(img);
-                        img.onerror = () => resolveImg(null); // Handle broken image links
-                    });
-                });
-
-                Promise.all(imagePromises).then(imageElements => {
-                    const validImages = imageElements.filter(img => img !== null);
-                    if(validImages.length === 0) reject(new Error("Không thể tải bất kỳ khung hình nào."));
-
-                    validImages.forEach(img => {
-                        gif.addFrame(img, { delay: 100 });
-                    });
-
-                    gif.on('finished', function(blob) {
-                        const videoUrl = URL.createObjectURL(blob);
-                        resolve(videoUrl);
-                    });
-
-                    gif.render();
-                });
-             });
-        }
-        
-        // Auto-resize textarea
-        mainInput.addEventListener('input', () => {
-            mainInput.style.height = 'auto';
-            mainInput.style.height = (mainInput.scrollHeight) + 'px';
-        });
-
+        async function callApi(endpoint, body) { const serverUrl = window.location.origin; const response = await fetch(`${serverUrl}${endpoint}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body), }); if (!response.ok) { throw new Error(await response.text()); } return response.json(); }
+        function createGifFromFrames(frames) { return new Promise((resolve, reject) => { const gif = new GIF({ workers: 2, quality: 10, width: 512, height: 512, }); const imagePromises = frames.map(frameData => { return new Promise(resolveImg => { const img = new Image(); img.crossOrigin = "anonymous"; img.src = frameData; img.onload = () => resolveImg(img); img.onerror = () => resolveImg(null); }); }); Promise.all(imagePromises).then(imageElements => { const validImages = imageElements.filter(img => img !== null); if(validImages.length === 0) reject(new Error("Could not load any frames.")); validImages.forEach(img => gif.addFrame(img, { delay: 100 })); gif.on('finished', (blob) => resolve(URL.createObjectURL(blob))); gif.render(); }); }); }
+        mainInput.addEventListener('input', () => { mainInput.style.height = 'auto'; mainInput.style.height = (mainInput.scrollHeight) + 'px'; });
+        initializeApp();
     });
     </script>
 </body>

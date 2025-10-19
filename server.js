@@ -1,7 +1,3 @@
-// ============================================================
-// 🤖 AI PROXY SERVER (Gemini 1.5 Flash + Pollinations + Video)
-// ============================================================
-
 import express from "express";
 import bodyParser from "body-parser";
 import fetch from "node-fetch";
@@ -11,135 +7,130 @@ import cors from "cors";
 dotenv.config();
 const app = express();
 
-// ============================================================
-// ⚙️ CẤU HÌNH MIDDLEWARE
-// ============================================================
 app.use(cors());
 app.use(bodyParser.json({ limit: "50mb" }));
 app.use(express.static("."));
 
-// ============================================================
-// 🧠 CẤU HÌNH GEMINI
-// ============================================================
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-const GEMINI_MODEL = "gemini-1.5-flash-latest"; 
+// Khuyến nghị dùng model mới và hiệu quả cho chat: gemini-2.5-flash
+const GEMINI_MODEL = "gemini-2.5-flash"; 
 const GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1/models/${GEMINI_MODEL}:generateContent`;
 
 if (!GEMINI_API_KEY) {
-  console.warn("⚠️ WARNING: GEMINI_API_KEY chưa được thiết lập trong .env. Chat và giải toán sẽ không hoạt động!");
+  console.warn("⚠️ WARNING: GEMINI_API_KEY chưa được thiết lập! Vui lòng tạo file .env và điền khóa API.");
 }
 
+/**
+ * Hàm gọi API Gemini
+ * @param {Array} contents 
+ * @returns {Promise<string>}
+ */
 async function callGeminiModel(contents) {
-  if (!GEMINI_API_KEY) return "❌ Thiếu GEMINI_API_KEY trong .env.";
+  if (!GEMINI_API_KEY) return "❌ Lỗi: Vui lòng cung cấp GEMINI_API_KEY trong file .env.";
   try {
     const response = await fetch(`${GEMINI_API_URL}?key=${GEMINI_API_KEY}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ contents }),
     });
-    if (!response.ok) {
-        const errorText = await response.text();
-        console.error(`❌ Lỗi HTTP ${response.status} từ Gemini API: ${errorText}`);
-        return `❌ Lỗi HTTP ${response.status} khi gọi Gemini. Vui lòng kiểm tra lại API Key và cấu hình project Google AI.`;
-    }
     const data = await response.json();
+    
+    if (!response.ok) {
+        console.error("❌ Lỗi từ Gemini API:", data);
+        // YÊU CẦU 2: Cải tiến thông báo lỗi HTTP 404/khác
+        const errorMessage = data.error?.message || 'Không có thông tin chi tiết. Vui lòng kiểm tra API Key và Project Google Cloud đã được kích hoạt dịch vụ Generative Language API chưa.';
+        return `❌ Lỗi HTTP ${response.status} khi gọi Gemini: ${errorMessage}`;
+    }
+    
     if (data.candidates?.[0]?.content?.parts?.[0]?.text) {
       return data.candidates[0].content.parts[0].text;
     }
-    return "❌ Không có phản hồi văn bản hợp lệ từ Gemini.";
+    return "❌ Không nhận được phản hồi hợp lệ từ Gemini.";
   } catch (error) {
-    console.error("🔥 Lỗi khi gọi Gemini:", error);
-    return "❌ Lỗi khi kết nối đến Google Gemini. (Kiểm tra server/mạng)";
+    console.error("🔥 Lỗi kết nối đến Gemini:", error);
+    return "❌ Lỗi kết nối đến Google Gemini. Vui lòng kiểm tra kết nối mạng của server.";
   }
 }
 
+/**
+ * Xây dựng các phần nội dung cho API Gemini
+ */
 function buildContentParts(text, image, systemInstruction) {
-  let userParts = [{ text: `${systemInstruction}\n\nUser query: ${text || "Please analyze this image."}` }];
+  let parts = [{ text: `${systemInstruction}\n\nUser query: ${text || "Please analyze this image."}` }];
   if (image) {
-    const [, mimeType, , data] = image.match(/data:(.*?);(.*?),(.*)/);
-    userParts.push({ inlineData: { mimeType, data } });
+    const [, mimeType, , data] = image.match(/data:(.*?);(.*?),(.*)/) || [];
+    if (mimeType && data) {
+      parts.push({ inlineData: { mimeType, data } });
+    }
   }
-  return userParts;
+  return parts;
 }
 
-// ============================================================
-//  G SỬA LỖI & NÂNG CẤP CHỨC NĂNG DỊCH
-// ============================================================
+/**
+ * YÊU CẦU 1: Dịch prompt tạo ảnh sang Tiếng Anh
+ * @param {string} text 
+ * @returns {Promise<string>}
+ */
 async function translateToEnglish(text) {
-    if (!text || !/[a-zA-Z]/.test(text) === false) { // Nếu không có text hoặc text đã là tiếng Anh
+    if (!text || /^[a-zA-Z0-9\s.,?!'-]*$/.test(text)) {
         return text;
     }
     try {
+        // Sử dụng Google Translate API công cộng
         const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=en&dt=t&q=${encodeURIComponent(text)}`;
         const response = await fetch(url);
         const data = await response.json();
-        // Dữ liệu trả về là một mảng phức tạp, ta chỉ cần lấy chuỗi đã dịch
         const translatedText = data[0].map(item => item[0]).join('');
-        console.log(`✅ Đã dịch: "${text}" -> "${translatedText}"`);
         return translatedText || text;
     } catch (error) {
-        console.error(" Lỗi dịch thuật:", error.message);
-        return text; // Trả về văn bản gốc nếu có lỗi
+        console.error(" Lỗi dịch thuật, sử dụng văn bản gốc:", error.message);
+        return text; 
     }
 }
 
+// =========================================================================
+// API ENDPOINTS
+// =========================================================================
 
-// ============================================================
-// 🖼️ API TẠO ẢNH (Pollinations - Có dịch đa ngôn ngữ)
-// ============================================================
 app.post("/api/pollinations-image", async (req, res) => {
   let { prompt } = req.body;
-  if (!prompt) return res.status(400).json({ message: "Vui lòng nhập mô tả ảnh." });
+  if (!prompt) return res.status(400).json({ message: "Vui lòng nhập mô tả." });
   try {
+    // THỰC HIỆN DỊCH TRƯỚC KHI GỌI TẠO ẢNH
     const translatedPrompt = await translateToEnglish(prompt);
     const safePrompt = encodeURIComponent(translatedPrompt);
+    // Pollinations.ai dùng tiếng Anh cho kết quả tốt nhất
     const imageUrl = `https://image.pollinations.ai/prompt/${safePrompt}?nologo=true&width=1024&height=1024`;
     res.json({ imageUrl });
   } catch (error) {
-    console.error("Lỗi Pollinations:", error);
     res.status(500).json({ message: "Không thể tạo ảnh." });
   }
 });
 
-// (Các API khác giữ nguyên, không cần thay đổi)
-async function fetchFrameWithRetry(url, index, maxRetries = 3) {
-    for (let attempt = 1; attempt <= maxRetries; attempt++) {
-        try {
-            const r = await fetch(url);
-            if (r.ok) {
-                const buffer = Buffer.from(await r.arrayBuffer());
-                return `data:image/jpeg;base64,${buffer.toString("base64")}`;
-            }
-            console.warn(`⚠️ Khung hình ${index} lỗi (HTTP ${r.status}). Thử lại lần ${attempt}/${maxRetries}.`);
-        } catch (e) {
-            console.warn(`⚠️ Khung hình ${index} lỗi mạng. Thử lại lần ${attempt}/${maxRetries}.`);
-        }
-        await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
-    }
-    console.error(`❌ Bỏ qua khung hình ${index} sau ${maxRetries} lần thử.`);
-    return null;
-}
-
 app.post("/api/pollinations-frames", async (req, res) => {
-  const { prompt } = req.body;
-  if (!prompt) return res.status(400).json({ message: "Vui lòng nhập mô tả." });
-  try {
-    const translatedPrompt = await translateToEnglish(prompt);
-    const framesCount = 12;
-    console.log(`Đang tải ${framesCount} khung hình cho: ${translatedPrompt}`);
-    const downloadPromises = Array.from({ length: framesCount }, (_, i) => {
-      const variation = `${translatedPrompt}, motion frame ${i + 1} of ${framesCount}, cinematic`;
-      const url = `https://image.pollinations.ai/prompt/${encodeURIComponent(variation)}?nologo=true&width=512&height=512`;
-      return fetchFrameWithRetry(url, i + 1);
-    });
-    const frames = (await Promise.all(downloadPromises)).filter(f => f);
-    if (frames.length < 8) return res.status(500).json({ message: `Không thể tải đủ khung hình (${frames.length}/${framesCount}).` });
-    res.json({ frames });
-  } catch (error) {
-    res.status(500).json({ message: "Lỗi server khi tạo khung hình." });
-  }
+    let { prompt } = req.body;
+    if (!prompt) return res.status(400).json({ message: "Vui lòng nhập mô tả." });
+    try {
+        const translatedPrompt = await translateToEnglish(prompt);
+        const safePrompt = encodeURIComponent(translatedPrompt);
+        // API này sẽ trả về 10 frame hình ảnh base64 để tạo GIF
+        const framesUrl = `https://image.pollinations.ai/prompt/${safePrompt}?frames=10&nologo=true&output_base64=true&width=512&height=512`;
+        const response = await fetch(framesUrl);
+        const data = await response.json();
+        if (data.frames) {
+            res.json({ frames: data.frames });
+        } else {
+            res.status(500).json({ message: "Không nhận được frames hợp lệ từ Pollinations." });
+        }
+    } catch (error) {
+        res.status(500).json({ message: "Lỗi trong quá trình tạo frames video." });
+    }
 });
 
+
+/**
+ * Hàm xử lý chung cho các yêu cầu Gemini (chat/math)
+ */
 async function handleGeminiRequest(req, res, systemInstruction) {
     const { message, question, image } = req.body;
     const text = message || question;
@@ -166,8 +157,8 @@ app.post("/api/math", (req, res) => {
     handleGeminiRequest(req, res, systemInstruction);
 });
 
+
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`✅ Server đang chạy tại http://localhost:${PORT} (Model: ${GEMINI_MODEL})`);
-  if (!GEMINI_API_KEY) console.warn("⚠️ GEMINI_API_KEY chưa được thiết lập!");
 });

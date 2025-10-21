@@ -12,7 +12,8 @@ app.use(bodyParser.json({ limit: "50mb" }));
 app.use(express.static("."));
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-const GEMINI_MODEL = "gemini-1.5-flash-latest";
+// ✅ SỬA LỖI: Bỏ đuôi "-latest" khỏi tên model
+const GEMINI_MODEL = "gemini-1.5-flash";
 const GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`;
 
 if (!GEMINI_API_KEY) {
@@ -57,19 +58,14 @@ function buildContentParts(text, image, systemInstruction) {
 
 async function translateToEnglish(text) {
     if (!text || /^[a-zA-Z0-9\s.,?!'-]*$/.test(text)) {
-        console.log(`- Skipping translation, text is already English: "${text}"`);
         return text;
     }
-    console.log(`- Attempting to translate text: "${text}"`);
     try {
         const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=en&dt=t&q=${encodeURIComponent(text)}`;
         const response = await fetch(url, { headers: { 'User-Agent': 'Mozilla/5.0' } });
         const data = await response.json();
         const translatedText = data[0].map(item => item[0]).join('');
-        if(translatedText) {
-             console.log(`✅ Translation successful: "${translatedText}"`);
-             return translatedText;
-        }
+        if(translatedText) return translatedText;
         throw new Error("Empty translation result.");
     } catch (error) {
         console.error("❌ Translation error, using original text:", error.message);
@@ -116,9 +112,9 @@ app.post("/api/math", (req, res) => {
     handleGeminiRequest(req, res, systemInstruction);
 });
 
+// Endpoint này không thay đổi, chỉ cần đảm bảo nó tồn tại
 app.post("/api/pollinations-frames", async (req, res) => {
-    // This endpoint remains the same as your previous version.
-    // Ensure the logic to fetch frames is here.
+    // Giữ nguyên logic cũ của bạn ở đây
 });
 
 const PORT = process.env.PORT || 3000;

@@ -13,7 +13,7 @@ app.use(express.static("."));
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 
-// ✅ SỬA LỖI: Chuyển về model gemini-pro và API v1 ổn định nhất
+// Sử dụng model gemini-pro và API v1 ổn định nhất
 const GEMINI_MODEL = "gemini-pro"; 
 const GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1/models/${GEMINI_MODEL}:generateContent`;
 
@@ -23,7 +23,7 @@ if (!GEMINI_API_KEY) {
 
 async function callGeminiModel(contents) {
     if (!GEMINI_API_KEY) return "❌ Error: GEMINI_API_KEY is not provided in the .env file.";
-    // Đối với gemini-pro, chỉ gửi text, không gửi ảnh
+    // gemini-pro không xử lý ảnh, vì vậy chúng ta lọc bỏ phần ảnh để tránh lỗi
     const filteredContents = contents.map(content => ({
         role: content.role,
         parts: content.parts.filter(part => 'text' in part)
@@ -38,7 +38,7 @@ async function callGeminiModel(contents) {
         const data = await response.json();
         if (!response.ok) {
             console.error("❌ Error from Gemini API:", data);
-            const errorMessage = data.error?.message || 'No details provided. Please check your API Key and ensure the Google Cloud Project has the Generative Language API enabled and a billing account linked.';
+            const errorMessage = data.error?.message || 'No details provided. Please check API Key and ensure Google Cloud Project has Generative Language API enabled and a billing account linked.';
             return `❌ HTTP Error ${response.status}: ${errorMessage}`;
         }
         if (data.candidates?.[0]?.content?.parts?.[0]?.text) {
@@ -53,9 +53,9 @@ async function callGeminiModel(contents) {
 
 function buildContentParts(text, image, systemInstruction) {
   let parts = [{ text: `${systemInstruction}\n\nUser query: ${text || "Please analyze this image."}` }];
-  // Lưu ý: gemini-pro không chính thức hỗ trợ ảnh qua API này, phần này chỉ để không gây lỗi
+  // gemini-pro không chính thức hỗ trợ ảnh, phần này chỉ để không gây lỗi
   if (image) {
-    parts.push({ text: "[Image Received - Analysis might be limited]" });
+    parts.push({ text: "[Image Received - Analysis is not supported with this model]" });
   }
   return parts;
 }
@@ -81,8 +81,8 @@ app.post("/api/pollinations-image", async (req, res) => {
   const { prompt } = req.body;
   if (!prompt) return res.status(400).json({ message: "A description is required." });
   try {
-    const translatedPrompt = await translateToEnglish(prompt);
-    const safePrompt = encodeURIComponent(translatedPrompt);
+    const translatedText = await translateToEnglish(prompt);
+    const safePrompt = encodeURIComponent(translatedText);
     const imageUrl = `https://image.pollinations.ai/prompt/${safePrompt}?nologo=true&width=1024&height=1024`;
     res.json({ imageUrl });
   } catch (error) {
@@ -116,9 +116,9 @@ app.post("/api/math", (req, res) => {
     handleGeminiRequest(req, res, systemInstruction);
 });
 
-// Endpoint này không thay đổi, chỉ cần đảm bảo nó tồn tại
-app.post("/api/pollinations-frames", async (req, res) => {
-    // Giữ nguyên logic cũ của bạn ở đây
+// Endpoint này không thay đổi
+app.post("/api/pollinations-frames", (req, res) => {
+    // Logic tạo video của bạn ở đây
 });
 
 const PORT = process.env.PORT || 3000;

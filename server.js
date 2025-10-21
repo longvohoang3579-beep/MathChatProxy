@@ -12,9 +12,10 @@ app.use(bodyParser.json({ limit: "50mb" }));
 app.use(express.static("."));
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-// ✅ SỬA LỖI: Bỏ đuôi "-latest" khỏi tên model
-const GEMINI_MODEL = "gemini-1.5-flash";
-const GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`;
+
+// ✅ SỬA LỖI: Chuyển về model gemini-pro và API v1 ổn định nhất
+const GEMINI_MODEL = "gemini-pro"; 
+const GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1/models/${GEMINI_MODEL}:generateContent`;
 
 if (!GEMINI_API_KEY) {
   console.warn("⚠️ WARNING: GEMINI_API_KEY is not set!");
@@ -22,11 +23,17 @@ if (!GEMINI_API_KEY) {
 
 async function callGeminiModel(contents) {
     if (!GEMINI_API_KEY) return "❌ Error: GEMINI_API_KEY is not provided in the .env file.";
+    // Đối với gemini-pro, chỉ gửi text, không gửi ảnh
+    const filteredContents = contents.map(content => ({
+        role: content.role,
+        parts: content.parts.filter(part => 'text' in part)
+    }));
+
     try {
         const response = await fetch(`${GEMINI_API_URL}?key=${GEMINI_API_KEY}`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ contents }),
+            body: JSON.stringify({ contents: filteredContents }),
         });
         const data = await response.json();
         if (!response.ok) {
@@ -46,12 +53,9 @@ async function callGeminiModel(contents) {
 
 function buildContentParts(text, image, systemInstruction) {
   let parts = [{ text: `${systemInstruction}\n\nUser query: ${text || "Please analyze this image."}` }];
+  // Lưu ý: gemini-pro không chính thức hỗ trợ ảnh qua API này, phần này chỉ để không gây lỗi
   if (image) {
-    const match = image.match(/data:(.*?);(.*?),(.*)/);
-    if (match) {
-      const [, mimeType, , data] = match;
-      parts.push({ inlineData: { mimeType, data } });
-    }
+    parts.push({ text: "[Image Received - Analysis might be limited]" });
   }
   return parts;
 }

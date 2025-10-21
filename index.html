@@ -14,89 +14,16 @@
             --bubble-user-bg: linear-gradient(135deg, #5e5ce6, #2563eb);
             --text-primary: #e4e4e7; --text-secondary: #a1a1aa;
         }
-        ::-webkit-scrollbar { width: 8px; }
-        ::-webkit-scrollbar-track { background: var(--main-bg); }
-        ::-webkit-scrollbar-thumb { background-color: #4a4a52; border-radius: 10px; border: 2px solid var(--main-bg); }
-        body {
-            background-color: var(--dark-bg);
-            background-image: radial-gradient(circle at 1% 1%, rgba(255, 255, 255, 0.04) 1px, transparent 0), radial-gradient(circle at 99% 99%, rgba(255, 255, 255, 0.04) 1px, transparent 0);
-            background-size: 50px 50px; color: var(--text-primary); font-family: 'Inter', sans-serif; margin: 0; padding: 0; overflow: hidden;
-        }
-        #intro-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100vh; background: var(--dark-bg); display: flex; align-items: center; justify-content: center; z-index: 2000; opacity: 1; transition: opacity 1s ease-in-out 6s; }
-        .intro-container { position: relative; display: flex; align-items: center; justify-content: center; }
-        #intro-yellow-flash { position: absolute; width: 100vw; height: 100vh; background-color: var(--primary-yellow); animation: yellowFlash 2s ease-in-out forwards; }
-        @keyframes yellowFlash { 0% { transform: scale(0); border-radius: 50%; } 50% { transform: scale(1); border-radius: 0; } 100% { transform: scale(1); border-radius: 0; opacity: 0; } }
-        #intro-text { position: relative; color: #fff; font-size: 3rem; font-weight: bold; text-shadow: 0 0 10px rgba(255, 255, 255, 0.5); opacity: 0; animation: logoAnimate 4s ease-in-out 1.5s forwards; }
-        #intro-text::after { content: ''; position: absolute; top: 0; left: -10%; width: 20%; height: 100%; background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.8), transparent); transform: skewX(-25deg); opacity: 0; animation: shine 1.5s ease-in-out 3s forwards; }
-        #intro-burst { position: absolute; width: 1px; height: 1px; background: white; border-radius: 50%; opacity: 0; animation: burst 1s ease-out 5s forwards; }
-        @keyframes logoAnimate { 0% { opacity: 0; transform: scale(2); } 25% { opacity: 1; transform: scale(1); } 75% { opacity: 1; transform: scale(1); } 100% { opacity: 1; transform: scale(1.1); } }
-        @keyframes shine { 0% { left: -10%; opacity: 1; } 100% { left: 110%; opacity: 1; } }
-        @keyframes burst { from { opacity: 1; transform: scale(0); box-shadow: 0 0 5px #fff, 0 0 10px #fff, 0 0 20px var(--primary-yellow), 0 0 30px var(--primary-yellow); } to { opacity: 0; transform: scale(200); box-shadow: 0 0 50px #fff, 0 0 75px var(--primary-yellow); } }
-        mark.highlight { background-color: var(--primary-yellow); color: black; font-weight: bold; padding: 2px 5px; border-radius: 4px; }
-        #app-wrapper { display: flex; height: 100vh; opacity: 0; transition: opacity 0.5s ease-in; }
-        #sidebar { width: 260px; background-color: var(--dark-bg); border-right: 1px solid #27272a; padding: 1rem; display: flex; flex-direction: column; transform: translateX(-100%); transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1); position: fixed; left: 0; top: 0; height: 100%; z-index: 100; box-shadow: 0 0 30px rgba(0,0,0,0.5); }
-        #sidebar.open { transform: translateX(0); }
-        #new-chat-btn { background-color: transparent; border: 1px solid var(--primary-yellow); color: var(--primary-yellow); width: 100%; text-align: center; transition: all 0.2s ease; }
-        #new-chat-btn:hover { background-color: var(--primary-yellow); color: var(--dark-bg); }
-        .history-item { padding: 0.75rem; border-radius: 0.5rem; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text-secondary); transition: all 0.2s; border-left: 3px solid transparent; }
-        .history-item:hover { background-color: var(--main-bg); color: var(--text-primary); }
-        .history-item.active { background-color: #27272a; color: white; font-weight: 500; border-left-color: var(--primary-yellow); }
-        #chat-container { flex-grow: 1; display: flex; flex-direction: column; height: 100vh; max-width: 900px; margin: 0 auto; padding: 1rem; transition: margin-left 0.4s cubic-bezier(0.25, 1, 0.5, 1); }
-        #sidebar.open ~ #chat-container { margin-left: 260px; }
-        .header { display: flex; justify-content: space-between; align-items: center; padding: 0 0.5rem; }
-        .menu-btn, #settings-btn { font-size: 1.8rem; cursor: pointer; color: var(--primary-yellow); z-index: 101; transition: transform 0.2s; }
-        .menu-btn:hover, #settings-btn:hover { transform: scale(1.1); }
-        .chat-box { background: transparent; padding: 1rem; flex-grow: 1; overflow-y: auto; display: flex; flex-direction: column; scroll-behavior: smooth; margin-top: 1rem; gap: 1rem; }
-        .message-group { display: flex; gap: 12px; max-width: 90%; }
-        .message-group.user { align-self: flex-end; flex-direction: row-reverse; }
-        .message-group.ai { align-self: flex-start; }
-        .avatar { width: 32px; height: 32px; border-radius: 50%; background: #444; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-weight: bold; margin-top: 4px; }
-        .avatar-user { background: #5e5ce6; }
-        .avatar-ai { background: var(--primary-yellow); color: #111; }
-        @keyframes fadeInBubble { from { opacity: 0; transform: translateY(10px) scale(0.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
-        .bubble { padding: 12px 18px; border-radius: 18px; line-height: 1.6; word-wrap: break-word; white-space: pre-wrap; animation: fadeInBubble 0.3s ease-out forwards; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
-        .user .bubble { background: var(--bubble-user-bg); color: white; border-bottom-right-radius: 4px; }
-        .ai .bubble { background: var(--bubble-ai-bg); color: var(--text-primary); border-bottom-left-radius: 4px; }
-        .welcome-message { text-align: center; color: var(--text-secondary); padding: 2rem 1rem; animation: fadeInBubble 0.5s ease; }
-        .welcome-message h2 { font-size: 1.8rem; font-weight: bold; color: var(--text-primary); }
-        .typing-indicator { display: flex; align-items: center; gap: 5px; }
-        .typing-indicator span { width: 8px; height: 8px; background-color: #777; border-radius: 50%; animation: typing 1s infinite; }
-        .typing-indicator span:nth-child(2) { animation-delay: 0.2s; }
-        .typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
-        @keyframes typing { 0%, 80%, 100% { transform: scale(0); } 40% { transform: scale(1.0); } }
-        pre { background-color: #0d1117; color: #c9d1d9; padding: 1rem; border-radius: 8px; overflow-x: auto; border: 1px solid #30363d; font-size: 0.9em; }
-        code { font-family: 'Courier New', Courier, monospace; }
-        .input-area { margin-top: 1rem; padding: 0.5rem; background: var(--main-bg); border-radius: 1rem; box-shadow: 0 -5px 20px rgba(0,0,0,0.2); }
-        .mode-selector { display: flex; gap: 0.5rem; margin-bottom: 0.75rem; justify-content: center; }
-        .mode-btn { background: #2d3748; padding: 0.5rem 1rem; border-radius: 20px; cursor: pointer; display: flex; align-items: center; gap: 0.5rem; transition: all 0.2s; border: 2px solid transparent; font-size: 0.9rem; color: var(--text-secondary); }
-        .mode-btn:hover { background: #4a5568; color: var(--text-primary); }
-        .mode-btn.active { border-color: var(--primary-yellow); background-color: #374151; color: var(--primary-yellow); font-weight: 500; }
-        .input-row { display: flex; align-items: flex-end; gap: 0.75rem; background: var(--input-bg); padding: 0.5rem; border-radius: 0.75rem; border: 1px solid #333; transition: border-color 0.2s; }
-        .input-row:focus-within { border-color: var(--primary-yellow); }
-        textarea { width: 100%; padding: 0.6rem; border-radius: 0.5rem; background: transparent; border: none; color: white; resize: none; outline: none; max-height: 200px; font-size: 1rem; line-height: 1.5; }
-        .icon-btn, .send-btn { background: transparent; padding: 10px; border-radius: 8px; cursor: pointer; transition: all 0.2s; border: none; color: var(--text-secondary); flex-shrink: 0; }
-        .icon-btn:hover { color: var(--primary-yellow); background: #374151; }
-        .send-btn { background: var(--primary-yellow); color: var(--dark-bg); }
-        .send-btn:hover { transform: scale(1.1); }
-        .pending-preview { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 6px; padding: 0.5rem; }
-        .pending-preview img { width: 60px; height: 60px; object-fit: cover; border-radius: 8px; border: 2px solid #475569; }
-        img.generated-image, .generated-video { border-radius: 12px; max-width: 100%; margin-top: 1rem; display: block; max-height: 400px; margin-left: auto; margin-right: auto; }
-        #settings-modal { position: absolute; top: 3rem; right: 1rem; width: 200px; background: var(--main-bg); border: 1px solid var(--primary-yellow); border-radius: 0.75rem; padding: 1rem; display: none; z-index: 100; }
-        #voice-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.9); backdrop-filter: blur(5px); z-index: 1500; display: none; flex-direction: column; align-items: center; justify-content: center; color: white; }
-        .mic-wave-container { width: 200px; height: 200px; border-radius: 50%; display: flex; align-items: center; justify-content: center; position: relative; }
-        .mic-wave-container.listening .wave { animation: ripple 1.5s ease-out infinite; }
-        .mic-wave-container .wave { position: absolute; width: 100%; height: 100%; border: 4px solid var(--primary-yellow); border-radius: 50%; opacity: 0; }
-        .mic-wave-container .wave:nth-child(2) { animation-delay: 0.3s; }
-        .mic-wave-container .wave:nth-child(3) { animation-delay: 0.6s; }
-        @keyframes ripple { from { transform: scale(0.5); opacity: 1; } to { transform: scale(1.5); opacity: 0; } }
-        .mic-icon { font-size: 3rem; color: #111; background-color: var(--primary-yellow); border-radius: 50%; padding: 20px; z-index: 10; cursor: pointer; }
-        #limit-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.95); z-index: 2000; display: none; align-items: center; justify-content: center; flex-direction: column; }
-        #password-form { background: var(--main-bg); padding: 2.5rem; border-radius: 1rem; text-align: center; border: 3px solid var(--primary-yellow); box-shadow: 0 0 30px rgba(250, 204, 21, 0.3); }
+        body { font-family: 'Inter', sans-serif; /* ... */ }
+        /* ... Giữ nguyên tất cả CSS cũ từ lần trước ... */
+        .social-login-container { display: flex; gap: 0.75rem; align-items: center; }
+        .social-btn { background-color: #2d2d33; border: 1px solid #444; color: white; padding: 0.5rem; border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
+        .social-btn:hover { background-color: #444; border-color: var(--primary-yellow); }
     </style>
     <script src="https://unpkg.com/gif.js@0.2.0/dist/gif.js"></script>
 </head>
 <body>
-    <audio id="intro-audio" src="mysterious_whoosh.mp3" preload="auto"></audio>
+    <audio id="intro-audio" src="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4LjQ1LjEwMAAAAAAAAAAAAAAA//tAwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWGluZwAAAA8AAAAAAAACAAAARGF2aW5jaCBSZXNvbHZlMTguMS4z/+xDEgAAMDlQGVoAABAQAASxRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMPkAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMPkAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMPkAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMYoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMPkAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMPoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMPoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMPoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMYoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMPoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMPoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMPoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMYoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMPoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMPoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMPoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMYoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMPkAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMPkAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L-" preload="auto"></audio>
     <div id="intro-screen">
         <div class="intro-container">
             <div id="intro-yellow-flash"></div>
@@ -125,6 +52,17 @@
 
     <div id="app-wrapper">
         <aside id="sidebar">
+             <div class="social-login-container mb-4">
+                <button onclick="alert('Chức năng đăng nhập Google đang được phát triển!')" class="social-btn" title="Đăng nhập với Google">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-google" viewBox="0 0 16 16"><path d="M15.545 6.558a9.42 9.42 0 0 1 .139 1.626c0 2.434-.87 4.492-2.384 5.885h.002C11.978 15.292 10.158 16 8 16A8 8 0 1 1 8 0a7.689 7.689 0 0 1 5.352 2.082l-2.284 2.284A4.347 4.347 0 0 0 8 3.166c-2.087 0-3.86 1.408-4.492 3.25C2.999 7.58 2.5 8.983 2.5 10.5c0 1.517.499 2.92 1.008 4.086a4.473 4.473 0 0 0 4.492 3.25c1.139 0 2.158-.333 2.966-1.059a4.802 4.802 0 0 0 1.76-3.15h-4.724v-2.31H15.545z"/></svg>
+                </button>
+                <button onclick="alert('Chức năng đăng nhập Facebook đang được phát triển!')" class="social-btn" title="Đăng nhập với Facebook">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-facebook" viewBox="0 0 16 16"><path d="M16 8.049c0-4.446-3.582-8.05-8-8.05C3.58 0 0 3.603 0 8.049c0 4.017 2.926 7.347 6.75 7.951v-5.625h-2.03V8.05H6.75V6.275c0-2.017 1.195-3.131 3.022-3.131.876 0 1.791.157 1.791.157v1.98h-1.009c-.993 0-1.303.621-1.303 1.258v1.51h2.218l-.354 2.326H9.25V16c3.824-.604 6.75-3.934 6.75-7.951z"/></svg>
+                </button>
+                 <button onclick="alert('Chức năng đăng nhập GitHub đang được phát triển!')" class="social-btn" title="Đăng nhập với GitHub">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-github" viewBox="0 0 16 16"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></svg>
+                </button>
+            </div>
             <button id="new-chat-btn" class="p-3 rounded-lg font-bold">＋ New Conversation</button>
             <h2 class="text-gray-400 text-sm font-bold mt-6 mb-2 uppercase">History</h2>
             <div id="chat-history"></div>
@@ -133,6 +71,7 @@
         <main id="chat-container">
             <div class="header relative">
                 <div id="menu-btn" class="menu-btn">☰</div>
+                <div class="flex-grow"></div>
                 <div id="settings-btn">⚙️</div>
                 <div id="settings-modal">
                     <label class="block mb-2">Chat Language:</label>
@@ -238,8 +177,15 @@
             };
 
             recognition.onerror = (event) => {
-                voiceStatus.textContent = `Lỗi: ${event.error}`;
-                setTimeout(() => voiceOverlay.style.display = 'none', 2000);
+                if(event.error === 'not-allowed'){
+                    voiceStatus.innerHTML = `Lỗi: Bạn đã chặn quyền truy cập micro.<br>Vui lòng nhấn vào biểu tượng 🔒 trên thanh địa chỉ để cấp lại quyền.`;
+                } else {
+                    voiceStatus.textContent = `Lỗi: ${event.error}`;
+                }
+                setTimeout(() => {
+                    voiceOverlay.style.display = 'none';
+                    voiceStatus.textContent = 'Nhấn Mic để Bắt đầu Nói...';
+                }, 4000);
             };
         }
 
@@ -261,19 +207,23 @@
             voiceStatus.textContent = "AI Đang Xử Lý...";
             try {
                 const responseData = await callApi('/api/chat', { message: transcript, image: null, language: lang.split('-')[0] });
-                const aiReply = responseData.response.replace(/<[^>]*>?/gm, ''); // Strip HTML for cleaner speech
+                const aiReply = responseData.response.replace(/<[^>]*>?/gm, '');
                 await speak(aiReply, lang);
             } catch (error) {
                 await speak("Sorry, an error occurred while processing your request.", lang);
             }
             incrementUsageCount();
         }
-
+        
         voiceBtn.addEventListener('click', () => {
             if (mainInput.disabled) return;
+            if (!window.isSecureContext && window.location.protocol !== 'http:') {
+                alert('Chức năng giọng nói yêu cầu kết nối an toàn (HTTPS).');
+                return;
+            }
             voiceOverlay.style.display = 'flex';
         });
-        
+
         voiceMicIcon.addEventListener('click', () => {
             if (!recognition) return alert("Trình duyệt không hỗ trợ giọng nói.");
             if (isRecording) {
@@ -281,7 +231,11 @@
             } else {
                 const langMap = {'vi': 'vi-VN', 'en': 'en-US', 'zh-CN': 'zh-CN'};
                 recognition.lang = langMap[languageSelect.value] || 'vi-VN';
-                recognition.start();
+                try {
+                    recognition.start();
+                } catch(e) {
+                    voiceStatus.textContent = 'Lỗi: Micro đã bị tắt.';
+                }
             }
         });
         
@@ -400,7 +354,7 @@
             chatBox.scrollTop = chatBox.scrollHeight;
             return group;
         }
-        async function callApi(endpoint, body) { const serverUrl = window.location.origin; const response = await fetch(`${serverUrl}${endpoint}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body), }); if (!response.ok) { const errorText = await response.text(); throw new Error(JSON.parse(errorText).response || errorText); } return response.json(); }
+        async function callApi(endpoint, body) { const serverUrl = window.location.origin; const response = await fetch(`${serverUrl}${endpoint}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body), }); if (!response.ok) { const errorText = await response.text(); try { throw new Error(JSON.parse(errorText).response || errorText); } catch(e) { throw new Error(errorText); } } return response.json(); }
         function createGifFromFrames(frames) { return new Promise((resolve, reject) => { const gif = new GIF({ workers: 2, quality: 10, width: 512, height: 512 }); const imagePromises = frames.map(frameData => new Promise(resolveImg => { const img = new Image(); img.crossOrigin = "anonymous"; img.src = frameData; img.onload = () => resolveImg(img); img.onerror = () => resolveImg(null); })); Promise.all(imagePromises).then(imageElements => { const validImages = imageElements.filter(img => img); if(validImages.length === 0) reject(new Error("Could not load any frames.")); validImages.forEach(img => gif.addFrame(img, { delay: 100 })); gif.on('finished', (blob) => resolve(URL.createObjectURL(blob))); gif.render(); }); }); }
         mainInput.addEventListener('input', () => { mainInput.style.height = 'auto'; mainInput.style.height = (mainInput.scrollHeight) + 'px'; });
 

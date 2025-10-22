@@ -3,6 +3,7 @@ import bodyParser from "body-parser";
 import fetch from "node-fetch";
 import dotenv from "dotenv";
 import cors from "cors";
+import { YoutubeLoader } from "@langchain/community/document_loaders/web/youtube";
 
 dotenv.config();
 const app = express();
@@ -12,10 +13,9 @@ app.use(bodyParser.json({ limit: "50mb" }));
 app.use(express.static("."));
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-
-// Sử dụng model gemini-pro và API v1 ổn định nhất
-const GEMINI_MODEL = "gemini-pro"; 
-const GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1/models/${GEMINI_MODEL}:generateContent`;
+// ✅ SỬA LỖI: Sử dụng model mới nhất hỗ trợ ảnh và API v1beta
+const GEMINI_MODEL = "gemini-1.5-flash"; 
+const GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`;
 
 if (!GEMINI_API_KEY) {
   console.warn("⚠️ WARNING: GEMINI_API_KEY is not set!");
@@ -23,22 +23,16 @@ if (!GEMINI_API_KEY) {
 
 async function callGeminiModel(contents) {
     if (!GEMINI_API_KEY) return "❌ Error: GEMINI_API_KEY is not provided in the .env file.";
-    // gemini-pro không xử lý ảnh, vì vậy chúng ta lọc bỏ phần ảnh để tránh lỗi
-    const filteredContents = contents.map(content => ({
-        role: content.role,
-        parts: content.parts.filter(part => 'text' in part)
-    }));
-
     try {
         const response = await fetch(`${GEMINI_API_URL}?key=${GEMINI_API_KEY}`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ contents: filteredContents }),
+            body: JSON.stringify({ contents }),
         });
         const data = await response.json();
         if (!response.ok) {
             console.error("❌ Error from Gemini API:", data);
-            const errorMessage = data.error?.message || 'No details provided. Please check API Key and ensure Google Cloud Project has Generative Language API enabled and a billing account linked.';
+            const errorMessage = data.error?.message || 'No details provided. Ensure your API Key is correct and the Google Cloud Project has the "Vertex AI API" enabled and a billing account linked.';
             return `❌ HTTP Error ${response.status}: ${errorMessage}`;
         }
         if (data.candidates?.[0]?.content?.parts?.[0]?.text) {
@@ -53,9 +47,12 @@ async function callGeminiModel(contents) {
 
 function buildContentParts(text, image, systemInstruction) {
   let parts = [{ text: `${systemInstruction}\n\nUser query: ${text || "Please analyze this image."}` }];
-  // gemini-pro không chính thức hỗ trợ ảnh, phần này chỉ để không gây lỗi
   if (image) {
-    parts.push({ text: "[Image Received - Analysis is not supported with this model]" });
+    const match = image.match(/data:(.*?);(.*?),(.*)/);
+    if (match) {
+      const [, mimeType, , data] = match;
+      parts.push({ inlineData: { mimeType, data } });
+    }
   }
   return parts;
 }
@@ -76,6 +73,10 @@ async function translateToEnglish(text) {
         return text;
     }
 }
+
+// ===================================
+// === API ENDPOINTS
+// ===================================
 
 app.post("/api/pollinations-image", async (req, res) => {
   const { prompt } = req.body;
@@ -114,6 +115,37 @@ app.post("/api/chat", (req, res) => {
 app.post("/api/math", (req, res) => {
     const systemInstruction = `Solve the math problem in Vietnamese. Show only the **main steps** and the **final result**. Use LaTeX for formulas ($...$) and <mark class="highlight">...</mark> for the result.`;
     handleGeminiRequest(req, res, systemInstruction);
+});
+
+// THÊM MỚI: API TÓM TẮT YOUTUBE
+app.post("/api/summarize-youtube", async (req, res) => {
+    const { youtubeUrl } = req.body;
+    if (!youtubeUrl) {
+        return res.status(400).json({ response: "Vui lòng cung cấp URL YouTube." });
+    }
+    try {
+        const loader = YoutubeLoader.createFromUrl(youtubeUrl, {
+            language: "en",
+            addVideoInfo: true,
+        });
+        const docs = await loader.load();
+        const transcript = docs.map(doc => doc.pageContent).join("\n");
+        if (!transcript) {
+            return res.status(500).json({ response: "Không thể lấy được phụ đề từ video này. Video có thể không có phụ đề hoặc bị giới hạn." });
+        }
+
+        const systemInstruction = "Bạn là một chuyên gia tóm tắt nội dung. Dựa vào bản ghi phụ đề (transcript) của video YouTube được cung cấp, hãy tóm tắt nội dung chính một cách ngắn gọn, rõ ràng bằng tiếng Việt. Bắt đầu bằng tiêu đề video và kênh, sau đó trình bày các ý chính theo gạch đầu dòng.";
+        const contents = [{
+            role: "user",
+            parts: [{ text: `${systemInstruction}\n\nTranscript:\n${transcript}` }]
+        }];
+        
+        const summary = await callGeminiModel(contents);
+        res.json({ response: summary });
+    } catch (error) {
+        console.error("Youtube Summarize Error:", error);
+        res.status(500).json({ response: `Lỗi khi tóm tắt video: ${error.message}`});
+    }
 });
 
 // Endpoint này không thay đổi

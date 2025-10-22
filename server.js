@@ -1,159 +1,161 @@
-import express from "express";
-import bodyParser from "body-parser";
-import fetch from "node-fetch";
-import dotenv from "dotenv";
-import cors from "cors";
-import { YoutubeLoader } from "@langchain/community/document_loaders/web/youtube";
+import express from 'express';
+import bodyParser from 'body-parser';
+import dotenv from 'dotenv';
+import { OpenAI } from 'openai';
+import { ChatOpenAI } from '@langchain/openai'; // Thay vì '@langchain/community'
+import { ChatPromptTemplate } from '@langchain/core/prompts';
+import { RecursiveCharacterTextSplitter } from 'langchain/text_splitter';
+import multer from 'multer'; // Thư viện xử lý upload file
 
 dotenv.config();
+
 const app = express();
+const port = process.env.PORT || 3000;
 
-app.use(cors());
-app.use(bodyParser.json({ limit: "50mb" }));
-app.use(express.static("."));
+// Cấu hình OpenAI và LangChain
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+const chatModel = new ChatOpenAI({
+  openAIApiKey: process.env.OPENAI_API_KEY,
+  modelName: 'gpt-4o', // Hoặc model bạn muốn sử dụng
+  temperature: 0.7,
+});
 
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-// ✅ SỬA LỖI: Sử dụng model mới nhất hỗ trợ ảnh và API v1beta
-const GEMINI_MODEL = "gemini-1.5-flash"; 
-const GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`;
+// Cấu hình Multer cho upload file (Ảnh)
+const upload = multer({ dest: 'uploads/' });
 
-if (!GEMINI_API_KEY) {
-  console.warn("⚠️ WARNING: GEMINI_API_KEY is not set!");
-}
+// Middleware
+app.use(bodyParser.json());
+app.use(express.static('public')); // Cung cấp file tĩnh như index.html
 
-async function callGeminiModel(contents) {
-    if (!GEMINI_API_KEY) return "❌ Error: GEMINI_API_KEY is not provided in the .env file.";
-    try {
-        const response = await fetch(`${GEMINI_API_URL}?key=${GEMINI_API_KEY}`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ contents }),
-        });
-        const data = await response.json();
-        if (!response.ok) {
-            console.error("❌ Error from Gemini API:", data);
-            const errorMessage = data.error?.message || 'No details provided. Ensure your API Key is correct and the Google Cloud Project has the "Vertex AI API" enabled and a billing account linked.';
-            return `❌ HTTP Error ${response.status}: ${errorMessage}`;
-        }
-        if (data.candidates?.[0]?.content?.parts?.[0]?.text) {
-            return data.candidates[0].content.parts[0].text;
-        }
-        return "❌ No valid response received from Gemini.";
-    } catch (error) {
-        console.error("🔥 Connection error to Gemini:", error);
-        return "❌ Connection error to Google Gemini. Please check the server's network connection.";
-    }
-}
-
-function buildContentParts(text, image, systemInstruction) {
-  let parts = [{ text: `${systemInstruction}\n\nUser query: ${text || "Please analyze this image."}` }];
-  if (image) {
-    const match = image.match(/data:(.*?);(.*?),(.*)/);
-    if (match) {
-      const [, mimeType, , data] = match;
-      parts.push({ inlineData: { mimeType, data } });
-    }
+// --- CHỨC NĂNG CHÍNH: CHAT (General) ---
+app.post('/api/chat', async (req, res) => {
+  const { messages, mode } = req.body;
+  
+  if (!messages || messages.length === 0) {
+    return res.status(400).json({ error: 'Không có tin nhắn nào.' });
   }
-  return parts;
-}
 
-async function translateToEnglish(text) {
-    if (!text || /^[a-zA-Z0-9\s.,?!'-]*$/.test(text)) {
-        return text;
-    }
-    try {
-        const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=en&dt=t&q=${encodeURIComponent(text)}`;
-        const response = await fetch(url, { headers: { 'User-Agent': 'Mozilla/5.0' } });
-        const data = await response.json();
-        const translatedText = data[0].map(item => item[0]).join('');
-        if(translatedText) return translatedText;
-        throw new Error("Empty translation result.");
-    } catch (error) {
-        console.error("❌ Translation error, using original text:", error.message);
-        return text;
-    }
-}
-
-// ===================================
-// === API ENDPOINTS
-// ===================================
-
-app.post("/api/pollinations-image", async (req, res) => {
-  const { prompt } = req.body;
-  if (!prompt) return res.status(400).json({ message: "A description is required." });
+  const userMessage = messages[messages.length - 1].content;
+  
   try {
-    const translatedText = await translateToEnglish(prompt);
-    const safePrompt = encodeURIComponent(translatedText);
-    const imageUrl = `https://image.pollinations.ai/prompt/${safePrompt}?nologo=true&width=1024&height=1024`;
-    res.json({ imageUrl });
+    let systemPrompt = '';
+    switch (mode) {
+      case 'chat':
+        systemPrompt = "Bạn là AI Assistant Pro, một trợ lý trò chuyện thân thiện và thông minh, sẵn sàng giúp đỡ mọi thứ.";
+        break;
+      case 'summarizer':
+        systemPrompt = "Bạn là AI Tóm Tắt. Hãy tóm tắt nội dung được cung cấp một cách ngắn gọn, súc tích và chính xác nhất.";
+        break;
+      case 'video_creator':
+        systemPrompt = "Bạn là AI Tạo Kịch Bản Video. Người dùng sẽ mô tả ý tưởng và bạn sẽ tạo ra một kịch bản video chi tiết, chuyên nghiệp. Không tạo video thật, chỉ tạo kịch bản.";
+        break;
+      case 'image_editor':
+        systemPrompt = "Bạn là AI Xử Lý Ảnh. Người dùng sẽ yêu cầu chỉnh sửa ảnh. Hãy mô tả các bước chỉnh sửa hoặc thông báo rằng bạn đã sẵn sàng nhận ảnh và yêu cầu chỉnh sửa (do bạn không thể thực hiện chỉnh sửa ảnh thực tế).";
+        break;
+      case 'notetaker':
+        systemPrompt = "Bạn là AI Ghi Chú Cuộc Họp. Người dùng sẽ cung cấp nội dung cuộc họp hoặc link (tượng trưng). Hãy phân tích nội dung đó và ghi lại các điểm chính, quyết định, và hành động cụ thể (Action Items) theo định dạng rõ ràng.";
+        break;
+      default:
+        systemPrompt = "Bạn là AI Assistant Pro.";
+    }
+    
+    // Xây dựng prompt cho LangChain (LangChain sử dụng mảng role/content)
+    const chatMessages = [
+      ["system", systemPrompt],
+      ...messages.map(msg => [msg.role, msg.content])
+    ];
+
+    const prompt = ChatPromptTemplate.fromMessages(chatMessages);
+    const chain = prompt.pipe(chatModel);
+    
+    const response = await chain.invoke({});
+    
+    res.json({ reply: response.content });
+
   } catch (error) {
-    res.status(500).json({ message: "Could not create image." });
+    console.error('Lỗi khi gọi API:', error);
+    res.status(500).json({ error: 'Đã xảy ra lỗi khi xử lý yêu cầu.' });
   }
 });
 
-async function handleGeminiRequest(req, res, systemInstruction) {
-    const { message, question, image } = req.body;
-    const text = message || question;
-    if (!text && !image) return res.status(400).json({ response: "Missing content." });
-    try {
-        const userParts = buildContentParts(text, image, systemInstruction);
-        const contents = [{ role: "user", parts: userParts }];
-        const reply = await callGeminiModel(contents);
-        res.json({ response: reply });
-    } catch (error) {
-        res.status(500).json({ response: "Error processing data on the server." });
-    }
-}
+// --- CHỨC NĂNG MỚI: CHỈNH SỬA ẢNH (Image Edit - API Mock) ---
+// Lưu ý: Chức năng này chỉ là mô phỏng. Việc chỉnh sửa ảnh thực tế yêu cầu xử lý file và API của các dịch vụ như DALL-E (với prompt) hoặc các thư viện xử lý ảnh khác (như Sharp, Jimp).
+app.post('/api/image-edit', upload.single('image'), async (req, res) => {
+  const { prompt } = req.body;
+  const imageFile = req.file;
 
-app.post("/api/chat", (req, res) => {
-    const { language } = req.body;
-    const langName = { 'vi': 'Tiếng Việt', 'en': 'English', 'zh-CN': '简体中文' }[language] || 'Tiếng Việt';
-    const systemInstruction = `You are an AI assistant. Respond in **${langName}**. Keep answers **CONCISE**, use markdown, and highlight key points with <mark class="highlight">...</mark>.`;
-    handleGeminiRequest(req, res, systemInstruction);
+  if (!imageFile || !prompt) {
+    return res.status(400).json({ error: 'Vui lòng cung cấp cả ảnh và mô tả chỉnh sửa.' });
+  }
+
+  try {
+    // TẠM THỜI: GỌI DALL-E TẠO ẢNH MỚI (Mô phỏng chỉnh sửa)
+    // Trong một ứng dụng thực, bạn sẽ dùng prompt và ảnh gốc để gọi API chỉnh sửa.
+    
+    // Ghi chú: DALL-E 3 chỉ hỗ trợ tạo mới/chỉnh sửa dựa trên prompt, không phải chỉnh sửa file ảnh trực tiếp.
+    // Nếu muốn chỉnh sửa một phần của ảnh, cần DALL-E 2 và một mask.
+    // Dưới đây là ví dụ đơn giản tạo ảnh mới dựa trên prompt chỉnh sửa.
+    
+    const image = await openai.images.generate({
+      model: "dall-e-3", // Hoặc "dall-e-2" cho chỉnh sửa chi tiết hơn
+      prompt: `Ảnh gốc là: ${imageFile.originalname}. Yêu cầu chỉnh sửa: ${prompt}. Tạo ra một hình ảnh mới mô phỏng kết quả chỉnh sửa.`,
+      n: 1,
+      size: "1024x1024",
+      response_format: 'url',
+    });
+
+    // Xóa file tạm sau khi xử lý (QUAN TRỌNG)
+    // import fs from 'fs/promises';
+    // await fs.unlink(imageFile.path); 
+
+    res.json({ 
+      imageUrl: image.data[0].url, 
+      message: `Đã hoàn thành chỉnh sửa mô phỏng. Ảnh gốc: ${imageFile.originalname}. Yêu cầu: ${prompt}`
+    });
+
+  } catch (error) {
+    console.error('Lỗi khi chỉnh sửa ảnh:', error);
+    res.status(500).json({ error: 'Đã xảy ra lỗi khi xử lý yêu cầu chỉnh sửa ảnh.' });
+  }
 });
 
-app.post("/api/math", (req, res) => {
-    const systemInstruction = `Solve the math problem in Vietnamese. Show only the **main steps** and the **final result**. Use LaTeX for formulas ($...$) and <mark class="highlight">...</mark> for the result.`;
-    handleGeminiRequest(req, res, systemInstruction);
+// --- CHỨC NĂNG MỚI: NOTETAKER (API Mock - Xử lý văn bản) ---
+app.post('/api/notetaker', async (req, res) => {
+  const { content } = req.body; // Có thể là text cuộc họp, hoặc link (tượng trưng)
+
+  if (!content) {
+    return res.status(400).json({ error: 'Vui lòng cung cấp nội dung cuộc họp hoặc link (tượng trưng) để ghi chú.' });
+  }
+
+  try {
+    // Mô phỏng việc xử lý nội dung dài
+    const textSplitter = new RecursiveCharacterTextSplitter({ chunkSize: 1000, chunkOverlap: 200 });
+    const docs = await textSplitter.createDocuments([content]);
+    
+    const context = docs.map(doc => doc.pageContent).join('\n---\n');
+
+    const prompt = ChatPromptTemplate.fromMessages([
+      ["system", "Bạn là AI Ghi Chú Chuyên Nghiệp. Phân tích nội dung sau và trích xuất các thông tin chính, quyết định đã được đưa ra, và các mục hành động cần thực hiện (Action Items). Format kết quả như sau: \n\n## Ghi Chú Cuộc Họp\n\n### 1. Thông Tin Chính\n- \n- \n\n### 2. Quyết Định\n- \n- \n\n### 3. Mục Hành Động (Action Items)\n- [Ai] Cần làm gì (Deadline)\n- [Ai] Cần làm gì (Deadline)"],
+      ["user", `Nội dung cuộc họp cần ghi chú:\n${context}`]
+    ]);
+
+    const chain = prompt.pipe(chatModel);
+    const response = await chain.invoke({});
+    
+    res.json({ notes: response.content });
+
+  } catch (error) {
+    console.error('Lỗi khi ghi chú:', error);
+    res.status(500).json({ error: 'Đã xảy ra lỗi khi xử lý yêu cầu ghi chú.' });
+  }
 });
 
-// THÊM MỚI: API TÓM TẮT YOUTUBE
-app.post("/api/summarize-youtube", async (req, res) => {
-    const { youtubeUrl } = req.body;
-    if (!youtubeUrl) {
-        return res.status(400).json({ response: "Vui lòng cung cấp URL YouTube." });
-    }
-    try {
-        const loader = YoutubeLoader.createFromUrl(youtubeUrl, {
-            language: "en",
-            addVideoInfo: true,
-        });
-        const docs = await loader.load();
-        const transcript = docs.map(doc => doc.pageContent).join("\n");
-        if (!transcript) {
-            return res.status(500).json({ response: "Không thể lấy được phụ đề từ video này. Video có thể không có phụ đề hoặc bị giới hạn." });
-        }
 
-        const systemInstruction = "Bạn là một chuyên gia tóm tắt nội dung. Dựa vào bản ghi phụ đề (transcript) của video YouTube được cung cấp, hãy tóm tắt nội dung chính một cách ngắn gọn, rõ ràng bằng tiếng Việt. Bắt đầu bằng tiêu đề video và kênh, sau đó trình bày các ý chính theo gạch đầu dòng.";
-        const contents = [{
-            role: "user",
-            parts: [{ text: `${systemInstruction}\n\nTranscript:\n${transcript}` }]
-        }];
-        
-        const summary = await callGeminiModel(contents);
-        res.json({ response: summary });
-    } catch (error) {
-        console.error("Youtube Summarize Error:", error);
-        res.status(500).json({ response: `Lỗi khi tóm tắt video: ${error.message}`});
-    }
-});
+// --- CHỨC NĂNG: TÓM TẮT (Summarizer - Tách text riêng nếu cần) ---
+// Có thể xử lý trong /api/chat với mode 'summarizer' hoặc tách ra endpoint riêng.
+// Hiện tại đang xử lý trong /api/chat.
 
-// Endpoint này không thay đổi
-app.post("/api/pollinations-frames", (req, res) => {
-    // Logic tạo video của bạn ở đây
-});
-
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`✅ Server is running at http://localhost:${PORT}`);
+// Lắng nghe cổng
+app.listen(port, () => {
+  console.log(`Server đang chạy tại http://localhost:${port}`);
 });

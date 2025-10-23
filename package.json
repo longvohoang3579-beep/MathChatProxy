@@ -9,9 +9,13 @@
   },
   "dependencies": {
     "@google/genai": "*",
-    "@langchain/community": "*",
-    "@langchain/core": "*",
-    "@langchain/google-genai": "*",
+    
+    // Cập nhật các dependencies Langchain lên phiên bản mới nhất
+    "@langchain/community": "^0.2.14",
+    "@langchain/core": "^0.2.14",
+    "@langchain/google-genai": "^0.1.0",
+    
+    // Giữ nguyên các dependencies cơ bản
     "body-parser": "^1.20.2",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",

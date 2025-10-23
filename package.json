@@ -8,14 +8,15 @@
     "start": "node server.js"
   },
   "dependencies": {
-    "express": "^4.18.2",
+    "@google/genai": "^0.1.0", 
+    "@langchain/community": "^0.0.51",
+    "@langchain/core": "^0.1.66",
+    "@langchain/google-genai": "^0.0.26",
     "body-parser": "^1.20.2",
-    "dotenv": "^16.3.1",
-    "node-fetch": "^3.3.2",
     "cors": "^2.8.5",
-    "@langchain/community": "^0.0.52" 
-  },
-  "engines": {
-    "node": ">=18.0.0"
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2"
+    
+    // Bạn có thể thêm bất kỳ dependencies nào khác nếu bạn đang dùng chúng.
   }
 }

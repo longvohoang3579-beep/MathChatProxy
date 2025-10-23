@@ -1,88 +1,178 @@
-import express from 'express';
-import bodyParser from 'body-parser';
-import cors from 'cors';
-import { GoogleGenAI } from '@google/genai';
-import 'dotenv/config'; 
+// ==========================
+// ✅ AI ASSISTANT PRO SERVER
+// ==========================
 
-// ... CÁC IMPORT KHÁC CỦA BẠN (NẾU CÓ) ...
+import express from "express";
+import cors from "cors";
+import bodyParser from "body-parser";
+import fetch from "node-fetch";
+import dotenv from "dotenv";
 
-// ------------------------------------------------------------------
-// ⭐ ĐÃ SỬA LỖI (FIXED LANGCHAIN IMPORT) ⭐
-// Thay thế: import { YoutubeLoader } from '@langchain/community/document_loaders/web/youtube';
-// Bằng:
-import { YoutubeLoader } from '@langchain/community/document_loaders/youtube';
-// ------------------------------------------------------------------
-
-// ... CODE IMPORT CỦA CÁC MODULE KHÁC NHƯ Langchain, GoogleGenerativeAI, vv. ...
-
+dotenv.config();
 const app = express();
-// Đảm bảo bạn đang đọc đúng tên biến môi trường (ví dụ: GEMINI_API_KEY)
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
+app.use(cors());
+app.use(bodyParser.json({ limit: "20mb" }));
+app.use(express.static("public"));
 
-if (!GEMINI_API_KEY) {
-    console.error("Lỗi: Không tìm thấy GEMINI_API_KEY hoặc GOOGLE_API_KEY trong .env");
-    process.exit(1);
+// ==========================
+// 📦 IMPORT LANGCHAIN MODULES
+// ==========================
+import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
+import { HumanMessage, SystemMessage } from "@langchain/core/messages";
+
+// ⚙️ FIX LỖI: YoutubeLoader thay đổi export trong @langchain/community
+// -> dùng dynamic import để đảm bảo tương thích mọi phiên bản
+let YoutubeLoader;
+try {
+  const mod = await import("@langchain/community/dist/document_loaders/web/youtube.js");
+  YoutubeLoader = mod.YoutubeLoader;
+} catch {
+  try {
+    const mod2 = await import("langchain/document_loaders/web/youtube.js");
+    YoutubeLoader = mod2.YoutubeLoader;
+  } catch (err) {
+    console.error("❌ Không thể load YoutubeLoader:", err);
+  }
 }
 
-// Khởi tạo Gemini Client
-const ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY }); 
-
-// Middleware
-app.use(cors());
-app.use(bodyParser.json());
-// ... CÁC MIDDLEWARE KHÁC CỦA BẠN ...
-
-
-// ------------------------------------------------------------------
-// TẤT CẢ CÁC ROUTES API VÀ HÀM XỬ LÝ CỦA BẠN VẪN ĐƯỢC GIỮ NGUYÊN
-// ------------------------------------------------------------------
-
-// Ví dụ: Route xử lý chat (Giả định)
-app.post('/api/chat', async (req, res) => {
-    // ... LOGIC XỬ LÝ CHAT BẰNG GEMINI API CỦA BẠN ...
-    try {
-        const { prompt, history } = req.body;
-        // Logic gọi ai.models.generateContent() ...
-        const response = await ai.models.generateContent({
-            model: 'gemini-2.5-flash',
-            contents: prompt
-        });
-
-        res.json({ text: response.text });
-    } catch (error) {
-        console.error("Lỗi khi xử lý chat:", error);
-        res.status(500).json({ message: "Lỗi nội bộ server." });
-    }
+// ==========================
+// 🌐 KHỞI TẠO GEMINI
+// ==========================
+const chatModel = new ChatGoogleGenerativeAI({
+  model: "gemini-1.5-flash",
+  apiKey: process.env.GOOGLE_API_KEY,
 });
 
-// Ví dụ: Route xử lý Video Frames (Dựa trên snippet trong file bạn cung cấp)
-app.post('/api/video-frames', async (req, res) => {
-    // ... LOGIC XỬ LÝ POLLINATIONS CŨ CỦA BẠN ...
-    try {
-         const { prompt } = req.body;
-         const safePrompt = encodeURIComponent(prompt.trim());
-         let frames = [];
-         
-         // Logic Placeholder từ file: For loop để tạo 10 frame
-         for (let i = 0; i < 10; i++) {
-             frames.push(`https://pollinations.ai/p/${safePrompt}?nologo=true&width=512&height=512&seed=${i}`);
-         }
-         
-        if (frames.length < 8) { 
-             res.json({ frames: [] }); 
-        } else {
-             res.json({ frames });
-        }
-    } catch (error) {
-        console.error("Pollinations Frames Error:", error);
-        res.status(500).json({ message: "Could not create video frames." });
-    }
+// ==========================
+// 🤖 API: CHAT CHUNG
+// ==========================
+app.post("/api/chat", async (req, res) => {
+  try {
+    const { message, image, language } = req.body;
+    const messages = [
+      new SystemMessage("You are a helpful AI assistant."),
+      new HumanMessage(message),
+    ];
+
+    const result = await chatModel.invoke(messages);
+    res.json({ response: result.content });
+  } catch (error) {
+    console.error("❌ Chat Error:", error);
+    res.status(500).json({ response: "❌ Error processing chat request." });
+  }
 });
 
-// ... TẤT CẢ CÁC HÀM XỬ LÝ KHÁC CỦA BẠN (SUMMARY, MATH, YOUTUBE LOGIC) ...
+// ==========================
+// 🧮 API: GIẢI TOÁN (CÓ HÌNH ẢNH)
+// ==========================
+app.post("/api/math", async (req, res) => {
+  try {
+    const { question, image } = req.body;
+    const prompt = image
+      ? `Giải bài toán từ hình ảnh sau: ${image}`
+      : `Giải bài toán sau: ${question}`;
 
-// ------------------------------------------------------------------
-// KHỞI ĐỘNG SERVER
-// ------------------------------------------------------------------
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`✅ Server running at http://localhost:${PORT}`));
+    const result = await chatModel.invoke([new HumanMessage(prompt)]);
+    res.json({ response: result.content });
+  } catch (error) {
+    console.error("❌ Math Error:", error);
+    res.status(500).json({ response: "❌ Error solving math problem." });
+  }
+});
+
+// ==========================
+// 🖼️ API: TẠO ẢNH BẰNG POLLINATIONS
+// ==========================
+app.post("/api/pollinations-image", async (req, res) => {
+  try {
+    const { prompt } = req.body;
+    const imageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}`;
+    res.json({ imageUrl });
+  } catch (error) {
+    console.error("❌ Pollinations Image Error:", error);
+    res.status(500).json({ response: "❌ Error generating image." });
+  }
+});
+
+// ==========================
+// 🎞️ API: TẠO VIDEO (GIF NGẮN)
+// ==========================
+app.post("/api/pollinations-frames", async (req, res) => {
+  try {
+    const { prompt } = req.body;
+    const frames = [
+      `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)} frame 1`,
+      `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)} frame 2`,
+    ];
+    res.json({ frames });
+  } catch (error) {
+    console.error("❌ Pollinations Frames Error:", error);
+    res.status(500).json({ response: "❌ Error generating frames." });
+  }
+});
+
+// ==========================
+// 🧠 API: TÓM TẮT YOUTUBE
+// ==========================
+app.post("/api/summarize-youtube", async (req, res) => {
+  try {
+    const { youtubeUrl } = req.body;
+
+    if (!YoutubeLoader) {
+      return res.status(500).json({ response: "❌ YoutubeLoader not available." });
+    }
+
+    const loader = new YoutubeLoader(youtubeUrl);
+    const docs = await loader.load();
+
+    const fullTranscript = docs.map((d) => d.pageContent).join("\n");
+    const result = await chatModel.invoke([
+      new SystemMessage("Tóm tắt video YouTube bằng tiếng Việt."),
+      new HumanMessage(fullTranscript),
+    ]);
+
+    res.json({ response: result.content });
+  } catch (error) {
+    console.error("❌ YouTube Summary Error:", error);
+    res.status(500).json({ response: "❌ Error summarizing YouTube video." });
+  }
+});
+
+// ==========================
+// 🗒️ API: GHI CHÚ / TÓM TẮT VĂN BẢN
+// ==========================
+app.post("/api/summarize-text", async (req, res) => {
+  try {
+    const { textToSummarize } = req.body;
+    const result = await chatModel.invoke([
+      new SystemMessage("Tóm tắt văn bản ngắn gọn và dễ hiểu."),
+      new HumanMessage(textToSummarize),
+    ]);
+
+    res.json({ response: result.content });
+  } catch (error) {
+    console.error("❌ Summarize Error:", error);
+    res.status(500).json({ response: "❌ Error summarizing text." });
+  }
+});
+
+// ==========================
+// 🖼️ API: CHỈNH SỬA ẢNH
+// ==========================
+app.post("/api/edit-image", async (req, res) => {
+  try {
+    const { message, image } = req.body;
+    const prompt = `Người dùng muốn chỉnh sửa ảnh theo mô tả sau: "${message}". Hãy mô tả lại yêu cầu chỉnh sửa bằng tiếng Anh ngắn gọn để gửi tới AI tạo ảnh.`;
+    const result = await chatModel.invoke([new HumanMessage(prompt)]);
+    res.json({ response: result.content });
+  } catch (error) {
+    console.error("❌ Edit Image Error:", error);
+    res.status(500).json({ response: "❌ Error generating edit prompt." });
+  }
+});
+
+// ==========================
+// 🚀 KHỞI ĐỘNG SERVER
+// ==========================
+const PORT = process.env.PORT || 8080;
+app.listen(PORT, () => console.log(`✅ Server đang chạy tại cổng ${PORT}`));

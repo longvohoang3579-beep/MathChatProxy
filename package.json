@@ -1,24 +1,21 @@
-{
-  "name": "ai-assistant-pro-proxy",
-  "version": "1.0.0",
-  "description": "AI proxy server (Gemini + Pollinations) for Chat, Math, Image, Video, and Summarization.",
-  "main": "server.js",
-  "type": "module",
-  "scripts": {
-    "start": "node server.js"
-  },
-  "dependencies": {
-    "@google/genai": "*",
-    
-    // Cập nhật các dependencies Langchain lên phiên bản mới nhất
-    "@langchain/community": "^0.2.14",
-    "@langchain/core": "^0.2.14",
-    "@langchain/google-genai": "^0.1.0",
-    
-    // Giữ nguyên các dependencies cơ bản
-    "body-parser": "^1.20.2",
-    "cors": "^2.8.5",
-    "dotenv": "^16.4.5",
-    "express": "^4.19.2"
-  }
+
+  "name": "ai-assistant-pro-proxy",
+  "version": "1.0.0",
+  "description": "AI proxy server (Gemini + Pollinations) for Chat, Math, Image, Video, and Summarization.",
+  "main": "server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "body-parser": "^1.20.2",
+    "dotenv": "^16.3.1",
+    "node-fetch": "^3.3.2",
+    "cors": "^2.8.5",
+    "@langchain/community": "^0.0.52" 
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
 }

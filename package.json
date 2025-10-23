@@ -8,10 +8,16 @@
     "start": "node server.js"
   },
   "dependencies": {
-    "@google/genai": "^0.1.0",
+    // ⭐ ĐÃ SỬA LỖI ETARGET: SỬ DỤNG PHIÊN BẢN CÓ SẴN 
+    // Nếu bạn biết phiên bản cụ thể (ví dụ: "0.1.1"), hãy dùng nó thay cho "*".
+    "@google/genai": "*", 
+    
+    // Giữ nguyên các dependencies Langchain (đã dùng trong server.js)
     "@langchain/community": "^0.0.51",
     "@langchain/core": "^0.1.66",
     "@langchain/google-genai": "^0.0.26",
+    
+    // Giữ nguyên các dependencies cơ bản
     "body-parser": "^1.20.2",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",

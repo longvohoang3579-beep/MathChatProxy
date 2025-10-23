@@ -8,10 +8,13 @@
     "start": "node server.js"
   },
   "dependencies": {
-    "@google/genai": "*",
-    "@langchain/community": "^0.0.51",
-    "@langchain/core": "^0.1.66",
-    "@langchain/google-genai": "^0.0.26",
+    "@google/genai": "*", 
+    
+    // ⭐ ĐÃ SỬA LỖI ETARGET: Dùng "*" cho các dependencies Langchain
+    "@langchain/community": "*",
+    "@langchain/core": "*", 
+    "@langchain/google-genai": "*",
+    
     "body-parser": "^1.20.2",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",

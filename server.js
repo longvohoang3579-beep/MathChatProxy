@@ -3,7 +3,8 @@ import bodyParser from "body-parser";
 import fetch from "node-fetch";
 import dotenv from "dotenv";
 import cors from "cors";
-// Removed YoutubeLoader import
+// Bỏ import YoutubeLoader vì đã gây lỗi và chức năng bị loại bỏ
+// import { YoutubeLoader } from "@langchain/community/document_loaders/web/youtube";
 
 dotenv.config();
 const app = express();
@@ -13,10 +14,12 @@ app.use(bodyParser.json({ limit: "50mb" }));
 app.use(express.static("."));
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-const GEMINI_MODEL = "gemini-1.5-flash"; // Supports images
+const GEMINI_MODEL = "gemini-1.5-flash"; // Model hỗ trợ ảnh
 const GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`;
 
-if (!GEMINI_API_KEY) console.warn("⚠️ WARNING: GEMINI_API_KEY is not set!");
+if (!GEMINI_API_KEY) {
+  console.warn("⚠️ WARNING: GEMINI_API_KEY is not set!");
+}
 
 async function callGeminiAPI(contents) {
     if (!GEMINI_API_KEY) return "❌ Error: GEMINI_API_KEY is missing.";
@@ -28,6 +31,7 @@ async function callGeminiAPI(contents) {
         if (!response.ok) {
             console.error("❌ Gemini API Error:", data);
             const errorMsg = data.error?.message || 'Check API Key & ensure "Vertex AI API" + Billing are enabled.';
+            // Trả về lỗi cụ thể hơn
             return `❌ HTTP Error ${response.status}: ${errorMsg}`;
         }
         if (data.candidates && data.candidates[0].finishReason === 'SAFETY') return "❌ Response blocked due to safety concerns.";
@@ -63,9 +67,12 @@ async function translateToEnglish(text) {
 
 async function handleGeminiRequest(req, res, systemInstruction, inputField = 'message') {
     const { image } = req.body;
+    // Lấy text từ các trường có thể có
     const text = req.body[inputField] || req.body['message'] || req.body['question'] || req.body['textToSummarize'] || req.body['textToConvert'];
     try {
-        const contents = buildGeminiContent(text, image, systemInstruction);
+        // Lấy system instruction từ request body nếu có (dùng cho cá nhân hóa)
+        const finalSystemInstruction = req.body.systemInstruction || systemInstruction;
+        const contents = buildGeminiContent(text, image, finalSystemInstruction);
         const reply = await callGeminiAPI(contents);
         res.json({ response: reply });
     } catch (error) { res.status(500).json({ response: `Server error: ${error.message}` }); }
@@ -74,8 +81,9 @@ async function handleGeminiRequest(req, res, systemInstruction, inputField = 'me
 // --- API Endpoints ---
 app.post("/api/chat", (req, res) => {
     const langName = { 'vi': 'Tiếng Việt', 'en': 'English', 'zh-CN': '简体中文' }[req.body.language] || 'Tiếng Việt';
-    const instruction = `Respond in **${langName}**. Be concise, use markdown, highlight with <mark class="highlight">...</mark>. Analyze image if provided.`;
-    handleGeminiRequest(req, res, instruction, 'message');
+    // Instruction cơ bản, sẽ bị ghi đè nếu client gửi instruction riêng
+    const baseInstruction = `You are a helpful AI assistant. Respond in **${langName}**. Keep answers concise, use markdown, highlight with <mark class="highlight">...</mark>. Analyze image if provided.`;
+    handleGeminiRequest(req, res, baseInstruction, 'message');
 });
 
 app.post("/api/math", (req, res) => {
@@ -83,7 +91,7 @@ app.post("/api/math", (req, res) => {
     handleGeminiRequest(req, res, instruction, 'question');
 });
 
-app.post("/api/edit-image", (req, res) => {
+app.post("/api/edit-image", (req, res) => { // Gemini generates prompt for Pollinations
     const instruction = `Analyze image and user text. Generate ONLY a detailed English prompt for an image generation model (like Pollinations) to create the edited image.`;
     handleGeminiRequest(req, res, instruction, 'message');
 });
@@ -103,7 +111,7 @@ app.post("/api/generate-mindmap", (req, res) => {
     handleGeminiRequest(req, res, instruction, 'textToConvert');
 });
 
-// Removed /api/summarize-youtube endpoint
+// Bỏ endpoint /api/summarize-youtube
 
 app.post("/api/pollinations-image", async (req, res) => {
   const { prompt } = req.body;

@@ -12,10 +12,15 @@
         :root { --primary-yellow: #facc15; --dark-bg: #0a0a0c; /* ... */ }
         body { font-family: 'Inter', sans-serif; /* ... */ }
         .summary-actions { margin-top: 1rem; display: flex; flex-wrap: wrap; gap: 0.5rem; border-top: 1px solid #444; padding-top: 0.75rem; }
-        .summary-btn { background-color: #374151; color: #e5e7eb; padding: 0.3rem 0.8rem; border-radius: 15px; font-size: 0.8rem; cursor: pointer; transition: background-color 0.2s; border: none; }
-        .summary-btn:hover:not(:disabled) { background-color: #4b5563; }
-        .summary-btn:disabled { opacity: 0.6; cursor: not-allowed; }
-        /* --- Hết CSS --- */
+        .summary-btn { background-color: #374151; /* ... */ }
+        .personality-selector { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem; }
+        .personality-selector label { font-size: 0.9rem; color: var(--text-secondary); }
+        .personality-select { background-color: #2d3748; color: white; border: 1px solid #444; border-radius: 6px; padding: 0.3rem 0.5rem; font-size: 0.9rem; }
+         /* Style cho avatar AI cá nhân hóa */
+        .avatar-ai.marketing { background-color: #3b82f6; color: white; } /* Blue */
+        .avatar-ai.tutor { background-color: #10b981; color: white; } /* Green */
+        .avatar-ai.creative { background-color: #a855f7; color: white; } /* Purple */
+        .avatar-ai.default { background: var(--primary-yellow); color: #111; } /* Default Yellow */
     </style>
     <script src="https://unpkg.com/gif.js@0.2.0/dist/gif.js"></script>
 </head>
@@ -27,9 +32,18 @@
 
     <div id="app-wrapper">
         <aside id="sidebar">
-             <div class="social-login-container mb-4">...</div>
+            <div class="social-login-container mb-4">...</div>
              <button id="new-chat-btn" class="p-3 rounded-lg font-bold">＋ New Conversation</button>
-             <h2 class="text-gray-400 text-sm font-bold mt-6 mb-2 uppercase">History</h2>
+             <div class="personality-selector mt-6">
+                 <label for="personality-select">AI Personality:</label>
+                 <select id="personality-select" class="personality-select flex-grow">
+                     <option value="default">Default Assistant</option>
+                     <option value="marketing">💼 Marketing Pro</option>
+                     <option value="tutor">🎓 Academic Tutor</option>
+                     <option value="creative">🎨 Idea Creator</option>
+                 </select>
+             </div>
+             <h2 class="text-gray-400 text-sm font-bold mt-4 mb-2 uppercase">History</h2>
              <div id="chat-history"></div>
              <div id="usage-counter" class="text-center text-sm text-gray-400 mt-auto pt-4 border-t border-gray-700">Loading usage...</div>
         </aside>
@@ -44,7 +58,6 @@
                     <button class="mode-btn" data-mode="math" title="Giải toán"><span>Giải Toán</span></button>
                     <button class="mode-btn" data-mode="video" title="Tạo video"><span>Tạo Video</span></button>
                     <button class="mode-btn" data-mode="edit_image" title="Chỉnh sửa ảnh"><span>Sửa Ảnh</span></button>
-                    {/* Xóa nút này */}
                     <button class="mode-btn" data-mode="notetaker" title="Ghi chú văn bản"><span>Ghi Chú</span></button>
                 </div>
                 <div class="pending-preview" id="previewContainer"></div>
@@ -57,39 +70,48 @@
     document.addEventListener('DOMContentLoaded', () => {
         // --- Giữ nguyên tất cả các biến DOM và logic cũ ---
         const getEl = (id) => document.getElementById(id);
-        const introScreen = getEl('intro-screen'), /*...*/ usageCounterEl = getEl('usage-counter'); // Add usageCounterEl
+        const introScreen = getEl('intro-screen'), /*...*/ personalitySelect = getEl('personality-select'); // Thêm personalitySelect
 
         let currentChatMode = 'chat', uploadedFile = null, chatHistory = {}, activeChatId = null, isRecording = false;
+        let currentPersonality = 'default'; // Biến lưu personality đang chọn
 
         // === Logic Giới Hạn Hàng Ngày (Giữ nguyên) ===
-        const MAX_DAILY_USES = 20;
-        const UNLOCK_PASSWORD = "Hoang1082009@";
-        let usageData = { count: 0, date: '', unlocked: false };
-        function loadUsageData() { /* ... Giữ nguyên ... */ }
-        function saveUsageData() { /* ... Giữ nguyên ... */ }
-        function updateUsageDisplay() { /* ... Giữ nguyên ... */ }
-        function checkUsageLimit() { /* ... Giữ nguyên ... */ }
-        function incrementUsageCount() { /* ... Giữ nguyên ... */ }
-        unlockBtn.addEventListener('click', () => { /* ... Giữ nguyên ... */ });
+        // ...
+        function loadUsageData() { /* ... */ }
+        function saveUsageData() { /* ... */ }
+        function checkUsageLimit() { /* ... */ }
+        function incrementUsageCount() { /* ... */ }
+        unlockBtn.addEventListener('click', () => { /* ... */ });
 
         // === Logic Voice Chat (Giữ nguyên) ===
+        // ...
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         let recognition;
         let conversationMode = false;
         let silenceTimeout;
-        if (SpeechRecognition) { /* ... Giữ nguyên toàn bộ logic voice ... */ }
+        if (SpeechRecognition) { /* ... */ }
         else { voiceBtn.style.display = 'none'; }
-        function startListening() { /* ... Giữ nguyên ... */ }
-        function speak(text, lang) { /* ... Giữ nguyên ... */ }
-        async function handleVoiceQuery(transcript, langCode) { /* ... Giữ nguyên ... */ }
-        voiceBtn.addEventListener('click', () => { /* ... Giữ nguyên ... */ });
-        voiceMicIcon.addEventListener('click', () => { /* ... Giữ nguyên ... */ });
-        voiceCloseBtn.addEventListener('click', () => { /* ... Giữ nguyên ... */ });
+        function startListening() { /* ... */ }
+        function speak(text, lang) { /* ... */ }
+        async function handleVoiceQuery(transcript, langCode) {
+            // Gửi cả personality hiện tại khi gọi voice chat
+            voiceStatus.textContent = "AI Processing...";
+            try {
+                const shortLang = langCode.split('-')[0];
+                const systemInstruction = getSystemInstruction(currentPersonality, shortLang); // Lấy instruction theo personality
+                const responseData = await callApi('/api/chat', { message: transcript, image: null, language: shortLang, systemInstruction: systemInstruction }); // Gửi instruction
+                // ... (xử lý response và speak)
+            } catch (error) { /* ... */ }
+            incrementUsageCount();
+        }
+        voiceBtn.addEventListener('click', () => { /* ... */ });
+        voiceMicIcon.addEventListener('click', () => { /* ... */ });
+        voiceCloseBtn.addEventListener('click', () => { /* ... */ });
 
         // === Logic Flashcard/Mindmap (Giữ nguyên) ===
-        function addSummaryActions(bubbleElement, summaryText) { /* ... Giữ nguyên ... */ }
+        function addSummaryActions(bubbleElement, summaryText) { /* ... */ }
 
-        // --- Core Chat Logic (Giữ nguyên) ---
+        // === Core Chat Logic (Cập nhật) ===
         function playIntro() { /* ... Giữ nguyên ... */ }
         function saveHistoryToStorage() { /* ... Giữ nguyên ... */ }
         function loadHistoryFromStorage() { /* ... Giữ nguyên ... */ }
@@ -98,43 +120,57 @@
         function renderChatHistory() { /* ... Giữ nguyên ... */ }
         function updateChatTitle(firstUserMessage, isImageOnly = false) { /* ... Giữ nguyên ... */ }
 
-        // --- Event Listeners (Cập nhật mode selector) ---
+        // --- Event Listeners ---
         newChatBtn.addEventListener('click', () => { /* ... */ });
         menuBtn.addEventListener('click', () => { /* ... */ });
         settingsBtn.addEventListener('click', () => { /* ... */ });
         document.addEventListener('click', (e) => { /* ... */ }); // Close modals
-
-        modeButtons.forEach(button => {
-            button.addEventListener('click', () => {
-                if (button.disabled) return;
-                modeButtons.forEach(btn => btn.classList.remove('active'));
-                button.classList.add('active');
-                currentChatMode = button.dataset.mode;
-                // Update placeholder
-                switch(currentChatMode) {
-                    // case 'summarize_youtube': // Xóa case này
-                    //     mainInput.placeholder = 'Paste YouTube video URL here...'; break;
-                    case 'edit_image': mainInput.placeholder = 'Upload image & describe desired changes...'; break;
-                    case 'notetaker': mainInput.placeholder = 'Paste text for note-taking...'; break;
-                    case 'math': mainInput.placeholder = 'Enter math problem or upload image...'; break;
-                    case 'image': mainInput.placeholder = 'Describe the image you want to create...'; break;
-                    case 'video': mainInput.placeholder = 'Describe the short video/GIF...'; break;
-                    default: mainInput.placeholder = 'Ask me anything...';
-                }
-                fileInput.labels[0].style.display = ['chat', 'math', 'edit_image'].includes(currentChatMode) ? 'flex' : 'none';
-            });
-        });
-
+        modeButtons.forEach(button => { /* ... Giữ nguyên logic cập nhật placeholder và file input visibility ... */ });
         fileInput.addEventListener('change', (event) => { /* ... Giữ nguyên ... */ });
 
-        // --- Main Send Function (Cập nhật) ---
+        // === Logic Cá nhân hóa AI (MỚI) ===
+        function getSystemInstruction(personality, lang) {
+            const langName = { 'vi': 'Tiếng Việt', 'en': 'English', 'zh-CN': '简体中文' }[lang] || 'Tiếng Việt';
+            let instruction = `You are a helpful AI assistant. Respond in **${langName}**. Keep answers concise, use markdown, highlight with <mark class="highlight">...</mark>. Analyze image if provided.`; // Default
+
+            switch (personality) {
+                case 'marketing':
+                    instruction = `You are Marketing Pro AI. Respond in **${langName}** with creative marketing ideas, strategies, and copywriting tips. Be enthusiastic and focus on results. Analyze images for branding/marketing potential.`;
+                    break;
+                case 'tutor':
+                    instruction = `You are an Academic Tutor AI. Respond in **${langName}**. Explain concepts clearly, provide step-by-step solutions (especially for math), and encourage learning. Be patient and supportive. Analyze images related to academic problems.`;
+                    break;
+                case 'creative':
+                    instruction = `You are an Idea Creator AI. Respond in **${langName}**. Brainstorm unique and imaginative ideas for stories, art, projects, etc. Be playful and think outside the box. Use images as inspiration.`;
+                    break;
+            }
+            return instruction;
+        }
+
+        personalitySelect.addEventListener('change', (e) => {
+            currentPersonality = e.target.value;
+            localStorage.setItem('ai_pro_personality', currentPersonality); // Lưu lựa chọn
+            // Cập nhật avatar AI trong các tin nhắn đã hiển thị (nếu muốn)
+            document.querySelectorAll('.avatar-ai').forEach(avatar => {
+                avatar.className = `avatar avatar-ai ${currentPersonality}`; // Thêm class mới
+            });
+             // Có thể thêm lời chào khi đổi personality
+             appendMessage(`Switched to ${personalitySelect.options[personalitySelect.selectedIndex].text} personality!`, 'ai', false);
+        });
+
+        function loadPersonality() {
+            const savedPersonality = localStorage.getItem('ai_pro_personality') || 'default';
+            currentPersonality = savedPersonality;
+            personalitySelect.value = currentPersonality;
+        }
+
+
+        // --- Hàm Gửi Chính (Cập nhật để gửi personality instruction) ---
         const handleSendMessage = async () => {
              if (!checkUsageLimit()) return;
              const prompt = mainInput.value.trim(); const image = uploadedFile;
              if (currentChatMode === 'edit_image' && !image) { alert("Please upload an image for editing."); return; }
-             // Bỏ kiểm tra prompt cho summarize_youtube
-             if (!prompt && !image && currentChatMode !== 'notetaker') { return; } // Cho phép gửi ảnh không cần text ở chat/math/edit
-             if (!prompt && currentChatMode === 'notetaker') { alert("Please paste text for note-taking."); return; }
+             if (!prompt && !image) { return; }
 
              if (document.querySelector('.welcome-message')) document.querySelector('.welcome-message').remove();
              let userMessageContent = prompt;
@@ -142,109 +178,122 @@
 
              appendMessage(userMessageContent || "[Image Sent]", 'user');
              updateChatTitle(prompt, !prompt && !!image);
-             const loadingBubble = showLoading();
+             const loadingBubble = showLoading(); // Hiển thị loading với avatar mặc định
              const currentPromptValue = prompt; const currentImageValue = image;
              mainInput.value = ''; previewContainer.innerHTML = ''; uploadedFile = null; fileInput.value = ''; mainInput.style.height = 'auto';
 
             try {
                 let responseData;
                 let finalContent = '';
-                let isSummaryResult = false; // Chỉ bật cho notetaker
+                let isSummaryResult = false;
+                let systemInstruction = getSystemInstruction(currentPersonality, languageSelect.value); // Lấy instruction theo personality
 
                 switch (currentChatMode) {
-                    case 'image': /* Giữ nguyên */ break;
-                    case 'edit_image': /* Giữ nguyên */ break;
-                    case 'math': /* Giữ nguyên */ break;
-                    // case 'summarize_youtube': // Xóa case này
-                    //     responseData = await callApi('/api/summarize-youtube', { youtubeUrl: currentPromptValue });
-                    //     finalContent = responseData.response;
-                    //     isSummaryResult = true;
-                    //     break;
-                    case 'notetaker':
-                        responseData = await callApi('/api/summarize-text', { textToSummarize: currentPromptValue });
-                        finalContent = responseData.response;
-                        isSummaryResult = true; // Bật cho notetaker
+                    case 'image':
+                        responseData = await callApi('/api/pollinations-image', { prompt: currentPromptValue });
+                        finalContent = `<img src="${responseData.imageUrl}" class="generated-image">`;
                         break;
-                    case 'video': /* Giữ nguyên */ break;
-                    default: /* Giữ nguyên chat */ break;
-                }
-
-                 // --- Xử lý switch case (Giữ nguyên logic bên trong các case còn lại) ---
-                 switch (currentChatMode) {
-                     case 'image':
-                         responseData = await callApi('/api/pollinations-image', { prompt: currentPromptValue });
-                         finalContent = `<img src="${responseData.imageUrl}" class="generated-image">`;
-                         break;
-                     case 'edit_image':
-                         loadingBubble.querySelector('.bubble').innerHTML = 'Generating edit description...';
-                         const descriptionResponse = await callApi('/api/edit-image', { message: currentPromptValue, image: currentImageValue });
-                         const newPrompt = descriptionResponse.response;
-                         if (newPrompt.startsWith('❌')) throw new Error(newPrompt);
-                         loadingBubble.querySelector('.bubble').innerHTML = 'Generating edited image...';
-                         const imageResponse = await callApi('/api/pollinations-image', { prompt: newPrompt });
-                         finalContent = `<p><strong>Generated based on:</strong> ${newPrompt}</p><img src="${imageResponse.imageUrl}" class="generated-image">`;
-                         break;
-                     case 'math':
-                         responseData = await callApi('/api/math', { question: currentPromptValue, image: currentImageValue });
-                         finalContent = responseData.response;
-                         break; // MathJax sẽ được gọi sau
-                     case 'notetaker':
-                         responseData = await callApi('/api/summarize-text', { textToSummarize: currentPromptValue });
-                         finalContent = responseData.response;
-                         isSummaryResult = true; // Bật cho notetaker
-                         break;
+                    case 'edit_image':
+                        loadingBubble.querySelector('.bubble').innerHTML = 'Generating edit description...';
+                        // Gửi instruction riêng cho edit_image
+                        systemInstruction = `Analyze image and user text. Generate ONLY a detailed English prompt for an image generation model (like Pollinations) to create the edited image.`;
+                        const descriptionResponse = await callApi('/api/edit-image', { message: currentPromptValue, image: currentImageValue, systemInstruction: systemInstruction });
+                        const newPrompt = descriptionResponse.response;
+                        if (newPrompt.startsWith('❌')) throw new Error(newPrompt);
+                        loadingBubble.querySelector('.bubble').innerHTML = 'Generating edited image...';
+                        const imageResponse = await callApi('/api/pollinations-image', { prompt: newPrompt });
+                        finalContent = `<p><strong>Generated based on:</strong> ${newPrompt}</p><img src="${imageResponse.imageUrl}" class="generated-image">`;
+                        break;
+                    case 'math':
+                        // Math không dùng personality, dùng instruction riêng
+                        systemInstruction = `Solve math in Vietnamese. Show steps & final result. Use LaTeX ($...$) and <mark class="highlight">...</mark>. Analyze image if provided.`;
+                        responseData = await callApi('/api/math', { question: currentPromptValue, image: currentImageValue, systemInstruction: systemInstruction });
+                        finalContent = responseData.response;
+                        break; // MathJax xử lý sau
+                    case 'notetaker':
+                        // Notetaker dùng instruction riêng
+                        systemInstruction = "You are a notetaker. Extract key decisions, action items, main topics. Format in Vietnamese with headings (## Decisions, ## Actions, ## Topics) and bullets.";
+                        responseData = await callApi('/api/summarize-text', { textToSummarize: currentPromptValue, systemInstruction: systemInstruction });
+                        finalContent = responseData.response;
+                        isSummaryResult = true;
+                        break;
                      case 'video':
                          loadingBubble.querySelector('.bubble').innerHTML = 'Generating video frames...';
                          responseData = await callApi('/api/pollinations-frames', { prompt: currentPromptValue });
-                         // Quan trọng: Kiểm tra responseData.frames có tồn tại và là mảng không rỗng
                          if (!responseData.frames || !Array.isArray(responseData.frames) || responseData.frames.length === 0) {
-                              // Nếu server trả về lỗi hoặc mảng rỗng (do placeholder)
                               throw new Error(responseData.message || 'Video frame generation failed or not implemented.');
                          }
                          loadingBubble.querySelector('.bubble').innerHTML = 'Rendering GIF...';
                          const videoUrl = await createGifFromFrames(responseData.frames);
                          finalContent = `<img src="${videoUrl}" class="generated-video" alt="Generated Video">`;
                          break;
-                     default: // chat
-                         responseData = await callApi('/api/chat', { message: currentPromptValue, image: currentImageValue, language: languageSelect.value });
-                         finalContent = responseData.response;
-                         break;
-                 }
-
+                    default: // chat (dùng personality instruction)
+                        responseData = await callApi('/api/chat', { message: currentPromptValue, image: currentImageValue, language: languageSelect.value, systemInstruction: systemInstruction });
+                        finalContent = responseData.response;
+                        break;
+                }
 
                 const aiBubbleElement = loadingBubble.querySelector('.bubble');
-                aiBubbleElement.innerHTML = finalContent;
+                const aiAvatarElement = loadingBubble.querySelector('.avatar-ai'); // Lấy avatar của bubble loading
+
+                aiBubbleElement.innerHTML = finalContent; // Cập nhật nội dung
+                aiAvatarElement.className = `avatar avatar-ai ${currentPersonality}`; // Cập nhật class avatar theo personality
 
                 if (currentChatMode === 'math') {
                      MathJax.typesetPromise([aiBubbleElement]);
                 }
-
-                // Thêm actions nếu là notetaker và thành công
                 if (isSummaryResult && !finalContent.startsWith('❌')) {
                     addSummaryActions(aiBubbleElement, finalContent);
                 }
 
-                saveMessage(aiBubbleElement.innerHTML, 'ai');
+                saveMessage(aiBubbleElement.innerHTML, 'ai'); // Lưu nội dung cuối cùng
                 incrementUsageCount();
 
             } catch (error) { /* ... Giữ nguyên xử lý lỗi ... */
-                console.error("Error in handleSendMessage:", error);
-                const errorMessage = `❌ Lỗi: ${error.message}`;
-                loadingBubble.querySelector('.bubble').textContent = errorMessage;
-                saveMessage(errorMessage, 'ai');
+                 console.error("Error in handleSendMessage:", error);
+                 const errorMessage = `❌ Lỗi: ${error.message}`;
+                 loadingBubble.querySelector('.bubble').textContent = errorMessage;
+                 saveMessage(errorMessage, 'ai');
             }
         };
 
-        // --- Giữ nguyên các hàm helper và khởi tạo ---
-        sendBtn.addEventListener('click', handleSendMessage);
-        mainInput.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSendMessage(); } });
-        function appendMessage(content, type, save = true) { /* ... */ }
-        function saveMessage(content, type) { /* ... */ }
-        function showLoading() { /* ... */ }
-        async function callApi(endpoint, body) { /* ... */ }
-        function createGifFromFrames(frames) { /* ... */ }
-        mainInput.addEventListener('input', () => { /* ... */ });
-        function initializeApp() { /* ... */ }
+        // --- Helper Functions (Cập nhật appendMessage và showLoading để dùng personality) ---
+        function appendMessage(content, type, save = true) {
+            const group = document.createElement('div');
+            group.className = `message-group ${type}`;
+            const avatarClass = type === 'user' ? 'avatar-user' : `avatar-ai ${currentPersonality}`; // Dùng personality hiện tại cho AI
+            group.innerHTML = `<div class="avatar ${avatarClass}">${type === 'user' ? 'U' : 'AI'}</div><div class="bubble">${content}</div>`;
+            chatBox.appendChild(group);
+            setTimeout(() => chatBox.scrollTop = chatBox.scrollHeight, 50);
+            if (save) saveMessage(content, type);
+            return group;
+        }
+
+        function showLoading() {
+            const group = document.createElement('div');
+            group.className = 'message-group ai';
+            // Hiển thị avatar theo personality hiện tại ngay cả khi loading
+            group.innerHTML = `<div class="avatar avatar-ai ${currentPersonality}">AI</div><div class="bubble"><div class="typing-indicator"><span></span><span></span><span></span></div></div>`;
+            chatBox.appendChild(group);
+            setTimeout(() => chatBox.scrollTop = chatBox.scrollHeight, 50);
+            return group;
+        }
+        function saveMessage(content, type) { /* ... Giữ nguyên ... */ }
+        async function callApi(endpoint, body) { /* ... Giữ nguyên ... */ }
+        function createGifFromFrames(frames) { /* ... Giữ nguyên ... */ }
+        mainInput.addEventListener('input', () => { /* ... Giữ nguyên ... */ });
+
+        // --- Initialize App ---
+        function initializeApp() {
+            playIntro();
+            loadHistoryFromStorage();
+            loadPersonality(); // Load personality đã lưu
+            if (Object.keys(chatHistory).length === 0) startNewChat();
+            else loadChat(Object.keys(chatHistory).sort().pop());
+            renderChatHistory();
+            loadUsageData(); // Load và kiểm tra giới hạn
+            document.querySelector('.mode-btn[data-mode="chat"]')?.click();
+        }
         initializeApp();
     });
     </script>

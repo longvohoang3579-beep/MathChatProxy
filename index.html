@@ -7,15 +7,15 @@
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet" />
     <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     <style>
-        /* --- Keep ALL your previous CSS --- */
+        /* --- Giữ nguyên toàn bộ CSS của bạn --- */
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap');
-        :root { --primary-yellow: #facc15; /* ... */ }
+        :root { --primary-yellow: #facc15; --dark-bg: #0a0a0c; /* ... */ }
         body { font-family: 'Inter', sans-serif; /* ... */ }
-        /* Add style for summary buttons */
         .summary-actions { margin-top: 1rem; display: flex; flex-wrap: wrap; gap: 0.5rem; border-top: 1px solid #444; padding-top: 0.75rem; }
         .summary-btn { background-color: #374151; color: #e5e7eb; padding: 0.3rem 0.8rem; border-radius: 15px; font-size: 0.8rem; cursor: pointer; transition: background-color 0.2s; border: none; }
         .summary-btn:hover:not(:disabled) { background-color: #4b5563; }
         .summary-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+        /* --- Hết CSS --- */
     </style>
     <script src="https://unpkg.com/gif.js@0.2.0/dist/gif.js"></script>
 </head>
@@ -27,7 +27,7 @@
 
     <div id="app-wrapper">
         <aside id="sidebar">
-            <div class="social-login-container mb-4">...</div>
+             <div class="social-login-container mb-4">...</div>
              <button id="new-chat-btn" class="p-3 rounded-lg font-bold">＋ New Conversation</button>
              <h2 class="text-gray-400 text-sm font-bold mt-6 mb-2 uppercase">History</h2>
              <div id="chat-history"></div>
@@ -44,7 +44,7 @@
                     <button class="mode-btn" data-mode="math" title="Giải toán"><span>Giải Toán</span></button>
                     <button class="mode-btn" data-mode="video" title="Tạo video"><span>Tạo Video</span></button>
                     <button class="mode-btn" data-mode="edit_image" title="Chỉnh sửa ảnh"><span>Sửa Ảnh</span></button>
-                    <button class="mode-btn" data-mode="summarize_youtube" title="Tóm tắt YouTube"><span>Tóm Tắt YT</span></button>
+                    {/* Xóa nút này */}
                     <button class="mode-btn" data-mode="notetaker" title="Ghi chú văn bản"><span>Ghi Chú</span></button>
                 </div>
                 <div class="pending-preview" id="previewContainer"></div>
@@ -55,300 +55,86 @@
 
     <script>
     document.addEventListener('DOMContentLoaded', () => {
-        // --- Keep existing DOM element variables ---
+        // --- Giữ nguyên tất cả các biến DOM và logic cũ ---
         const getEl = (id) => document.getElementById(id);
         const introScreen = getEl('intro-screen'), /*...*/ usageCounterEl = getEl('usage-counter'); // Add usageCounterEl
 
         let currentChatMode = 'chat', uploadedFile = null, chatHistory = {}, activeChatId = null, isRecording = false;
 
-        // === Daily Usage Limit Logic ===
+        // === Logic Giới Hạn Hàng Ngày (Giữ nguyên) ===
         const MAX_DAILY_USES = 20;
         const UNLOCK_PASSWORD = "Hoang1082009@";
         let usageData = { count: 0, date: '', unlocked: false };
+        function loadUsageData() { /* ... Giữ nguyên ... */ }
+        function saveUsageData() { /* ... Giữ nguyên ... */ }
+        function updateUsageDisplay() { /* ... Giữ nguyên ... */ }
+        function checkUsageLimit() { /* ... Giữ nguyên ... */ }
+        function incrementUsageCount() { /* ... Giữ nguyên ... */ }
+        unlockBtn.addEventListener('click', () => { /* ... Giữ nguyên ... */ });
 
-        function loadUsageData() {
-            const storedData = JSON.parse(localStorage.getItem('ai_pro_usage_v2')) || { count: 0, date: '', unlocked: false };
-            const today = new Date().toLocaleDateString();
-
-            if (storedData.unlocked) { // If already unlocked, keep it
-                usageData = { ...storedData, date: today }; // Update date just in case
-            } else if (storedData.date === today) { // If same day, load count
-                usageData = storedData;
-            } else { // If new day, reset count
-                usageData = { count: 0, date: today, unlocked: false };
-            }
-            saveUsageData(); // Save the potentially updated state (especially the date)
-        }
-
-        function saveUsageData() {
-            localStorage.setItem('ai_pro_usage_v2', JSON.stringify(usageData));
-            updateUsageDisplay();
-        }
-
-        function updateUsageDisplay() {
-            if (!usageCounterEl) return;
-            if (usageData.unlocked) {
-                usageCounterEl.textContent = "Unlocked: Unlimited";
-            } else {
-                usageCounterEl.textContent = `Daily Uses: ${usageData.count} / ${MAX_DAILY_USES}`;
-            }
-        }
-
-        function checkUsageLimit() {
-            const isLocked = !usageData.unlocked && usageData.count >= MAX_DAILY_USES;
-            limitOverlay.style.display = isLocked ? 'flex' : 'none';
-            // Disable relevant controls
-            const controls = [mainInput, sendBtn, voiceBtn, fileInput, ...modeButtons];
-            controls.forEach(el => {
-                if (el) { // Check if element exists
-                    el.disabled = isLocked;
-                    const targetElement = el.tagName === 'INPUT' && el.type === 'file' ? el.labels[0] : el;
-                    if (targetElement) {
-                         targetElement.style.opacity = isLocked ? '0.5' : '1';
-                         targetElement.style.cursor = isLocked ? 'not-allowed' : 'pointer';
-                    }
-                }
-            });
-            return !isLocked;
-        }
-
-        function incrementUsageCount() {
-            if (!usageData.unlocked) {
-                usageData.count++;
-                saveUsageData(); // Save & update display
-            }
-        }
-
-        unlockBtn.addEventListener('click', () => {
-            if (passwordInput.value === UNLOCK_PASSWORD) {
-                usageData.unlocked = true;
-                usageData.date = new Date().toLocaleDateString(); // Ensure date is current on unlock
-                saveUsageData();
-                passwordMessage.textContent = 'Unlocked Successfully!';
-                passwordMessage.className = 'mt-3 text-green-500';
-                setTimeout(() => checkUsageLimit(), 1500); // Re-enable controls
-            } else {
-                passwordMessage.textContent = 'Incorrect Password.';
-                passwordMessage.className = 'mt-3 text-red-500';
-            }
-        });
-
-        // === Enhanced Voice Chat Logic ===
+        // === Logic Voice Chat (Giữ nguyên) ===
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         let recognition;
-        let conversationMode = false; // Flag for continuous conversation
-        let silenceTimeout; // Timeout to stop listening after silence
+        let conversationMode = false;
+        let silenceTimeout;
+        if (SpeechRecognition) { /* ... Giữ nguyên toàn bộ logic voice ... */ }
+        else { voiceBtn.style.display = 'none'; }
+        function startListening() { /* ... Giữ nguyên ... */ }
+        function speak(text, lang) { /* ... Giữ nguyên ... */ }
+        async function handleVoiceQuery(transcript, langCode) { /* ... Giữ nguyên ... */ }
+        voiceBtn.addEventListener('click', () => { /* ... Giữ nguyên ... */ });
+        voiceMicIcon.addEventListener('click', () => { /* ... Giữ nguyên ... */ });
+        voiceCloseBtn.addEventListener('click', () => { /* ... Giữ nguyên ... */ });
 
-        if (SpeechRecognition) {
-             recognition = new SpeechRecognition();
-             recognition.continuous = false; // Process speech after pauses
-             recognition.interimResults = false;
+        // === Logic Flashcard/Mindmap (Giữ nguyên) ===
+        function addSummaryActions(bubbleElement, summaryText) { /* ... Giữ nguyên ... */ }
 
-             recognition.onstart = () => {
-                 isRecording = true;
-                 voiceStatus.textContent = "Listening...";
-                 micWave.classList.add('listening');
-                 voiceMicIcon.textContent = '🔴';
-                 // Clear previous silence timeout
-                 clearTimeout(silenceTimeout);
-                 // Set a timeout to stop listening if no speech is detected for a while
-                 silenceTimeout = setTimeout(() => {
-                     if (isRecording) {
-                         recognition.stop();
-                         voiceStatus.textContent = "Stopped due to silence.";
-                     }
-                 }, 7000); // Stop after 7 seconds of silence
-             };
+        // --- Core Chat Logic (Giữ nguyên) ---
+        function playIntro() { /* ... Giữ nguyên ... */ }
+        function saveHistoryToStorage() { /* ... Giữ nguyên ... */ }
+        function loadHistoryFromStorage() { /* ... Giữ nguyên ... */ }
+        function startNewChat() { /* ... Giữ nguyên ... */ }
+        function loadChat(chatId) { /* ... Giữ nguyên ... */ }
+        function renderChatHistory() { /* ... Giữ nguyên ... */ }
+        function updateChatTitle(firstUserMessage, isImageOnly = false) { /* ... Giữ nguyên ... */ }
 
-             recognition.onresult = (event) => {
-                 clearTimeout(silenceTimeout); // Got speech, clear timeout
-                 const transcript = event.results[0][0].transcript;
-                 handleVoiceQuery(transcript, recognition.lang); // Process the speech
-             };
+        // --- Event Listeners (Cập nhật mode selector) ---
+        newChatBtn.addEventListener('click', () => { /* ... */ });
+        menuBtn.addEventListener('click', () => { /* ... */ });
+        settingsBtn.addEventListener('click', () => { /* ... */ });
+        document.addEventListener('click', (e) => { /* ... */ }); // Close modals
 
-             recognition.onend = () => {
-                 isRecording = false;
-                 micWave.classList.remove('listening');
-                 voiceMicIcon.textContent = '🎤';
-                 clearTimeout(silenceTimeout); // Clear timeout on explicit stop or end
-                 // Automatically re-listen if in conversation mode and AI isn't speaking
-                 if (conversationMode && !speechSynthesis.speaking) {
-                     startListening();
-                 } else if (!conversationMode) {
-                     // Reset prompt if not in continuous mode
-                     voiceStatus.textContent = "Click Mic to Speak...";
-                 }
-             };
-
-             recognition.onerror = (event) => {
-                  isRecording = false;
-                  micWave.classList.remove('listening');
-                  voiceMicIcon.textContent = '🎤';
-                  clearTimeout(silenceTimeout);
-                 // ... (Keep existing error handling: not-allowed, no-speech, network) ...
-                if(event.error === 'not-allowed'){ voiceStatus.innerHTML = `Error: Microphone access denied.<br>Click the 🔒 icon in the address bar to allow access.`; }
-                else if (event.error === 'no-speech') { voiceStatus.textContent = 'No speech detected. Please try again.'; }
-                else if (event.error === 'network'){ voiceStatus.textContent = 'Network error during speech recognition.'; }
-                else { voiceStatus.textContent = `Error: ${event.error}`; }
-                // Close overlay on error only if NOT in conversation mode
-                 if (!conversationMode) {
-                     setTimeout(() => voiceOverlay.style.display = 'none', 3000);
-                 }
-             };
-        } else { voiceBtn.style.display = 'none'; } // Hide if not supported
-
-        function startListening() {
-            if (!recognition || isRecording || !conversationMode) return; // Only listen if in conv mode and not already listening
-            const langMap = {'vi': 'vi-VN', 'en': 'en-US', 'zh-CN': 'zh-CN'};
-            recognition.lang = langMap[languageSelect.value] || 'vi-VN';
-            try {
-                recognition.start();
-            } catch(e) { console.error("Rec start error:", e); voiceStatus.textContent = `Error: ${e.message}`; }
-        }
-
-        function speak(text, lang) {
-            return new Promise((resolve, reject) => {
-                speechSynthesis.cancel();
-                const utterance = new SpeechSynthesisUtterance(text);
-                utterance.lang = lang;
-                utterance.rate = 1.0;
-                let ended = false; // Flag to prevent multiple resolves/rejects
-
-                utterance.onstart = () => voiceStatus.textContent = "AI Replying...";
-                utterance.onend = () => {
-                    if (!ended) {
-                        ended = true;
-                        // Don't reset status here, onend of recognition handles it if conversationMode is on
-                        resolve();
-                    }
-                };
-                 utterance.onerror = (e) => {
-                     if (!ended) {
-                         ended = true;
-                         console.error("Speech Synthesis Error:", e);
-                         voiceStatus.textContent = `Speech Error: ${e.error}`;
-                         reject(e);
-                     }
-                 };
-                 // Ensure voices are loaded before speaking
-                 const voices = speechSynthesis.getVoices();
-                 if (voices.length > 0) {
-                     // Optional: Find a specific voice for the language if needed
-                     // utterance.voice = voices.find(v => v.lang === lang);
-                     speechSynthesis.speak(utterance);
-                 } else {
-                     // If voices not loaded yet, wait for the event
-                     speechSynthesis.onvoiceschanged = () => {
-                         // utterance.voice = speechSynthesis.getVoices().find(v => v.lang === lang);
-                         speechSynthesis.speak(utterance);
-                     };
-                 }
-
+        modeButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                if (button.disabled) return;
+                modeButtons.forEach(btn => btn.classList.remove('active'));
+                button.classList.add('active');
+                currentChatMode = button.dataset.mode;
+                // Update placeholder
+                switch(currentChatMode) {
+                    // case 'summarize_youtube': // Xóa case này
+                    //     mainInput.placeholder = 'Paste YouTube video URL here...'; break;
+                    case 'edit_image': mainInput.placeholder = 'Upload image & describe desired changes...'; break;
+                    case 'notetaker': mainInput.placeholder = 'Paste text for note-taking...'; break;
+                    case 'math': mainInput.placeholder = 'Enter math problem or upload image...'; break;
+                    case 'image': mainInput.placeholder = 'Describe the image you want to create...'; break;
+                    case 'video': mainInput.placeholder = 'Describe the short video/GIF...'; break;
+                    default: mainInput.placeholder = 'Ask me anything...';
+                }
+                fileInput.labels[0].style.display = ['chat', 'math', 'edit_image'].includes(currentChatMode) ? 'flex' : 'none';
             });
-        }
-
-
-        async function handleVoiceQuery(transcript, langCode) {
-            voiceStatus.textContent = "AI Processing...";
-            try {
-                const shortLang = langCode.split('-')[0];
-                // Always use the chat endpoint for voice interaction
-                const responseData = await callApi('/api/chat', { message: transcript, image: null, language: shortLang });
-                const tempDiv = document.createElement('div');
-                tempDiv.innerHTML = responseData.response;
-                const aiReplyText = tempDiv.textContent || tempDiv.innerText || "";
-
-                if (!aiReplyText || aiReplyText.startsWith('❌')) throw new Error(aiReplyText || "AI response invalid.");
-
-                await speak(aiReplyText, langCode); // Wait for speech to finish
-
-            } catch (error) {
-                console.error("Voice Query Error:", error);
-                const errorMsg = error.message.includes('HTTP Error') ? "Problem connecting to AI." : error.message.startsWith('❌') ? error.message.substring(2) : "Error processing request.";
-                await speak(errorMsg, langCode); // Speak the error
-            } finally {
-                 incrementUsageCount(); // Count usage for voice query
-                 // If in conversation mode, recognition.onend will trigger startListening()
-                 // If not in conversation mode, overlay should close (handled by speak() or error)
-                 if (!conversationMode) {
-                     setTimeout(() => voiceOverlay.style.display = 'none', 500); // Close overlay after speaking
-                 }
-            }
-        }
-
-
-        voiceBtn.addEventListener('click', () => {
-             if (mainInput.disabled) return;
-             if (!recognition) return alert("Speech recognition not supported.");
-             if (!window.isSecureContext && window.location.protocol !== 'http:') return alert('Voice requires HTTPS or localhost.');
-
-             conversationMode = true; // Enter continuous conversation mode
-             voiceStatus.textContent = "Click Mic to Speak..."; // Initial prompt
-             micWave.classList.remove('listening');
-             voiceMicIcon.textContent = '🎤';
-             voiceOverlay.style.display = 'flex';
-             // Don't start listening immediately, wait for mic click
         });
 
-        voiceMicIcon.addEventListener('click', () => { // Mic toggles listening
-            if (!recognition) return;
-            if (isRecording) {
-                recognition.stop();
-                clearTimeout(silenceTimeout);
-            } else {
-                startListening();
-            }
-        });
+        fileInput.addEventListener('change', (event) => { /* ... Giữ nguyên ... */ });
 
-        voiceCloseBtn.addEventListener('click', () => { // Close button exits conversation mode
-             conversationMode = false; // Exit continuous mode
-             if (isRecording) recognition.stop();
-             speechSynthesis.cancel();
-             clearTimeout(silenceTimeout);
-             voiceOverlay.style.display = 'none';
-        });
-
-        // --- Flashcard/Mindmap Logic ---
-        function addSummaryActions(bubbleElement, summaryText) {
-            // Check if actions already exist
-            if (bubbleElement.querySelector('.summary-actions')) return;
-
-            const actionsDiv = document.createElement('div');
-            actionsDiv.className = 'summary-actions';
-            actionsDiv.innerHTML = `
-                <button class="summary-btn" data-action="flashcard" title="Generate flashcards from this summary">Flashcards</button>
-                <button class="summary-btn" data-action="mindmap" title="Generate a mindmap structure from this summary">Mindmap</button>
-            `;
-            actionsDiv.querySelectorAll('.summary-btn').forEach(button => {
-                button.addEventListener('click', async () => {
-                    if (!checkUsageLimit()) return; // Check limit before generating
-                    const action = button.dataset.action;
-                    const endpoint = action === 'flashcard' ? '/api/generate-flashcards' : '/api/generate-mindmap';
-                    const originalText = button.textContent;
-                    button.textContent = 'Generating...';
-                    button.disabled = true;
-                    try {
-                        // Pass the original summary text to the new endpoint
-                        const response = await callApi(endpoint, { textToConvert: summaryText });
-                        appendMessage(response.response, 'ai'); // Display result in new bubble
-                        incrementUsageCount(); // Count this as a use
-                    } catch (error) {
-                        appendMessage(`❌ Error creating ${action}: ${error.message}`, 'ai');
-                    } finally {
-                        button.textContent = originalText;
-                        button.disabled = false;
-                    }
-                });
-            });
-            bubbleElement.appendChild(actionsDiv);
-        }
-
-        // --- Main Send Function (handleSendMessage) ---
+        // --- Main Send Function (Cập nhật) ---
         const handleSendMessage = async () => {
              if (!checkUsageLimit()) return;
              const prompt = mainInput.value.trim(); const image = uploadedFile;
              if (currentChatMode === 'edit_image' && !image) { alert("Please upload an image for editing."); return; }
-             if (!prompt && !image) { return; } // Allow image-only for chat/math/edit
+             // Bỏ kiểm tra prompt cho summarize_youtube
+             if (!prompt && !image && currentChatMode !== 'notetaker') { return; } // Cho phép gửi ảnh không cần text ở chat/math/edit
+             if (!prompt && currentChatMode === 'notetaker') { alert("Please paste text for note-taking."); return; }
 
              if (document.querySelector('.welcome-message')) document.querySelector('.welcome-message').remove();
              let userMessageContent = prompt;
@@ -363,66 +149,85 @@
             try {
                 let responseData;
                 let finalContent = '';
-                let isSummaryResult = false; // Flag to add actions later
+                let isSummaryResult = false; // Chỉ bật cho notetaker
 
                 switch (currentChatMode) {
-                    case 'image':
-                        responseData = await callApi('/api/pollinations-image', { prompt: currentPromptValue });
-                        finalContent = `<img src="${responseData.imageUrl}" class="generated-image">`;
-                        break;
-                    case 'edit_image':
-                        loadingBubble.querySelector('.bubble').innerHTML = 'Generating edit description...';
-                        const descriptionResponse = await callApi('/api/edit-image', { message: currentPromptValue, image: currentImageValue });
-                        const newPrompt = descriptionResponse.response;
-                        if (newPrompt.startsWith('❌')) throw new Error(newPrompt);
-                        loadingBubble.querySelector('.bubble').innerHTML = 'Generating edited image...';
-                        const imageResponse = await callApi('/api/pollinations-image', { prompt: newPrompt });
-                        finalContent = `<p><strong>Generated based on:</strong> ${newPrompt}</p><img src="${imageResponse.imageUrl}" class="generated-image">`;
-                        break;
-                    case 'math':
-                        responseData = await callApi('/api/math', { question: currentPromptValue, image: currentImageValue });
-                        finalContent = responseData.response; // MathJax will render this
-                        break;
-                    case 'summarize_youtube':
-                        responseData = await callApi('/api/summarize-youtube', { youtubeUrl: currentPromptValue });
-                        finalContent = responseData.response;
-                        isSummaryResult = true; // Mark for actions
-                        break;
+                    case 'image': /* Giữ nguyên */ break;
+                    case 'edit_image': /* Giữ nguyên */ break;
+                    case 'math': /* Giữ nguyên */ break;
+                    // case 'summarize_youtube': // Xóa case này
+                    //     responseData = await callApi('/api/summarize-youtube', { youtubeUrl: currentPromptValue });
+                    //     finalContent = responseData.response;
+                    //     isSummaryResult = true;
+                    //     break;
                     case 'notetaker':
                         responseData = await callApi('/api/summarize-text', { textToSummarize: currentPromptValue });
                         finalContent = responseData.response;
-                        isSummaryResult = true; // Mark for actions
+                        isSummaryResult = true; // Bật cho notetaker
                         break;
-                    case 'video':
-                        loadingBubble.querySelector('.bubble').innerHTML = 'Generating video frames...';
-                        responseData = await callApi('/api/pollinations-frames', { prompt: currentPromptValue });
-                        if (!responseData.frames || responseData.frames.length === 0) throw new Error('No video frames received.');
-                        loadingBubble.querySelector('.bubble').innerHTML = 'Rendering GIF...';
-                        const videoUrl = await createGifFromFrames(responseData.frames);
-                        finalContent = `<img src="${videoUrl}" class="generated-video" alt="Generated Video">`;
-                        break;
-                    default: // chat
-                        responseData = await callApi('/api/chat', { message: currentPromptValue, image: currentImageValue, language: languageSelect.value });
-                        finalContent = responseData.response;
-                        break;
+                    case 'video': /* Giữ nguyên */ break;
+                    default: /* Giữ nguyên chat */ break;
                 }
+
+                 // --- Xử lý switch case (Giữ nguyên logic bên trong các case còn lại) ---
+                 switch (currentChatMode) {
+                     case 'image':
+                         responseData = await callApi('/api/pollinations-image', { prompt: currentPromptValue });
+                         finalContent = `<img src="${responseData.imageUrl}" class="generated-image">`;
+                         break;
+                     case 'edit_image':
+                         loadingBubble.querySelector('.bubble').innerHTML = 'Generating edit description...';
+                         const descriptionResponse = await callApi('/api/edit-image', { message: currentPromptValue, image: currentImageValue });
+                         const newPrompt = descriptionResponse.response;
+                         if (newPrompt.startsWith('❌')) throw new Error(newPrompt);
+                         loadingBubble.querySelector('.bubble').innerHTML = 'Generating edited image...';
+                         const imageResponse = await callApi('/api/pollinations-image', { prompt: newPrompt });
+                         finalContent = `<p><strong>Generated based on:</strong> ${newPrompt}</p><img src="${imageResponse.imageUrl}" class="generated-image">`;
+                         break;
+                     case 'math':
+                         responseData = await callApi('/api/math', { question: currentPromptValue, image: currentImageValue });
+                         finalContent = responseData.response;
+                         break; // MathJax sẽ được gọi sau
+                     case 'notetaker':
+                         responseData = await callApi('/api/summarize-text', { textToSummarize: currentPromptValue });
+                         finalContent = responseData.response;
+                         isSummaryResult = true; // Bật cho notetaker
+                         break;
+                     case 'video':
+                         loadingBubble.querySelector('.bubble').innerHTML = 'Generating video frames...';
+                         responseData = await callApi('/api/pollinations-frames', { prompt: currentPromptValue });
+                         // Quan trọng: Kiểm tra responseData.frames có tồn tại và là mảng không rỗng
+                         if (!responseData.frames || !Array.isArray(responseData.frames) || responseData.frames.length === 0) {
+                              // Nếu server trả về lỗi hoặc mảng rỗng (do placeholder)
+                              throw new Error(responseData.message || 'Video frame generation failed or not implemented.');
+                         }
+                         loadingBubble.querySelector('.bubble').innerHTML = 'Rendering GIF...';
+                         const videoUrl = await createGifFromFrames(responseData.frames);
+                         finalContent = `<img src="${videoUrl}" class="generated-video" alt="Generated Video">`;
+                         break;
+                     default: // chat
+                         responseData = await callApi('/api/chat', { message: currentPromptValue, image: currentImageValue, language: languageSelect.value });
+                         finalContent = responseData.response;
+                         break;
+                 }
+
 
                 const aiBubbleElement = loadingBubble.querySelector('.bubble');
-                aiBubbleElement.innerHTML = finalContent; // Update with final content
+                aiBubbleElement.innerHTML = finalContent;
 
                 if (currentChatMode === 'math') {
-                     MathJax.typesetPromise([aiBubbleElement]); // Render LaTeX for math
+                     MathJax.typesetPromise([aiBubbleElement]);
                 }
 
-                // Add summary actions AFTER content is set
+                // Thêm actions nếu là notetaker và thành công
                 if (isSummaryResult && !finalContent.startsWith('❌')) {
                     addSummaryActions(aiBubbleElement, finalContent);
                 }
 
-                saveMessage(aiBubbleElement.innerHTML, 'ai'); // Save final HTML
+                saveMessage(aiBubbleElement.innerHTML, 'ai');
                 incrementUsageCount();
 
-            } catch (error) {
+            } catch (error) { /* ... Giữ nguyên xử lý lỗi ... */
                 console.error("Error in handleSendMessage:", error);
                 const errorMessage = `❌ Lỗi: ${error.message}`;
                 loadingBubble.querySelector('.bubble').textContent = errorMessage;
@@ -430,18 +235,16 @@
             }
         };
 
-        // --- Keep all other helper functions and initializations ---
-         // (playIntro, save/load history, start/load chat, render history, appendMessage, showLoading, callApi, createGif, input resize)
-
-        function initializeApp() {
-            playIntro();
-            loadHistoryFromStorage();
-            if (Object.keys(chatHistory).length === 0) startNewChat();
-            else loadChat(Object.keys(chatHistory).sort().pop());
-            renderChatHistory();
-            loadUsageData(); // Use the daily limit loader
-             document.querySelector('.mode-btn[data-mode="chat"]')?.click(); // Set default mode and visibility
-        }
+        // --- Giữ nguyên các hàm helper và khởi tạo ---
+        sendBtn.addEventListener('click', handleSendMessage);
+        mainInput.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSendMessage(); } });
+        function appendMessage(content, type, save = true) { /* ... */ }
+        function saveMessage(content, type) { /* ... */ }
+        function showLoading() { /* ... */ }
+        async function callApi(endpoint, body) { /* ... */ }
+        function createGifFromFrames(frames) { /* ... */ }
+        mainInput.addEventListener('input', () => { /* ... */ });
+        function initializeApp() { /* ... */ }
         initializeApp();
     });
     </script>

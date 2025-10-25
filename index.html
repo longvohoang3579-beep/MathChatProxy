@@ -7,12 +7,15 @@
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet" />
     <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     <style>
-        /* --- Giữ nguyên toàn bộ CSS của bạn --- */
+        /* --- Keep ALL your previous CSS --- */
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap');
-        :root { --primary-yellow: #facc15; --dark-bg: #0a0a0c; /* ... */ }
+        :root { --primary-yellow: #facc15; /* ... */ }
         body { font-family: 'Inter', sans-serif; /* ... */ }
-        .summary-actions { margin-top: 10px; display: flex; gap: 10px; }
-        .summary-btn { background-color: #444; color: #eee; padding: 5px 10px; border-radius: 5px; font-size: 0.8em; cursor: pointer; }
+        /* Add style for summary buttons */
+        .summary-actions { margin-top: 1rem; display: flex; flex-wrap: wrap; gap: 0.5rem; border-top: 1px solid #444; padding-top: 0.75rem; }
+        .summary-btn { background-color: #374151; color: #e5e7eb; padding: 0.3rem 0.8rem; border-radius: 15px; font-size: 0.8rem; cursor: pointer; transition: background-color 0.2s; border: none; }
+        .summary-btn:hover:not(:disabled) { background-color: #4b5563; }
+        .summary-btn:disabled { opacity: 0.6; cursor: not-allowed; }
     </style>
     <script src="https://unpkg.com/gif.js@0.2.0/dist/gif.js"></script>
 </head>
@@ -23,7 +26,14 @@
     <div id="voice-overlay">...</div>
 
     <div id="app-wrapper">
-        <aside id="sidebar">...</aside>
+        <aside id="sidebar">
+            <div class="social-login-container mb-4">...</div>
+             <button id="new-chat-btn" class="p-3 rounded-lg font-bold">＋ New Conversation</button>
+             <h2 class="text-gray-400 text-sm font-bold mt-6 mb-2 uppercase">History</h2>
+             <div id="chat-history"></div>
+             <div id="usage-counter" class="text-center text-sm text-gray-400 mt-auto pt-4 border-t border-gray-700">Loading usage...</div>
+        </aside>
+
         <main id="chat-container">
             <div class="header relative">...</div>
             <div class="chat-box" id="chatBox"></div>
@@ -45,129 +55,204 @@
 
     <script>
     document.addEventListener('DOMContentLoaded', () => {
-        // --- Giữ nguyên các biến DOM và logic cũ ---
+        // --- Keep existing DOM element variables ---
         const getEl = (id) => document.getElementById(id);
-        const introScreen = getEl('intro-screen'), /*...*/ passwordMessage = getEl('password-message');
-        const modeButtons = document.querySelectorAll('.mode-btn');
+        const introScreen = getEl('intro-screen'), /*...*/ usageCounterEl = getEl('usage-counter'); // Add usageCounterEl
 
         let currentChatMode = 'chat', uploadedFile = null, chatHistory = {}, activeChatId = null, isRecording = false;
 
-        // === Logic Giới Hạn Hàng Ngày ===
+        // === Daily Usage Limit Logic ===
         const MAX_DAILY_USES = 20;
         const UNLOCK_PASSWORD = "Hoang1082009@";
         let usageData = { count: 0, date: '', unlocked: false };
 
         function loadUsageData() {
             const storedData = JSON.parse(localStorage.getItem('ai_pro_usage_v2')) || { count: 0, date: '', unlocked: false };
-            const today = new Date().toLocaleDateString(); // Lấy ngày hôm nay dạng 'MM/DD/YYYY' hoặc tương tự
+            const today = new Date().toLocaleDateString();
 
-            // Reset nếu sang ngày mới hoặc chưa từng dùng
-            if (storedData.date !== today && !storedData.unlocked) {
-                usageData = { count: 0, date: today, unlocked: false };
-            } else {
+            if (storedData.unlocked) { // If already unlocked, keep it
+                usageData = { ...storedData, date: today }; // Update date just in case
+            } else if (storedData.date === today) { // If same day, load count
                 usageData = storedData;
+            } else { // If new day, reset count
+                usageData = { count: 0, date: today, unlocked: false };
             }
-            // Đảm bảo date được cập nhật nếu đã unlock
-            if (usageData.unlocked) usageData.date = today;
-
-            saveUsageData(); // Lưu lại trạng thái đã được cập nhật (đặc biệt là date)
-            checkUsageLimit();
+            saveUsageData(); // Save the potentially updated state (especially the date)
         }
 
         function saveUsageData() {
             localStorage.setItem('ai_pro_usage_v2', JSON.stringify(usageData));
-            updateUsageDisplay(); // Cập nhật hiển thị trên sidebar (nếu có)
+            updateUsageDisplay();
         }
-         function updateUsageDisplay() {
-            const counterEl = document.getElementById('usage-counter'); // Giả sử bạn có element này
-            if (!counterEl) return;
-            if (usageData.unlocked) {
-                counterEl.textContent = "Unlocked: Unlimited";
-            } else {
-                counterEl.textContent = `Hôm nay: ${usageData.count} / ${MAX_DAILY_USES}`;
-            }
-         }
 
+        function updateUsageDisplay() {
+            if (!usageCounterEl) return;
+            if (usageData.unlocked) {
+                usageCounterEl.textContent = "Unlocked: Unlimited";
+            } else {
+                usageCounterEl.textContent = `Daily Uses: ${usageData.count} / ${MAX_DAILY_USES}`;
+            }
+        }
 
         function checkUsageLimit() {
             const isLocked = !usageData.unlocked && usageData.count >= MAX_DAILY_USES;
             limitOverlay.style.display = isLocked ? 'flex' : 'none';
-            // Disable/enable inputs and buttons
-            [mainInput, sendBtn, voiceBtn, fileInput].forEach(el => el.disabled = isLocked);
-            modeButtons.forEach(btn => btn.disabled = isLocked);
-             // Visual indication
-            [voiceBtn, sendBtn, fileInput.labels[0]].forEach(btn => { if(btn) btn.style.cssText = isLocked ? 'opacity: 0.5; cursor: not-allowed;' : ''; });
-            modeButtons.forEach(btn => btn.style.cssText = isLocked ? 'opacity: 0.5; cursor: not-allowed;' : '');
+            // Disable relevant controls
+            const controls = [mainInput, sendBtn, voiceBtn, fileInput, ...modeButtons];
+            controls.forEach(el => {
+                if (el) { // Check if element exists
+                    el.disabled = isLocked;
+                    const targetElement = el.tagName === 'INPUT' && el.type === 'file' ? el.labels[0] : el;
+                    if (targetElement) {
+                         targetElement.style.opacity = isLocked ? '0.5' : '1';
+                         targetElement.style.cursor = isLocked ? 'not-allowed' : 'pointer';
+                    }
+                }
+            });
             return !isLocked;
         }
 
         function incrementUsageCount() {
             if (!usageData.unlocked) {
                 usageData.count++;
-                saveUsageData(); // Save updated count and today's date
-                checkUsageLimit();
+                saveUsageData(); // Save & update display
             }
         }
 
         unlockBtn.addEventListener('click', () => {
             if (passwordInput.value === UNLOCK_PASSWORD) {
                 usageData.unlocked = true;
-                usageData.date = new Date().toLocaleDateString(); // Cập nhật ngày khi unlock
-                saveUsageData(); // Lưu trạng thái đã unlock
-                passwordMessage.textContent = 'Mở khóa thành công!';
+                usageData.date = new Date().toLocaleDateString(); // Ensure date is current on unlock
+                saveUsageData();
+                passwordMessage.textContent = 'Unlocked Successfully!';
                 passwordMessage.className = 'mt-3 text-green-500';
-                setTimeout(() => checkUsageLimit(), 1500);
-            } else { /* ... xử lý sai mật khẩu ... */ }
+                setTimeout(() => checkUsageLimit(), 1500); // Re-enable controls
+            } else {
+                passwordMessage.textContent = 'Incorrect Password.';
+                passwordMessage.className = 'mt-3 text-red-500';
+            }
         });
 
-        // === Logic Voice Chat (Nâng cấp) ===
+        // === Enhanced Voice Chat Logic ===
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         let recognition;
-        let stopRecognitionTimeout; // Để tự động dừng nếu im lặng
-        let conversationMode = false; // Trạng thái đang nói chuyện liên tục
+        let conversationMode = false; // Flag for continuous conversation
+        let silenceTimeout; // Timeout to stop listening after silence
 
         if (SpeechRecognition) {
-            recognition = new SpeechRecognition();
-            recognition.continuous = false; // Nhận dạng từng câu
-            recognition.interimResults = false;
+             recognition = new SpeechRecognition();
+             recognition.continuous = false; // Process speech after pauses
+             recognition.interimResults = false;
 
-            recognition.onstart = () => { /* ... giữ nguyên ... */ };
-            recognition.onresult = (event) => {
-                clearTimeout(stopRecognitionTimeout); // Hủy timeout nếu có kết quả
-                const transcript = event.results[0][0].transcript;
-                handleVoiceQuery(transcript, recognition.lang); // Gửi đi xử lý
-            };
-            recognition.onend = () => {
-                isRecording = false;
-                micWave.classList.remove('listening');
-                voiceMicIcon.textContent = '🎤';
-                // Nếu đang trong chế độ trò chuyện và AI không nói, tự động lắng nghe lại
-                if (conversationMode && !speechSynthesis.speaking) {
-                    startListening(); // Gọi hàm lắng nghe lại
-                } else if (!conversationMode){
-                     voiceStatus.textContent = "Nhấn Mic để Bắt đầu Nói...";
-                }
-            };
-            recognition.onerror = (event) => { /* ... giữ nguyên xử lý lỗi ... */ };
-        } else { voiceBtn.style.display = 'none'; }
+             recognition.onstart = () => {
+                 isRecording = true;
+                 voiceStatus.textContent = "Listening...";
+                 micWave.classList.add('listening');
+                 voiceMicIcon.textContent = '🔴';
+                 // Clear previous silence timeout
+                 clearTimeout(silenceTimeout);
+                 // Set a timeout to stop listening if no speech is detected for a while
+                 silenceTimeout = setTimeout(() => {
+                     if (isRecording) {
+                         recognition.stop();
+                         voiceStatus.textContent = "Stopped due to silence.";
+                     }
+                 }, 7000); // Stop after 7 seconds of silence
+             };
+
+             recognition.onresult = (event) => {
+                 clearTimeout(silenceTimeout); // Got speech, clear timeout
+                 const transcript = event.results[0][0].transcript;
+                 handleVoiceQuery(transcript, recognition.lang); // Process the speech
+             };
+
+             recognition.onend = () => {
+                 isRecording = false;
+                 micWave.classList.remove('listening');
+                 voiceMicIcon.textContent = '🎤';
+                 clearTimeout(silenceTimeout); // Clear timeout on explicit stop or end
+                 // Automatically re-listen if in conversation mode and AI isn't speaking
+                 if (conversationMode && !speechSynthesis.speaking) {
+                     startListening();
+                 } else if (!conversationMode) {
+                     // Reset prompt if not in continuous mode
+                     voiceStatus.textContent = "Click Mic to Speak...";
+                 }
+             };
+
+             recognition.onerror = (event) => {
+                  isRecording = false;
+                  micWave.classList.remove('listening');
+                  voiceMicIcon.textContent = '🎤';
+                  clearTimeout(silenceTimeout);
+                 // ... (Keep existing error handling: not-allowed, no-speech, network) ...
+                if(event.error === 'not-allowed'){ voiceStatus.innerHTML = `Error: Microphone access denied.<br>Click the 🔒 icon in the address bar to allow access.`; }
+                else if (event.error === 'no-speech') { voiceStatus.textContent = 'No speech detected. Please try again.'; }
+                else if (event.error === 'network'){ voiceStatus.textContent = 'Network error during speech recognition.'; }
+                else { voiceStatus.textContent = `Error: ${event.error}`; }
+                // Close overlay on error only if NOT in conversation mode
+                 if (!conversationMode) {
+                     setTimeout(() => voiceOverlay.style.display = 'none', 3000);
+                 }
+             };
+        } else { voiceBtn.style.display = 'none'; } // Hide if not supported
 
         function startListening() {
-            if (!recognition || isRecording) return;
+            if (!recognition || isRecording || !conversationMode) return; // Only listen if in conv mode and not already listening
             const langMap = {'vi': 'vi-VN', 'en': 'en-US', 'zh-CN': 'zh-CN'};
             recognition.lang = langMap[languageSelect.value] || 'vi-VN';
             try {
                 recognition.start();
-                // Tự động dừng nếu im lặng quá 5 giây
-                stopRecognitionTimeout = setTimeout(() => {
-                    if (isRecording) recognition.stop();
-                }, 5000);
-            } catch(e) { /* ... xử lý lỗi start ... */ }
+            } catch(e) { console.error("Rec start error:", e); voiceStatus.textContent = `Error: ${e.message}`; }
         }
 
+        function speak(text, lang) {
+            return new Promise((resolve, reject) => {
+                speechSynthesis.cancel();
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = lang;
+                utterance.rate = 1.0;
+                let ended = false; // Flag to prevent multiple resolves/rejects
+
+                utterance.onstart = () => voiceStatus.textContent = "AI Replying...";
+                utterance.onend = () => {
+                    if (!ended) {
+                        ended = true;
+                        // Don't reset status here, onend of recognition handles it if conversationMode is on
+                        resolve();
+                    }
+                };
+                 utterance.onerror = (e) => {
+                     if (!ended) {
+                         ended = true;
+                         console.error("Speech Synthesis Error:", e);
+                         voiceStatus.textContent = `Speech Error: ${e.error}`;
+                         reject(e);
+                     }
+                 };
+                 // Ensure voices are loaded before speaking
+                 const voices = speechSynthesis.getVoices();
+                 if (voices.length > 0) {
+                     // Optional: Find a specific voice for the language if needed
+                     // utterance.voice = voices.find(v => v.lang === lang);
+                     speechSynthesis.speak(utterance);
+                 } else {
+                     // If voices not loaded yet, wait for the event
+                     speechSynthesis.onvoiceschanged = () => {
+                         // utterance.voice = speechSynthesis.getVoices().find(v => v.lang === lang);
+                         speechSynthesis.speak(utterance);
+                     };
+                 }
+
+            });
+        }
+
+
         async function handleVoiceQuery(transcript, langCode) {
-            voiceStatus.textContent = "AI Đang Xử Lý...";
+            voiceStatus.textContent = "AI Processing...";
             try {
                 const shortLang = langCode.split('-')[0];
+                // Always use the chat endpoint for voice interaction
                 const responseData = await callApi('/api/chat', { message: transcript, image: null, language: shortLang });
                 const tempDiv = document.createElement('div');
                 tempDiv.innerHTML = responseData.response;
@@ -175,70 +260,82 @@
 
                 if (!aiReplyText || aiReplyText.startsWith('❌')) throw new Error(aiReplyText || "AI response invalid.");
 
-                await speak(aiReplyText, langCode); // AI nói xong
+                await speak(aiReplyText, langCode); // Wait for speech to finish
 
-                // Tự động lắng nghe lại nếu đang ở chế độ trò chuyện
-                if (conversationMode) {
-                     startListening();
-                } else {
-                     voiceOverlay.style.display = 'none'; // Đóng overlay nếu không phải conversation mode
-                }
-
-            } catch (error) { /* ... xử lý lỗi và đọc lỗi ... */
-                 await speak(errorMessageToSpeak, langCode);
-                 // Đóng overlay nếu có lỗi nghiêm trọng
-                 setTimeout(() => voiceOverlay.style.display = 'none', 1000);
+            } catch (error) {
+                console.error("Voice Query Error:", error);
+                const errorMsg = error.message.includes('HTTP Error') ? "Problem connecting to AI." : error.message.startsWith('❌') ? error.message.substring(2) : "Error processing request.";
+                await speak(errorMsg, langCode); // Speak the error
+            } finally {
+                 incrementUsageCount(); // Count usage for voice query
+                 // If in conversation mode, recognition.onend will trigger startListening()
+                 // If not in conversation mode, overlay should close (handled by speak() or error)
+                 if (!conversationMode) {
+                     setTimeout(() => voiceOverlay.style.display = 'none', 500); // Close overlay after speaking
+                 }
             }
-            incrementUsageCount();
         }
 
-        voiceBtn.addEventListener('click', () => { /* ... giữ nguyên ... */
-            conversationMode = true; // Bật chế độ trò chuyện khi mở overlay
-            voiceOverlay.style.display = 'flex';
-            startListening(); // Bắt đầu lắng nghe ngay khi mở
+
+        voiceBtn.addEventListener('click', () => {
+             if (mainInput.disabled) return;
+             if (!recognition) return alert("Speech recognition not supported.");
+             if (!window.isSecureContext && window.location.protocol !== 'http:') return alert('Voice requires HTTPS or localhost.');
+
+             conversationMode = true; // Enter continuous conversation mode
+             voiceStatus.textContent = "Click Mic to Speak..."; // Initial prompt
+             micWave.classList.remove('listening');
+             voiceMicIcon.textContent = '🎤';
+             voiceOverlay.style.display = 'flex';
+             // Don't start listening immediately, wait for mic click
         });
 
-        voiceMicIcon.addEventListener('click', () => { // Nút này giờ chỉ để dừng/bắt đầu nói
+        voiceMicIcon.addEventListener('click', () => { // Mic toggles listening
             if (!recognition) return;
             if (isRecording) {
                 recognition.stop();
-                 clearTimeout(stopRecognitionTimeout);
+                clearTimeout(silenceTimeout);
             } else {
-                 startListening();
+                startListening();
             }
         });
 
-        voiceCloseBtn.addEventListener('click', () => { // Nút đóng sẽ tắt hẳn chế độ trò chuyện
-            conversationMode = false; // Tắt chế độ trò chuyện
-            if(isRecording) recognition.stop();
-            speechSynthesis.cancel();
-            clearTimeout(stopRecognitionTimeout);
-            voiceOverlay.style.display = 'none';
+        voiceCloseBtn.addEventListener('click', () => { // Close button exits conversation mode
+             conversationMode = false; // Exit continuous mode
+             if (isRecording) recognition.stop();
+             speechSynthesis.cancel();
+             clearTimeout(silenceTimeout);
+             voiceOverlay.style.display = 'none';
         });
 
-        // === Logic Flashcard/Mindmap ===
+        // --- Flashcard/Mindmap Logic ---
         function addSummaryActions(bubbleElement, summaryText) {
+            // Check if actions already exist
+            if (bubbleElement.querySelector('.summary-actions')) return;
+
             const actionsDiv = document.createElement('div');
             actionsDiv.className = 'summary-actions';
             actionsDiv.innerHTML = `
-                <button class="summary-btn" data-action="flashcard">Tạo Flashcards</button>
-                <button class="summary-btn" data-action="mindmap">Tạo Mindmap</button>
+                <button class="summary-btn" data-action="flashcard" title="Generate flashcards from this summary">Flashcards</button>
+                <button class="summary-btn" data-action="mindmap" title="Generate a mindmap structure from this summary">Mindmap</button>
             `;
             actionsDiv.querySelectorAll('.summary-btn').forEach(button => {
                 button.addEventListener('click', async () => {
+                    if (!checkUsageLimit()) return; // Check limit before generating
                     const action = button.dataset.action;
                     const endpoint = action === 'flashcard' ? '/api/generate-flashcards' : '/api/generate-mindmap';
-                    button.textContent = 'Đang tạo...';
+                    const originalText = button.textContent;
+                    button.textContent = 'Generating...';
                     button.disabled = true;
                     try {
+                        // Pass the original summary text to the new endpoint
                         const response = await callApi(endpoint, { textToConvert: summaryText });
-                        // Hiển thị kết quả trong bubble mới
-                        appendMessage(response.response, 'ai');
-                        incrementUsageCount(); // Tính lượt
+                        appendMessage(response.response, 'ai'); // Display result in new bubble
+                        incrementUsageCount(); // Count this as a use
                     } catch (error) {
-                        appendMessage(`❌ Lỗi tạo ${action}: ${error.message}`, 'ai');
+                        appendMessage(`❌ Error creating ${action}: ${error.message}`, 'ai');
                     } finally {
-                        button.textContent = action === 'flashcard' ? 'Tạo Flashcards' : 'Tạo Mindmap';
+                        button.textContent = originalText;
                         button.disabled = false;
                     }
                 });
@@ -246,18 +343,18 @@
             bubbleElement.appendChild(actionsDiv);
         }
 
-
-        // === Hàm Gửi Chính (Cập nhật) ===
+        // --- Main Send Function (handleSendMessage) ---
         const handleSendMessage = async () => {
-            // ... (Giữ nguyên phần kiểm tra limit, lấy prompt, image) ...
              if (!checkUsageLimit()) return;
-             const prompt = mainInput.value.trim();
-             const image = uploadedFile;
-             if (currentChatMode === 'edit_image' && !image) { alert("Vui lòng tải ảnh lên."); return; }
-             if (!prompt && !image) { return; } // Cho phép gửi ảnh không cần text ở chế độ chat/math
+             const prompt = mainInput.value.trim(); const image = uploadedFile;
+             if (currentChatMode === 'edit_image' && !image) { alert("Please upload an image for editing."); return; }
+             if (!prompt && !image) { return; } // Allow image-only for chat/math/edit
 
-             // ... (Giữ nguyên phần hiển thị user message, update title) ...
-             appendMessage(userMessageContent, 'user');
+             if (document.querySelector('.welcome-message')) document.querySelector('.welcome-message').remove();
+             let userMessageContent = prompt;
+             if (image) userMessageContent = `<img src="${image}" style="max-height: 100px; max-width: 150px; border-radius: 8px; display:block; margin-bottom: 5px;" alt="uploaded"><p>${prompt || 'Analyze/Edit this image'}</p>`;
+
+             appendMessage(userMessageContent || "[Image Sent]", 'user');
              updateChatTitle(prompt, !prompt && !!image);
              const loadingBubble = showLoading();
              const currentPromptValue = prompt; const currentImageValue = image;
@@ -266,10 +363,13 @@
             try {
                 let responseData;
                 let finalContent = '';
-                let isSummary = false; // Cờ để biết có cần thêm nút flashcard/mindmap không
+                let isSummaryResult = false; // Flag to add actions later
 
                 switch (currentChatMode) {
-                    // ... (Giữ nguyên case 'image', 'video', 'math') ...
+                    case 'image':
+                        responseData = await callApi('/api/pollinations-image', { prompt: currentPromptValue });
+                        finalContent = `<img src="${responseData.imageUrl}" class="generated-image">`;
+                        break;
                     case 'edit_image':
                         loadingBubble.querySelector('.bubble').innerHTML = 'Generating edit description...';
                         const descriptionResponse = await callApi('/api/edit-image', { message: currentPromptValue, image: currentImageValue });
@@ -277,54 +377,70 @@
                         if (newPrompt.startsWith('❌')) throw new Error(newPrompt);
                         loadingBubble.querySelector('.bubble').innerHTML = 'Generating edited image...';
                         const imageResponse = await callApi('/api/pollinations-image', { prompt: newPrompt });
-                        finalContent = `<p><strong>Generated prompt:</strong> ${newPrompt}</p><img src="${imageResponse.imageUrl}" class="generated-image">`;
+                        finalContent = `<p><strong>Generated based on:</strong> ${newPrompt}</p><img src="${imageResponse.imageUrl}" class="generated-image">`;
+                        break;
+                    case 'math':
+                        responseData = await callApi('/api/math', { question: currentPromptValue, image: currentImageValue });
+                        finalContent = responseData.response; // MathJax will render this
                         break;
                     case 'summarize_youtube':
                         responseData = await callApi('/api/summarize-youtube', { youtubeUrl: currentPromptValue });
                         finalContent = responseData.response;
-                        isSummary = true; // Đánh dấu đây là tóm tắt
+                        isSummaryResult = true; // Mark for actions
                         break;
                     case 'notetaker':
                         responseData = await callApi('/api/summarize-text', { textToSummarize: currentPromptValue });
                         finalContent = responseData.response;
-                        isSummary = true; // Đánh dấu đây là tóm tắt
+                        isSummaryResult = true; // Mark for actions
                         break;
-                    default: // Chat
+                    case 'video':
+                        loadingBubble.querySelector('.bubble').innerHTML = 'Generating video frames...';
+                        responseData = await callApi('/api/pollinations-frames', { prompt: currentPromptValue });
+                        if (!responseData.frames || responseData.frames.length === 0) throw new Error('No video frames received.');
+                        loadingBubble.querySelector('.bubble').innerHTML = 'Rendering GIF...';
+                        const videoUrl = await createGifFromFrames(responseData.frames);
+                        finalContent = `<img src="${videoUrl}" class="generated-video" alt="Generated Video">`;
+                        break;
+                    default: // chat
                         responseData = await callApi('/api/chat', { message: currentPromptValue, image: currentImageValue, language: languageSelect.value });
                         finalContent = responseData.response;
                         break;
                 }
 
-                const bubbleElement = loadingBubble.querySelector('.bubble');
-                if (currentChatMode !== 'math') { // MathJax xử lý riêng
-                    bubbleElement.innerHTML = finalContent;
+                const aiBubbleElement = loadingBubble.querySelector('.bubble');
+                aiBubbleElement.innerHTML = finalContent; // Update with final content
+
+                if (currentChatMode === 'math') {
+                     MathJax.typesetPromise([aiBubbleElement]); // Render LaTeX for math
                 }
 
-                // Thêm nút Flashcard/Mindmap nếu là kết quả tóm tắt
-                if (isSummary && !finalContent.startsWith('❌')) {
-                    addSummaryActions(bubbleElement, finalContent);
+                // Add summary actions AFTER content is set
+                if (isSummaryResult && !finalContent.startsWith('❌')) {
+                    addSummaryActions(aiBubbleElement, finalContent);
                 }
 
-                saveMessage(bubbleElement.innerHTML, 'ai');
+                saveMessage(aiBubbleElement.innerHTML, 'ai'); // Save final HTML
                 incrementUsageCount();
-            } catch (error) { /* ... giữ nguyên xử lý lỗi ... */ }
+
+            } catch (error) {
+                console.error("Error in handleSendMessage:", error);
+                const errorMessage = `❌ Lỗi: ${error.message}`;
+                loadingBubble.querySelector('.bubble').textContent = errorMessage;
+                saveMessage(errorMessage, 'ai');
+            }
         };
 
-        // --- Giữ nguyên các hàm và listener khác ---
-        // (playIntro, save/load history, start/load chat, render history, appendMessage, showLoading, callApi, createGif, etc.)
-         sendBtn.addEventListener('click', handleSendMessage);
-         mainInput.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSendMessage(); } });
-         // ... (Các hàm helper khác giữ nguyên) ...
+        // --- Keep all other helper functions and initializations ---
+         // (playIntro, save/load history, start/load chat, render history, appendMessage, showLoading, callApi, createGif, input resize)
 
-        // --- Khởi tạo ---
         function initializeApp() {
             playIntro();
             loadHistoryFromStorage();
             if (Object.keys(chatHistory).length === 0) startNewChat();
             else loadChat(Object.keys(chatHistory).sort().pop());
             renderChatHistory();
-            loadUsageData(); // Dùng hàm mới để load và kiểm tra limit hàng ngày
-            document.querySelector('.mode-btn[data-mode="chat"]')?.click();
+            loadUsageData(); // Use the daily limit loader
+             document.querySelector('.mode-btn[data-mode="chat"]')?.click(); // Set default mode and visibility
         }
         initializeApp();
     });

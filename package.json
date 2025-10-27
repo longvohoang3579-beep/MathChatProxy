@@ -12,7 +12,7 @@
     "cors": "^2.8.5",
     "dotenv": "^16.3.1",
     "@google/genai": "^0.13.0",
-    "youtube-transcript": "^1.2.9",
+    "youtube-transcript": "^1",
     "axios": "^1.6.8"
   }
 }

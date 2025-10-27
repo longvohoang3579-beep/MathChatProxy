@@ -9,11 +9,14 @@
     "dev": "nodemon server.js"
   },
   "dependencies": {
+    "@langchain/community": "^0.2.0", // Cần cho YoutubeLoader
     "body-parser": "^1.20.3",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
     "express": "^4.19.2",
-    "node-fetch": "^3.3.2"
+    "node-fetch": "^3.3.2",
+    "youtube-transcript": "^1.1.0", // Phụ thuộc của YoutubeLoader
+    "youtubei.js": "^6.4.0"      // Phụ thuộc của YoutubeLoader
   },
   "engines": {
     "node": ">=18.0.0"

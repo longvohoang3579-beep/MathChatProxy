@@ -11,13 +11,9 @@
     "express": "^4.19.2",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
-    
     "body-parser": "^1.20.2",
     "node-fetch": "^3.3.2",
     "@langchain/community": "^0.0.10",  
-    
     "axios": "^1.6.8"
-    // Các gói như youtube-transcript hoặc @google/genai bị loại bỏ/không cần thiết
-    // vì code server.js mới của bạn đang sử dụng fetch và YoutubeLoader từ LangChain.
   }
 }

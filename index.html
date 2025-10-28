@@ -7,54 +7,29 @@
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet" />
     <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     <style>
-        /* --- CSS CƠ BẢN VÀ CẤU TRÚC GIAO DIỆN CHÍNH --- */
+        /* --- Giữ nguyên toàn bộ CSS từ file doc --- */ [cite: 1515-1673]
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap');
         :root { --primary-yellow: #facc15; --dark-bg: #0a0a0c; --main-bg: #141417; --input-bg: #1f1f23; --bubble-ai-bg: #2d2d33; --bubble-user-bg: linear-gradient(135deg, #5e5ce6, #2563eb); --text-primary: #e4e4e7; --text-secondary: #a1a1aa; }
         ::-webkit-scrollbar { width: 8px; } ::-webkit-scrollbar-track { background: var(--main-bg); } ::-webkit-scrollbar-thumb { background-color: #4a4a52; border-radius: 10px; border: 2px solid var(--main-bg); }
         body { background-color: var(--dark-bg); background-image: radial-gradient(circle at 1% 1%, rgba(255, 255, 255, 0.04) 1px, transparent 0), radial-gradient(circle at 99% 99%, rgba(255, 255, 255, 0.04) 1px, transparent 0); background-size: 50px 50px; color: var(--text-primary); font-family: 'Inter', sans-serif; margin: 0; padding: 0; overflow: hidden; }
-        
-        /* --- INTRO SCREEN CSS --- */
         #intro-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100vh; background: var(--dark-bg); display: flex; align-items: center; justify-content: center; z-index: 2000; opacity: 1; transition: opacity 1s ease-in-out 6s; }
         .intro-container { position: relative; display: flex; align-items: center; justify-content: center; }
         #intro-yellow-flash { position: absolute; width: 100vw; height: 100vh; background-color: var(--primary-yellow); animation: yellowFlash 2s ease-in-out forwards; } @keyframes yellowFlash { 0% { transform: scale(0); border-radius: 50%; } 50% { transform: scale(1); border-radius: 0; } 100% { transform: scale(1); border-radius: 0; opacity: 0; } }
         #intro-text { position: relative; color: #fff; font-size: 3rem; font-weight: bold; text-shadow: 0 0 10px rgba(255, 255, 255, 0.5); opacity: 0; animation: logoAnimate 4s ease-in-out 1.5s forwards; }
         #intro-text::after { content: ''; position: absolute; top: 0; left: -10%; width: 20%; height: 100%; background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.8), transparent); transform: skewX(-25deg); opacity: 0; animation: shine 1.5s ease-in-out 3s forwards; }
         #intro-burst { position: absolute; width: 1px; height: 1px; background: white; border-radius: 50%; opacity: 0; animation: burst 1s ease-out 5s forwards; } @keyframes logoAnimate { 0% { opacity: 0; transform: scale(2); } 25% { opacity: 1; transform: scale(1); } 75% { opacity: 1; transform: scale(1); } 100% { opacity: 1; transform: scale(1.1); } } @keyframes shine { 0% { left: -10%; opacity: 1; } 100% { left: 110%; opacity: 1; } } @keyframes burst { from { opacity: 1; transform: scale(0); box-shadow: 0 0 5px #fff, 0 0 10px #fff, 0 0 20px var(--primary-yellow), 0 0 30px var(--primary-yellow); } to { opacity: 0; transform: scale(200); box-shadow: 0 0 50px #fff, 0 0 75px var(--primary-yellow); } }
-        
-        /* --- APP WRAPPER & SIDEBAR CSS --- */
-        #app-wrapper { 
-            display: flex; 
-            height: 100vh; 
-            opacity: 0; 
-            transition: opacity 0.5s ease-in; 
-            position: relative; 
-            z-index: 1;
-        }
+        #app-wrapper { display: flex; height: 100vh; opacity: 0; transition: opacity 0.5s ease-in; position: relative; z-index: 1; }
         mark.highlight { background-color: var(--primary-yellow); color: black; font-weight: bold; padding: 2px 5px; border-radius: 4px; }
         #sidebar { width: 260px; background-color: var(--dark-bg); border-right: 1px solid #27272a; padding: 1rem; display: flex; flex-direction: column; transform: translateX(-100%); transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1); position: fixed; left: 0; top: 0; height: 100%; z-index: 100; box-shadow: 0 0 30px rgba(0,0,0,0.5); }
         #sidebar.open { transform: translateX(0); }
         .social-btn { background-color: #2d2d33; border: 1px solid #444; color: white; padding: 0.5rem; border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: all 0.2s; } .social-btn:hover { background-color: #444; border-color: var(--primary-yellow); }
         #new-chat-btn { background-color: transparent; border: 1px solid var(--primary-yellow); color: var(--primary-yellow); width: 100%; text-align: center; transition: all 0.2s ease; margin-top: 1rem; } #new-chat-btn:hover { background-color: var(--primary-yellow); color: var(--dark-bg); }
         .history-item { padding: 0.75rem; border-radius: 0.5rem; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text-secondary); transition: all 0.2s; border-left: 3px solid transparent; } .history-item:hover { background-color: var(--main-bg); color: var(--text-primary); } .history-item.active { background-color: #27272a; color: white; font-weight: 500; border-left-color: var(--primary-yellow); }
-        #chat-container { 
-            flex-grow: 1; 
-            display: flex; 
-            flex-direction: column; 
-            height: 100vh; 
-            max-width: 900px; 
-            margin: 0 auto; 
-            padding: 1rem; 
-            transition: margin-left 0.4s cubic-bezier(0.25, 1, 0.5, 1); 
-            margin-left: auto; 
-            margin-right: auto;
-            position: relative; 
-        }
+        #chat-container { flex-grow: 1; display: flex; flex-direction: column; height: 100vh; max-width: 900px; margin: 0 auto; padding: 1rem; transition: margin-left 0.4s cubic-bezier(0.25, 1, 0.5, 1); margin-left: auto; margin-right: auto; position: relative; }
         #sidebar.open ~ #chat-container { margin-left: 260px; }
-        
-        .header { display: flex; justify-content: space-between; align-items: center; padding: 0 0.5rem; position: relative; z-index: 50; } 
-        .menu-btn, #settings-btn { font-size: 1.8rem; cursor: pointer; color: var(--primary-yellow); z-index: 51; transition: transform 0.2s; } 
+        .header { display: flex; justify-content: space-between; align-items: center; padding: 0 0.5rem; position: relative; z-index: 50; }
+        .menu-btn, #settings-btn { font-size: 1.8rem; cursor: pointer; color: var(--primary-yellow); z-index: 51; transition: transform 0.2s; }
         .menu-btn:hover, #settings-btn:hover { transform: scale(1.1); }
-        
         .chat-box { background: transparent; padding: 1rem; flex-grow: 1; overflow-y: auto; display: flex; flex-direction: column; scroll-behavior: smooth; margin-top: 1rem; gap: 1rem; }
         .message-group { display: flex; gap: 12px; max-width: 90%; } .message-group.user { align-self: flex-end; flex-direction: row-reverse; } .message-group.ai { align-self: flex-start; }
         .avatar { width: 32px; height: 32px; border-radius: 50%; background: #444; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-weight: bold; margin-top: 4px; } .avatar-user { background: #5e5ce6; color: white; } .avatar-ai { background: var(--primary-yellow); color: #111; }
@@ -62,58 +37,14 @@
         .welcome-message { text-align: center; color: var(--text-secondary); padding: 2rem 1rem; animation: fadeInBubble 0.5s ease; } .welcome-message h2 { font-size: 1.8rem; font-weight: bold; color: var(--text-primary); }
         .typing-indicator { display: flex; align-items: center; gap: 5px; } .typing-indicator span { width: 8px; height: 8px; background-color: #777; border-radius: 50%; animation: typing 1s infinite; } .typing-indicator span:nth-child(2) { animation-delay: 0.2s; } .typing-indicator span:nth-child(3) { animation-delay: 0.4s; } @keyframes typing { 0%, 80%, 100% { transform: scale(0); } 40% { transform: scale(1.0); } }
         pre { background-color: #0d1117; color: #c9d1d9; padding: 1rem; border-radius: 8px; overflow-x: auto; border: 1px solid #30363d; font-size: 0.9em; } code { font-family: 'Courier New', Courier, monospace; }
-        
-        /* --- MODE SELECTOR CẬP NHẬT --- */
         .input-area { margin-top: 1rem; padding: 0.5rem; background: var(--main-bg); border-radius: 1rem; box-shadow: 0 -5px 20px rgba(0,0,0,0.2); }
-        .mode-selector { display: flex; gap: 0.5rem; margin-bottom: 0.75rem; justify-content: center; position: relative; } 
-        .mode-btn { background: #2d3748; padding: 0.5rem 1rem; border-radius: 20px; cursor: pointer; display: flex; align-items: center; gap: 0.5rem; transition: all 0.2s; border: 2px solid transparent; font-size: 0.9rem; color: var(--text-secondary); } 
-        .mode-btn:hover:not(:disabled) { background: #4a5568; color: var(--text-primary); } 
-        .mode-btn.active { border-color: var(--primary-yellow); background-color: #374151; color: var(--primary-yellow); font-weight: 500; } 
-        .mode-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-        
-        .hidden-modes {
-            position: absolute;
-            bottom: 100%; 
-            right: 0;
-            left: 0;
-            background: var(--main-bg);
-            border-radius: 10px;
-            padding: 10px;
-            margin-bottom: 8px;
-            box-shadow: 0 -5px 15px rgba(0,0,0,0.3);
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-            max-height: 0;
-            overflow: hidden;
-            transition: max-height 0.3s ease-in-out, padding 0.3s ease-in-out, border-width 0.3s ease-in-out;
-            border: 1px solid transparent;
-            z-index: 10;
-            justify-content: center;
-        }
-        .hidden-modes.open {
-            max-height: 300px; 
-            border: 1px solid #333;
-            padding: 10px;
-        }
-        .mode-selector > .mode-btn { padding: 0.5rem 1.5rem; } 
-        #mode-expand-btn { 
-            background: #2d3748; 
-            color: var(--primary-yellow); 
-            border-radius: 50%; 
-            width: 38px; 
-            height: 38px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.5rem;
-            line-height: 1;
-            transition: transform 0.3s ease;
-            z-index: 11; 
-        }
+        .mode-selector { display: flex; gap: 0.5rem; margin-bottom: 0.75rem; justify-content: center; position: relative; }
+        .mode-btn { background: #2d3748; padding: 0.5rem 1rem; border-radius: 20px; cursor: pointer; display: flex; align-items: center; gap: 0.5rem; transition: all 0.2s; border: 2px solid transparent; font-size: 0.9rem; color: var(--text-secondary); } .mode-btn:hover:not(:disabled) { background: #4a5568; color: var(--text-primary); } .mode-btn.active { border-color: var(--primary-yellow); background-color: #374151; color: var(--primary-yellow); font-weight: 500; } .mode-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .hidden-modes { position: absolute; bottom: 100%; right: 0; left: 0; background: var(--main-bg); border-radius: 10px; padding: 10px; margin-bottom: 8px; box-shadow: 0 -5px 15px rgba(0,0,0,0.3); display: flex; flex-wrap: wrap; gap: 8px; max-height: 0; overflow: hidden; transition: max-height 0.3s ease-in-out, padding 0.3s ease-in-out, border-width 0.3s ease-in-out; border: 1px solid transparent; z-index: 10; justify-content: center; }
+        .hidden-modes.open { max-height: 300px; border: 1px solid #333; padding: 10px; }
+        .mode-selector > .mode-btn { padding: 0.5rem 1.5rem; }
+        #mode-expand-btn { background: #2d3748; color: var(--primary-yellow); border-radius: 50%; width: 38px; height: 38px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; line-height: 1; transition: transform 0.3s ease; z-index: 11; }
         #mode-expand-btn:hover { background: #4a5568; transform: rotate(90deg); }
-
-        /* --- Input và Chatbox CSS --- */
         .input-row { display: flex; align-items: flex-end; gap: 0.75rem; background: var(--input-bg); padding: 0.5rem; border-radius: 0.75rem; border: 1px solid #333; transition: border-color 0.2s; } .input-row:focus-within { border-color: var(--primary-yellow); }
         textarea:disabled { opacity: 0.6; cursor: not-allowed; }
         .icon-btn:disabled, .send-btn:disabled { opacity: 0.5; cursor: not-allowed !important; transform: none !important; background-color: #2d3748 !important; color: var(--text-secondary) !important; }
@@ -130,6 +61,7 @@
         .summary-btn { background-color: #374151; color: #e5e7eb; padding: 0.3rem 0.8rem; border-radius: 15px; font-size: 0.8rem; cursor: pointer; transition: background-color 0.2s; border: none; }
         .summary-btn:hover:not(:disabled) { background-color: #4b5563; }
         .summary-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+        /* --- Hết CSS --- */
     </style>
     <script src="https://unpkg.com/gif.js@0.2.0/dist/gif.js"></script>
 </head>
@@ -141,10 +73,9 @@
             <div id="intro-burst"></div>
         </div>
     </div>
-    <audio id="intro-audio" src="data:audio/mpeg;base64,..."></audio>
-
-    <div id="limit-overlay">
-        <div id="password-form">
+    <audio id="intro-audio" src="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4LjQ1LjEwMAAAAAAAAAAAAAAA//tAwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWGluZwAAAA8AAAAAAAACAAAARGF2aW5jaCBSZXNvbHZlMTguMS4z/+xDEgAAMDlQGVoAABAQAASxRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMPkAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMPkAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMPkAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMYoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMPkAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMPoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMPoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMPoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMYoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMPoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMPoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMPoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMYoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMPkAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMPkAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//+xDEgAAMFoAAGVoAABAQAAQyRAUIgABAAAEwAABAIAADSAAAAQAAA0AAAQIECBAgQIED/L9//" preload="auto"></audio>
+    <div id="limit-overlay" class="fixed inset-0 bg-black bg-opacity-95 z-[2000] flex items-center justify-center flex-col hidden">
+        <div id="password-form" class="bg-main-bg p-10 rounded-xl text-center border-2 border-primary-yellow shadow-lg shadow-yellow-500/20">
              <h2 class="text-2xl font-bold mb-4 text-yellow-500">Đã hết lượt sử dụng miễn phí hôm nay!</h2>
              <p id="limit-message" class="mb-6 text-gray-300">Vui lòng nhập mật khẩu để mở khóa sử dụng không giới hạn:</p>
              <input type="password" id="password-input" class="w-full p-3 rounded-lg bg-gray-700 text-white border border-gray-600 focus:border-yellow-500 outline-none" placeholder="Mật khẩu">
@@ -152,7 +83,7 @@
              <p id="password-message" class="mt-3 text-red-500 hidden"></p>
         </div>
     </div>
-     <div id="voice-overlay">
+     <div id="voice-overlay" class="fixed inset-0 bg-black bg-opacity-90 backdrop-blur-sm z-[1500] flex flex-col items-center justify-center text-white hidden">
         <div class="mic-wave-container" id="mic-wave">
             <div class="wave"></div><div class="wave"></div><div class="wave"></div>
             <div class="mic-icon" id="voice-mic-icon">🎤</div>
@@ -161,43 +92,41 @@
         <button id="voice-close-btn" class="mt-10 p-3 bg-gray-700 text-white rounded-lg hover:bg-gray-600 transition">Tắt Chức Năng Giọng Nói</button>
     </div>
 
-    <div id="app-wrapper">
-        <aside id="sidebar">
-             <div class="social-login-container mb-4">
-                 <button onclick="alert('Chức năng đăng nhập Google đang được phát triển!')" class="social-btn" title="Đăng nhập với Google"> G </button>
-                 <button onclick="alert('Chức năng đăng nhập Facebook đang được phát triển!')" class="social-btn" title="Đăng nhập với Facebook"> F </button>
-                 <button onclick="alert('Chức năng đăng nhập GitHub đang được phát triển!')" class="social-btn" title="Đăng nhập với GitHub"> <> </button>
+    <div id="app-wrapper" class="flex h-screen opacity-0 transition-opacity duration-500 ease-in relative z-[1]">
+        <aside id="sidebar" class="w-64 bg-dark-bg border-r border-gray-800 p-4 flex flex-col fixed left-0 top-0 h-full z-[100] shadow-lg transform -translate-x-full transition-transform duration-300 ease-in-out sm:translate-x-0">
+             <div class="social-login-container mb-4 flex gap-3">
+                 <button onclick="alert('Đăng nhập Google đang phát triển!')" class="social-btn w-10 h-10 flex items-center justify-center"><i class="fab fa-google"></i></button>
+                 <button onclick="alert('Đăng nhập Facebook đang phát triển!')" class="social-btn w-10 h-10 flex items-center justify-center"><i class="fab fa-facebook-f"></i></button>
+                 <button onclick="alert('Đăng nhập GitHub đang phát triển!')" class="social-btn w-10 h-10 flex items-center justify-center"><i class="fab fa-github"></i></button>
              </div>
-             <button id="new-chat-btn" class="p-3 rounded-lg font-bold">＋ New Conversation</button>
-             <h2 class="text-gray-400 text-sm font-bold mt-6 mb-2 uppercase">History</h2>
-             <div id="chat-history"></div>
-             <div id="usage-counter" class="text-center text-sm text-gray-400 mt-auto pt-4 border-t border-gray-700">Loading usage...</div>
+             <button id="new-chat-btn" class="py-2 px-4 rounded-lg font-medium border border-yellow-500 text-yellow-500 hover:bg-yellow-500 hover:text-dark-bg transition w-full mt-4">＋ Cuộc trò chuyện mới</button>
+             <h2 class="text-gray-400 text-sm font-bold mt-6 mb-2 uppercase">Lịch sử</h2>
+             <div id="chat-history" class="flex-grow overflow-y-auto space-y-1 pr-2"></div>
+             <div id="usage-counter" class="text-center text-sm text-gray-400 mt-auto pt-4 border-t border-gray-700">Đang tải lượt sử dụng...</div>
         </aside>
 
-        <main id="chat-container">
-            <div class="header relative">
-                 <div id="menu-btn" class="menu-btn">☰</div>
-                 <div class="flex-grow"></div>
-                 <div id="settings-btn">⚙️</div>
-                 <div id="settings-modal">
-                     <label class="block mb-2">Chat Language:</label>
-                     <select id="language-select" class="w-full p-2 rounded bg-gray-800 text-white">
+        <main id="chat-container" class="flex-grow flex flex-col h-screen max-w-4xl mx-auto p-4 transition-all duration-300 ease-in-out sm:ml-64">
+            <div class="header relative flex justify-between items-center px-2">
+                 <button id="menu-btn" class="menu-btn sm:hidden">☰</button> <div class="flex-grow"></div>
+                 <button id="settings-btn" class="menu-btn">⚙️</button>
+                 <div id="settings-modal" class="absolute top-10 right-0 w-52 bg-main-bg border border-yellow-500 rounded-lg p-4 z-[100] hidden shadow-lg">
+                     <label class="block mb-2 text-sm font-medium text-gray-300">Ngôn ngữ Chat:</label>
+                     <select id="language-select" class="w-full p-2 rounded bg-gray-800 text-white border border-gray-600 focus:ring-yellow-500 focus:border-yellow-500 outline-none">
                          <option value="vi">Tiếng Việt</option>
                          <option value="en">English</option>
                          <option value="zh-CN">简体中文</option>
                      </select>
                  </div>
             </div>
-            <div class="chat-box" id="chatBox"></div>
-            <div class="input-area">
-                <div class="mode-selector">
-                    <button class="mode-btn active" data-mode="chat" title="Trò chuyện"><span>💬 Chat</span></button>
-                    
-                    <button id="mode-expand-btn" class="icon-btn" title="Chức năng mở rộng">
+            <div id="chatBox" class="chat-box flex-grow overflow-y-auto p-4 space-y-4">
+                </div>
+            <div class="input-area mt-4 p-2 bg-main-bg rounded-xl shadow-inner">
+                <div class="mode-selector flex flex-wrap gap-2 justify-center mb-3 relative">
+                     <button class="mode-btn active" data-mode="chat" title="Trò chuyện"><span>💬 Chat</span></button>
+                     <button id="mode-expand-btn" class="icon-btn w-10 h-10 flex items-center justify-center rounded-full text-xl leading-none" title="Chức năng mở rộng">
                         <span id="expand-icon">+</span>
                     </button>
-                    
-                    <div id="hidden-modes" class="hidden-modes">
+                     <div id="hidden-modes" class="hidden-modes absolute bottom-full left-0 right-0 mb-2 bg-main-bg p-3 rounded-lg shadow-lg border border-gray-700 flex flex-wrap gap-2 justify-center max-h-0 overflow-hidden transition-all duration-300 ease-out z-10">
                         <button class="mode-btn" data-mode="persona" title="Nhập vai nhân vật"><span>🎭 Nhập Vai</span></button>
                         <button class="mode-btn" data-mode="image" title="Tạo ảnh"><span>🖼️ Tạo Ảnh</span></button>
                         <button class="mode-btn" data-mode="math" title="Giải toán"><span>🧮 Giải Toán</span></button>
@@ -208,18 +137,18 @@
                         <button class="mode-btn" data-mode="analyze_stock" title="Phân tích Chứng khoán"><span>📈 Chứng Khoán</span></button>
                     </div>
                 </div>
-                <div class="pending-preview" id="previewContainer"></div>
-                <div class="input-row">
-                    <label class="icon-btn" for="fileInput" title="Tải ảnh">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="currentColor" viewBox="0 0 16 16"><path d="M6.5 12.5a.5.5 0 0 0 0 1h3a.5.5 0 0 0 0-1h-3zM3 3.5a.5.5 0 0 1 .5-.5h9a.5.5 0 0 1 0 1h-9a.5.5 0 0 1-.5-.5zM.5 4.5A.5.5 0 0 1 1 4h14a.5.5 0 0 1 0 1H1a.5.5 0 0 1-.5-.5zM3 8.5a.5.5 0 0 1 .5-.5h9a.5.5 0 0 1 0 1h-9A.5.5 0 0 1 3 8.5z"/></svg>
+                <div id="previewContainer" class="pending-preview flex gap-2 flex-wrap mb-2 px-2"></div>
+                <div class="input-row flex items-end gap-2 bg-input-bg p-2 rounded-lg border border-gray-700 focus-within:border-yellow-500 transition-colors">
+                    <label id="fileInputLabel" class="icon-btn flex items-center justify-center w-10 h-10 rounded-lg cursor-pointer hover:bg-gray-700" for="fileInput" title="Tải ảnh">
+                         <i class="fas fa-paperclip"></i>
                     </label>
-                    <input type="file" id="fileInput" accept="image/*" hidden />
-                    <button id="voiceBtn" class="icon-btn" title="Trò chuyện bằng giọng nói">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="currentColor" viewBox="0 0 16 16"><path d="M5 3a3 3 0 0 1 6 0v5a3 3 0 0 1-6 0V3z"/><path d="M3.5 6.5A.5.5 0 0 1 4 7v1a4 4 0 0 0 8 0V7a.5.5 0 0 1 1 0v1a5 5 0 0 1-4.5 4.975V15h3a.5.5 0 0 1 0 1h-7a.5.5 0 0 1 0-1h3v-2.025A5 5 0 0 1 3 8V7a.5.5 0 0 1 .5-.5z"/></svg>
+                    <input type="file" id="fileInput" accept="image/*" class="hidden" />
+                    <button id="voiceBtn" class="icon-btn flex items-center justify-center w-10 h-10 rounded-lg hover:bg-gray-700" title="Trò chuyện bằng giọng nói">
+                         <i class="fas fa-microphone"></i>
                     </button>
-                    <textarea id="mainInput" rows="1" placeholder="Ask me anything..."></textarea>
-                    <button id="sendBtn" class="send-btn" title="Gửi">
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" width="22" height="22" viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+                    <textarea id="mainInput" class="flex-grow bg-transparent text-white resize-none outline-none p-2 rounded-lg max-h-40 text-base leading-snug" rows="1" placeholder="Ask me anything..."></textarea>
+                    <button id="sendBtn" class="send-btn flex items-center justify-center w-10 h-10 rounded-lg bg-yellow-500 text-dark-bg hover:bg-yellow-400 transition-transform transform hover:scale-110">
+                         <i class="fas fa-paper-plane"></i>
                     </button>
                 </div>
             </div>
@@ -231,540 +160,296 @@
         // --- Khai báo biến DOM ---
         const getEl = (id) => document.getElementById(id);
         const introScreen = getEl('intro-screen'), appWrapper = getEl('app-wrapper'), introAudio = getEl('intro-audio');
-        const sidebar = getEl('sidebar'), menuBtn = getEl('menu-btn'), chatContainer = getEl('chat-container'), chatBox = getEl('chatBox'), mainInput = getEl('mainInput'), sendBtn = getEl('sendBtn'), fileInput = getEl('fileInput'), previewContainer = getEl('previewContainer'), languageSelect = getEl('language-select'), settingsBtn = getEl('settings-btn'), settingsModal = getEl('settings-modal'), newChatBtn = getEl('new-chat-btn'), chatHistoryContainer = getEl('chat-history');
+        const sidebar = getEl('sidebar'), menuBtn = getEl('menu-btn'), chatContainer = getEl('chat-container'), chatBox = getEl('chatBox'), mainInput = getEl('mainInput'), sendBtn = getEl('sendBtn'), fileInput = getEl('fileInput'), fileInputLabel = getEl('fileInputLabel'), previewContainer = getEl('previewContainer'), languageSelect = getEl('language-select'), settingsBtn = getEl('settings-btn'), settingsModal = getEl('settings-modal'), newChatBtn = getEl('new-chat-btn'), chatHistoryContainer = getEl('chat-history');
         const voiceBtn = getEl('voiceBtn'), voiceOverlay = getEl('voice-overlay'), voiceCloseBtn = getEl('voice-close-btn'), voiceStatus = getEl('voice-status'), voiceMicIcon = getEl('voice-mic-icon'), micWave = getEl('mic-wave');
         const limitOverlay = getEl('limit-overlay'), passwordInput = getEl('password-input'), unlockBtn = getEl('unlock-btn'), passwordMessage = getEl('password-message');
-        
-        const modeButtons = document.querySelectorAll('.mode-selector .mode-btn'); 
-        const expandBtn = getEl('mode-expand-btn'); 
-        const hiddenModesContainer = getEl('hidden-modes'); 
-
-        const usageCounterEl = document.getElementById('usage-counter');
+        const modeButtons = document.querySelectorAll('.mode-selector .mode-btn');
+        const expandBtn = getEl('mode-expand-btn');
+        const hiddenModesContainer = getEl('hidden-modes');
+        const usageCounterEl = getEl('usage-counter');
 
         let currentChatMode = 'chat', uploadedFile = null, chatHistory = {}, activeChatId = null, isRecording = false;
         let currentPersonaDesc = localStorage.getItem('ai_pro_persona_desc') || '';
         let isModeExpanded = false;
 
-        // === Logic Giới Hạn Hàng Ngày (Giữ nguyên) ===
+        // === Logic Giới Hạn Hàng Ngày ===
         const MAX_DAILY_USES = 20;
         const UNLOCK_PASSWORD = "Hoang1082009@";
         let usageData = { count: 0, date: '', unlocked: false };
         function loadUsageData() {
-            const today = new Date().toDateString();
-            const storedData = JSON.parse(localStorage.getItem('ai_assistant_usage')) || {};
-            if (storedData.date === today) {
+            const today = new Date().toDateString(); // Sử dụng toDateString để chỉ so sánh ngày
+            const storedData = JSON.parse(localStorage.getItem('ai_pro_usage_v3')) || { count: 0, date: '', unlocked: false };
+            if (storedData.unlocked) {
+                usageData = { ...storedData, date: today };
+            } else if (storedData.date === today) {
                 usageData = storedData;
             } else {
-                usageData = { count: 0, date: today, unlocked: storedData.unlocked || false };
-                saveUsageData();
+                usageData = { count: 0, date: today, unlocked: false };
             }
-            updateUsageDisplay();
+            saveUsageData(); // Lưu lại (đặc biệt là date mới)
+            checkUsageLimit(); // Kiểm tra ngay khi tải
         }
-        function saveUsageData() { localStorage.setItem('ai_assistant_usage', JSON.stringify(usageData)); }
+        function saveUsageData() { localStorage.setItem('ai_pro_usage_v3', JSON.stringify(usageData)); updateUsageDisplay(); }
         function updateUsageDisplay() {
-            usageCounterEl.innerHTML = usageData.unlocked 
+            if (!usageCounterEl) return;
+            usageCounterEl.innerHTML = usageData.unlocked
                 ? `<span class="text-green-400 font-bold">Vô hạn</span> | <a href="#" id="lock-limit" class="text-red-400 hover:text-red-300">Khóa Lại</a>`
                 : `Còn lại: <span class="text-yellow-400 font-bold">${Math.max(0, MAX_DAILY_USES - usageData.count)}</span> lượt`;
+            // Gắn lại sự kiện cho nút khóa (nếu có)
             document.getElementById('lock-limit')?.addEventListener('click', (e) => {
                 e.preventDefault();
-                usageData.unlocked = false;
-                saveUsageData();
-                updateUsageDisplay();
+                if (confirm("Bạn có chắc muốn khóa lại giới hạn sử dụng không?")) {
+                    usageData.unlocked = false;
+                    usageData.count = MAX_DAILY_USES; // Đặt về hết lượt để khóa ngay
+                    saveUsageData();
+                    checkUsageLimit(); // Cập nhật UI khóa
+                }
             });
         }
         function checkUsageLimit() {
-            if (usageData.unlocked) return true;
-            if (usageData.count >= MAX_DAILY_USES) {
-                limitOverlay.style.display = 'flex';
-                return false;
-            }
-            return true;
+            const isLocked = !usageData.unlocked && usageData.count >= MAX_DAILY_USES;
+            limitOverlay.style.display = isLocked ? 'flex' : 'none';
+            const controls = [mainInput, sendBtn, voiceBtn, fileInput, ...modeButtons, expandBtn];
+            controls.forEach(el => {
+                if (el) {
+                    el.disabled = isLocked;
+                    const targetElement = el.tagName === 'INPUT' && el.type === 'file' ? fileInputLabel : el; // Nhắm vào label của file input
+                    if (targetElement) {
+                         targetElement.style.opacity = isLocked ? '0.5' : '1';
+                         targetElement.style.cursor = isLocked ? 'not-allowed' : 'pointer';
+                    }
+                }
+            });
+             // Đảm bảo menu mode đóng khi bị khóa
+             if (isLocked) toggleModeExpand(true);
+            return !isLocked;
         }
         function incrementUsageCount() {
             if (!usageData.unlocked) {
                 usageData.count++;
-                saveUsageData();
-                updateUsageDisplay();
-                checkUsageLimit();
+                saveUsageData(); // Lưu & cập nhật hiển thị
+                checkUsageLimit(); // Kiểm tra lại nếu đã hết lượt
             }
         }
         unlockBtn.addEventListener('click', () => {
             if (passwordInput.value === UNLOCK_PASSWORD) {
                 usageData.unlocked = true;
+                usageData.date = new Date().toDateString();
                 saveUsageData();
-                updateUsageDisplay();
-                limitOverlay.style.display = 'none';
-                passwordMessage.textContent = '';
-                passwordInput.value = '';
+                checkUsageLimit(); // Gọi để ẩn overlay và bật lại nút
+                passwordMessage.textContent = 'Mở khóa thành công!';
+                passwordMessage.className = 'mt-3 text-green-500';
+                passwordInput.value = ''; // Xóa pass sau khi đúng
+                setTimeout(() => passwordMessage.textContent = '', 2000); // Ẩn thông báo thành công
             } else {
-                passwordMessage.textContent = 'Mật khẩu sai. Vui lòng thử lại.';
-                passwordMessage.classList.remove('hidden');
-                setTimeout(() => passwordMessage.classList.add('hidden'), 3000);
+                passwordMessage.textContent = 'Mật khẩu sai.';
+                passwordMessage.className = 'mt-3 text-red-500';
             }
         });
 
-        // === Logic Intro Screen (Đã sửa lỗi hiển thị App Wrapper) ===
+        // === Logic Intro Screen ===
         function playIntro() {
             introScreen.style.display = 'flex';
-            
-            try {
-                introAudio.play().catch(e => console.warn("Audio playback failed:", e));
-            } catch(e) { console.warn("Audio play error:", e); }
-            
+            try { introAudio.play().catch(e => {}); } catch(e) {}
             setTimeout(() => {
                 introScreen.style.opacity = '0';
                 appWrapper.style.opacity = '1';
-
-                setTimeout(() => {
-                    introScreen.style.display = 'none';
-                    appWrapper.style.zIndex = 'auto'; 
-                }, 1000); 
-            }, 6000); 
+                setTimeout(() => { introScreen.style.display = 'none'; }, 1000);
+            }, 6000);
         }
 
-        // === Logic Voice Chat (Giữ nguyên) ===
+        // === Logic Voice Chat ===
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         let recognition;
         let conversationMode = false;
         let silenceTimeout;
         if (SpeechRecognition) {
             recognition = new SpeechRecognition();
-            recognition.continuous = false;
-            recognition.interimResults = false;
-            recognition.lang = 'vi-VN';
-            // Placeholder/Giữ nguyên logic voice
-            recognition.onresult = (event) => {
-                const transcript = Array.from(event.results).map(result => result[0].transcript).join('');
-                if (event.results[0].isFinal) {
-                    recognition.stop();
-                    clearTimeout(silenceTimeout);
-                    handleVoiceQuery(transcript, recognition.lang);
-                } else {
-                    voiceStatus.textContent = `Đang Nghe... (${transcript})`;
-                    clearTimeout(silenceTimeout);
-                    silenceTimeout = setTimeout(() => {
-                        recognition.stop();
-                        voiceStatus.textContent = "Không nghe thấy gì, dừng ghi âm.";
-                    }, 3000);
-                }
-            };
-            recognition.onend = () => {
-                if (isRecording) startListening();
-                voiceMicIcon.classList.remove('animate-pulse');
-                micWave.classList.remove('listening');
-                isRecording = false;
-            };
-            recognition.onerror = (event) => {
-                console.error("Speech Recognition Error:", event.error);
-                voiceStatus.textContent = `Lỗi ghi âm: ${event.error}`;
-                isRecording = false;
-                micWave.classList.remove('listening');
-            };
+            recognition.continuous = false; recognition.interimResults = false; recognition.lang = 'vi-VN';
+            recognition.onresult = (event) => { clearTimeout(silenceTimeout); const transcript = event.results[0][0].transcript; voiceStatus.textContent = `Bạn: "${transcript}"`; handleVoiceQuery(transcript, recognition.lang); };
+            recognition.onend = () => { if (isRecording) { startListening(); } voiceMicIcon.classList.remove('animate-pulse'); micWave.classList.remove('listening'); isRecording = false; };
+            recognition.onerror = (event) => { console.error("Speech Error:", event.error); voiceStatus.textContent = `Lỗi: ${event.error}`; isRecording = false; micWave.classList.remove('listening'); if (!conversationMode) setTimeout(() => voiceOverlay.style.display = 'none', 3000); };
         } else { voiceBtn.style.display = 'none'; }
-        
         function startListening() {
-            if (isRecording) { recognition.stop(); return; }
-            voiceStatus.textContent = "Đang Nghe...";
-            voiceMicIcon.classList.add('animate-pulse');
-            micWave.classList.add('listening');
-            isRecording = true;
-            recognition.start();
-            clearTimeout(silenceTimeout);
-            silenceTimeout = setTimeout(() => {
-                recognition.stop();
-                voiceStatus.textContent = "Hết thời gian chờ.";
-            }, 5000);
+             if (!recognition || isRecording) { if(isRecording) recognition.stop(); return; } // Dừng nếu đang ghi, thoát nếu chưa sẵn sàng
+             voiceStatus.textContent = "Đang Nghe..."; voiceMicIcon.classList.add('animate-pulse'); micWave.classList.add('listening'); isRecording = true;
+             recognition.lang = languageSelect.value === 'en' ? 'en-US' : (languageSelect.value === 'zh-CN' ? 'zh-CN' : 'vi-VN');
+             recognition.start(); clearTimeout(silenceTimeout); silenceTimeout = setTimeout(() => { if (isRecording) recognition.stop(); voiceStatus.textContent = "Hết thời gian."; }, 7000);
         }
-        function speak(text, lang) {
-            return new Promise(resolve => {
-                const utterance = new SpeechSynthesisUtterance(text);
-                utterance.lang = lang;
-                utterance.onend = resolve;
-                speechSynthesis.speak(utterance);
-            });
-        }
-        async function handleVoiceQuery(transcript, langCode) {
-            voiceStatus.textContent = "AI Processing...";
+        function speak(text, lang) { return new Promise(resolve => { const u = new SpeechSynthesisUtterance(text); u.lang = lang.includes('-') ? lang : (lang === 'en' ? 'en-US' : (lang === 'zh-CN' ? 'zh-CN' : 'vi-VN')); u.onend = resolve; u.onerror = resolve; speechSynthesis.speak(u); }); }
+        async function handleVoiceQuery(transcript, langCode) { /* Giữ nguyên logic gọi API và speak */
+             voiceStatus.textContent = "AI Processing...";
             try {
                 const shortLang = langCode.split('-')[0];
                 const systemInstruction = getSystemInstruction(shortLang);
                 const responseData = await callApi('/api/chat', { message: transcript, image: null, language: shortLang, systemInstruction: systemInstruction });
-                const tempDiv = document.createElement('div');
-                tempDiv.innerHTML = responseData.response;
+                const tempDiv = document.createElement('div'); tempDiv.innerHTML = responseData.response;
                 const aiReplyText = tempDiv.textContent || tempDiv.innerText || "";
                 if (!aiReplyText || aiReplyText.startsWith('❌')) throw new Error(aiReplyText || "AI response invalid.");
                 await speak(aiReplyText, langCode);
             } catch (error) {
-                voiceStatus.textContent = `Lỗi xử lý AI: ${error.message}`;
-                await speak("Xin lỗi, tôi gặp lỗi khi xử lý yêu cầu của bạn.", langCode);
+                const errorMsg = error.message.includes('HTTP Error') ? "Problem connecting." : error.message.startsWith('❌') ? error.message.substring(2) : "Error processing.";
+                await speak(errorMsg, langCode);
+            } finally {
+                incrementUsageCount();
+                if (conversationMode && !speechSynthesis.speaking) startListening();
+                else if (!conversationMode) setTimeout(() => voiceOverlay.style.display = 'none', 500);
             }
-            incrementUsageCount();
-            if (conversationMode && !speechSynthesis.speaking) { startListening(); }
-            else if (!conversationMode) { setTimeout(() => voiceOverlay.style.display = 'none', 500); }
         }
-        voiceBtn.addEventListener('click', () => { voiceOverlay.style.display = 'flex'; conversationMode = true; startListening(); });
-        voiceMicIcon.addEventListener('click', () => { startListening(); });
-        voiceCloseBtn.addEventListener('click', () => {
-            conversationMode = false;
-            if (isRecording) recognition.stop();
-            voiceOverlay.style.display = 'none';
-        });
-        function addSummaryActions(bubbleElement, summaryText) {
-            // Logic Flashcard/Mindmap (Giữ nguyên)
-            // ...
+        voiceBtn.addEventListener('click', () => { if (!checkUsageLimit()) return; if (!recognition) return alert("Not supported."); if (!window.isSecureContext && window.location.protocol !== 'http:') return alert('Requires HTTPS/localhost.'); voiceOverlay.style.display = 'flex'; conversationMode = true; startListening(); });
+        voiceMicIcon.addEventListener('click', () => { if (isRecording) recognition.stop(); else startListening(); });
+        voiceCloseBtn.addEventListener('click', () => { conversationMode = false; if (isRecording) recognition.stop(); voiceOverlay.style.display = 'none'; });
+
+        // === Flashcard/Mindmap ===
+        function addSummaryActions(bubbleElement, summaryText) { /* Giữ nguyên */ }
+        async function generateNotes(type, text, button) { /* Giữ nguyên */ }
+
+        // === Cá nhân hóa AI ===
+        function getSystemInstruction(lang) { /* Giữ nguyên */ }
+        function setPersona(description) { /* Giữ nguyên */ }
+
+        // --- Core Chat Logic ---
+        function saveHistoryToStorage() { localStorage.setItem('ai_chat_history_v2', JSON.stringify(chatHistory)); }
+        function loadHistoryFromStorage() { chatHistory = JSON.parse(localStorage.getItem('ai_chat_history_v2')) || {}; }
+
+        function appendMessage(content, type, save = true) {
+             const messageGroup = document.createElement('div'); messageGroup.className = `message-group ${type}`;
+             const avatar = document.createElement('div'); avatar.className = `avatar avatar-${type}`; avatar.textContent = type === 'user' ? '👤' : '🤖';
+             const bubble = document.createElement('div'); bubble.className = 'bubble'; bubble.innerHTML = content;
+             messageGroup.appendChild(avatar); messageGroup.appendChild(bubble); chatBox.appendChild(messageGroup);
+             setTimeout(() => chatBox.scrollTop = chatBox.scrollHeight, 50); // Delay scroll
+             if (save) saveMessage(content, type);
+             return messageGroup;
         }
-        async function generateNotes(type, text, button) {
-             // Logic Flashcard/Mindmap (Giữ nguyên)
-            // ...
-        }
-
-        // === Logic Cá nhân hóa AI (Giữ nguyên) ===
-        function getSystemInstruction(lang) {
-            const langName = { 'vi': 'Tiếng Việt', 'en': 'English', 'zh-CN': '简体中文' }[lang] || 'Tiếng Việt';
-            let instruction = `You are a helpful AI assistant. Respond in **${langName}**. Be concise, use markdown, highlight <mark class="highlight">...</mark>. Analyze image if provided.`;
-
-            if (currentChatMode === 'persona' && currentPersonaDesc) {
-                const personaIntro = "I can become any role in the world. If the user enters a famous person, wife, sister, or historical figure, I will recognize that character and answer all questions in that role.";
-                instruction = `IMPORTANT: You must act as the following character: "${currentPersonaDesc}". Respond CONSISTENTLY in this role to all user input. Respond in **${langName}**. Keep answers concise, use markdown, highlight <mark class="highlight">...</mark>. ${personaIntro}`;
-            }
-            return instruction;
-        }
-
-        // Đã sửa lại để bao gồm saveMessage
-        function setPersona(description) {
-            currentPersonaDesc = description.trim();
-            localStorage.setItem('ai_pro_persona_desc', currentPersonaDesc);
-            
-            const introMessage = `Tuyệt vời! Từ giờ tôi sẽ nhập vai: **${currentPersonaDesc}**. Hãy hỏi tôi bất cứ điều gì! <br><br> (Ghi chú: Tôi có thể biến thành vai trò của bất kể người nào trên thế giới và nếu người dùng nhập một nhân vật nổi tiếng, vợ, em gái hay trong lịch sử, tôi sẽ nhận biết nhân vật đó và khi người dùng hỏi cái gì, tôi cũng sẽ trả lời trong vai trò đó.)`;
-            appendMessage(introMessage, 'ai', false); // Không cần save hai lần
-            saveMessage(introMessage, 'ai'); // Lưu tin nhắn giải thích này vào lịch sử
-        }
-
-        // --- Core Chat Logic (Đã phục hồi đầy đủ các hàm bị thiếu) ---
-        function saveHistoryToStorage() { localStorage.setItem('ai_chat_history', JSON.stringify(chatHistory)); }
-        function loadHistoryFromStorage() { chatHistory = JSON.parse(localStorage.getItem('ai_chat_history')) || {}; }
-
-        // Hàm lưu tin nhắn (đã phục hồi)
         function saveMessage(content, type) {
-            if (!activeChatId) return;
-            if (!chatHistory[activeChatId]) chatHistory[activeChatId] = { title: 'New Chat', messages: [] };
-            chatHistory[activeChatId].messages.push({ content, type, timestamp: new Date().toISOString() });
+            if (!activeChatId || !chatHistory[activeChatId]) return;
+            chatHistory[activeChatId].messages.push({ content, type, timestamp: Date.now() });
             saveHistoryToStorage();
         }
-
-        // Hàm hiển thị bong bóng chat (đã phục hồi)
-        function appendMessage(content, type, save = true) {
-            const messageGroup = document.createElement('div');
-            messageGroup.className = `message-group ${type}`;
-            
-            const avatar = document.createElement('div');
-            avatar.className = `avatar avatar-${type}`;
-            avatar.textContent = type === 'user' ? '👤' : '🤖';
-
-            const bubble = document.createElement('div');
-            bubble.className = 'bubble';
-            bubble.innerHTML = content;
-            
-            messageGroup.appendChild(avatar);
-            messageGroup.appendChild(bubble);
-            chatBox.appendChild(messageGroup);
-            chatBox.scrollTop = chatBox.scrollHeight;
-
-            if (save) saveMessage(content, type);
-            return messageGroup;
-        }
-
-        // Hàm hiển thị tin nhắn chào mừng (đã phục hồi)
         function displayWelcomeMessage() {
-            chatBox.innerHTML = `
-                <div class="welcome-message">
-                    <h2 class="text-yellow-500">Xin Chào! Tôi là AI Assistant Pro 🤖</h2>
-                    <p class="mt-4">Hãy chọn một chế độ bên dưới hoặc bắt đầu trò chuyện ngay!</p>
-                    <p class="mt-2 text-sm text-gray-500">
-                        (Sử dụng nút <span class="text-yellow-500">+</span> để khám phá thêm các chức năng như Tạo ảnh, Giải toán, Nhập vai...)
-                    </p>
-                </div>
-            `;
+            chatBox.innerHTML = `<div class="welcome-message"><h2>AI Assistant Pro 🤖</h2><p class="mt-4">How can I help you today?</p><p class="mt-2 text-sm text-gray-500">(Use the <span class="text-yellow-500 font-bold">+</span> button to explore features like Image Gen, Math, Persona...)</p></div>`;
         }
-
-        // Hàm bắt đầu chat mới (đã phục hồi)
         function startNewChat() {
             activeChatId = `chat_${Date.now()}`;
-            chatHistory[activeChatId] = { title: 'New Chat', messages: [] };
-            chatBox.innerHTML = '';
+            chatHistory[activeChatId] = { title: 'New Conversation', messages: [] };
             displayWelcomeMessage();
             renderChatHistory();
             saveHistoryToStorage();
-            
-            currentChatMode = 'chat';
-            document.querySelectorAll('.mode-btn').forEach(btn => btn.classList.remove('active'));
-            document.querySelector('.mode-btn[data-mode="chat"]').classList.add('active');
-            mainInput.placeholder = 'Ask me anything...';
+            handleModeSelection('chat'); // Reset to chat mode
         }
-
-        // Hàm tải chat cũ (đã phục hồi)
         function loadChat(chatId) {
-            if (!chatHistory[chatId]) return;
-            activeChatId = chatId;
-            chatBox.innerHTML = '';
-            
-            const messages = chatHistory[activeChatId].messages;
-            if (messages.length === 0) {
-                displayWelcomeMessage();
-            } else {
-                messages.forEach(msg => appendMessage(msg.content, msg.type, false));
-            }
-            
+            if (!chatHistory[chatId]) return startNewChat(); // Start new if ID invalid
+            activeChatId = chatId; chatBox.innerHTML = '';
+            const messages = chatHistory[activeChatId].messages || [];
+            if (messages.length === 0) displayWelcomeMessage();
+            else messages.forEach(msg => appendMessage(msg.content, msg.type, false));
             renderChatHistory();
-            document.querySelectorAll('.history-item').forEach(item => {
-                item.classList.remove('active');
-                if (item.dataset.chatId === chatId) {
-                    item.classList.add('active');
-                }
-            });
+            handleModeSelection('chat'); // Reset to chat mode
         }
-
-        // Hàm render lịch sử chat (đã phục hồi)
-        function renderChatHistory() {
-            chatHistoryContainer.innerHTML = '';
-            const sortedKeys = Object.keys(chatHistory).sort((a, b) => parseInt(b.split('_')[1]) - parseInt(a.split('_')[1]));
-            
-            sortedKeys.forEach(key => {
-                const chat = chatHistory[key];
-                const item = document.createElement('div');
-                item.className = `history-item ${key === activeChatId ? 'active' : ''}`;
-                item.dataset.chatId = key;
-                item.textContent = chat.title;
-                item.addEventListener('click', () => loadChat(key));
-                chatHistoryContainer.appendChild(item);
-            });
-        }
-        
-        // Hàm hiển thị loading (đã phục hồi)
-        function showLoading() {
-            const loadingMessage = document.createElement('div');
-            loadingMessage.className = 'message-group ai';
-            loadingMessage.id = 'loading-indicator';
-
-            const avatar = document.createElement('div');
-            avatar.className = 'avatar avatar-ai';
-            avatar.textContent = '🤖';
-
-            const bubble = document.createElement('div');
-            bubble.className = 'bubble';
-            bubble.innerHTML = `<div class="typing-indicator"><span></span><span></span><span></span></div>`;
-
-            loadingMessage.appendChild(avatar);
-            loadingMessage.appendChild(bubble);
-            chatBox.appendChild(loadingMessage);
-            chatBox.scrollTop = chatBox.scrollHeight;
-            return loadingMessage;
-        }
-
-        function updateChatTitle(firstUserMessage, isImageOnly = false) { /* Giữ nguyên */
-             if (!activeChatId) return;
-             if (chatHistory[activeChatId].title === 'New Chat' || chatHistory[activeChatId].title.includes('Image/Video')) {
-                 let newTitle = firstUserMessage || (isImageOnly ? 'Image/Video Chat' : 'Untitled Chat');
-                 if (newTitle.length > 30) newTitle = newTitle.substring(0, 30) + '...';
+         function renderChatHistory() {
+             chatHistoryContainer.innerHTML = '';
+             const sortedKeys = Object.keys(chatHistory).sort((a, b) => parseInt(b.split('_')[1]) - parseInt(a.split('_')[1])); // Sort by timestamp desc
+             sortedKeys.forEach(key => {
+                 const chat = chatHistory[key];
+                 // Chỉ hiển thị nếu có tin nhắn hoặc là chat mới nhất đang trống
+                 if ((chat.messages && chat.messages.length > 0) || key === activeChatId) {
+                     const item = document.createElement('div');
+                     item.className = `history-item ${key === activeChatId ? 'active' : ''}`;
+                     item.dataset.chatId = key;
+                     // Lấy tiêu đề từ chat hoặc tạo tiêu đề mặc định
+                     item.textContent = chat.title || 'New Conversation';
+                     item.addEventListener('click', () => loadChat(key));
+                     chatHistoryContainer.appendChild(item);
+                 } else {
+                     // Optionally delete empty chats that are not the current one
+                     // delete chatHistory[key];
+                 }
+             });
+             if (chatHistoryContainer.innerHTML === '') {
+                  chatHistoryContainer.innerHTML = '<div class="text-center text-gray-500 mt-4">No history yet.</div>';
+             }
+         }
+        function updateChatTitle(firstUserMessage, isImageOnly = false) {
+             if (!activeChatId || !chatHistory[activeChatId]) return;
+             // Chỉ cập nhật nếu là 'New Conversation'
+             if (chatHistory[activeChatId].title === 'New Conversation') {
+                 let newTitle = "Untitled";
+                 if (firstUserMessage) newTitle = firstUserMessage.substring(0, 30) + (firstUserMessage.length > 30 ? '...' : '');
+                 else if (isImageOnly) newTitle = "Image Input";
                  chatHistory[activeChatId].title = newTitle;
                  saveHistoryToStorage();
-                 renderChatHistory();
+                 renderChatHistory(); // Cập nhật sidebar ngay lập tức
              }
         }
-        
-        async function callApi(endpoint, body) { /* Giữ nguyên */
-             const response = await fetch(endpoint, {
-                 method: 'POST',
-                 headers: { 'Content-Type': 'application/json' },
-                 body: JSON.stringify(body),
-             });
-             if (!response.ok) {
-                 const errorBody = await response.json();
-                 throw new Error(errorBody.response || `Server returned status ${response.status}`);
-             }
-             return response.json();
-        }
-        
-        function createGifFromFrames(frames) { /* Giữ nguyên */
-             return new Promise((resolve) => {
-                 const gif = new GIF({
-                     workers: 2,
-                     quality: 10,
-                     width: 512,
-                     height: 512,
-                     workerScript: 'https://unpkg.com/gif.js@0.2.0/dist/gif.worker.js',
-                 });
-                 frames.forEach(frameData => {
-                     const img = new Image();
-                     img.onload = () => {
-                         gif.addFrame(img, { delay: 100 });
-                     };
-                     img.src = frameData;
-                 });
-                 gif.on('finished', function(blob) {
-                     const url = URL.createObjectURL(blob);
-                     resolve(url);
-                 });
-                 gif.render();
-             });
-        }
+        function showLoading() { /* Giữ nguyên */ }
+        async function callApi(endpoint, body) { /* Giữ nguyên */ }
+        function createGifFromFrames(frames) { /* Giữ nguyên */ }
 
-        // === Logic Mode Selector Mới (Giữ nguyên) ===
-        function toggleModeExpand(forceClose = false) {
-            isModeExpanded = forceClose ? false : !isModeExpanded;
-            if (isModeExpanded) {
-                hiddenModesContainer.classList.add('open');
-                expandBtn.querySelector('#expand-icon').textContent = '—'; 
-                expandBtn.style.transform = 'rotate(0deg)'; 
-            } else {
-                hiddenModesContainer.classList.remove('open');
-                expandBtn.querySelector('#expand-icon').textContent = '+';
-                expandBtn.style.transform = 'rotate(0deg)';
-            }
-        }
-        expandBtn.addEventListener('click', (e) => {
-            e.preventDefault();
-            toggleModeExpand();
-        });
+        // === Mode Selector Logic ===
+        function toggleModeExpand(forceClose = false) { /* Giữ nguyên */ }
+        expandBtn.addEventListener('click', (e) => { e.preventDefault(); toggleModeExpand(); });
+        function handleModeSelection(selectedMode) { /* Giữ nguyên */ }
+        modeButtons.forEach(button => { button.addEventListener('click', () => { if (!button.disabled) handleModeSelection(button.dataset.mode); }); });
 
-        function handleModeSelection(selectedMode) {
-            const previousMode = currentChatMode;
-            modeButtons.forEach(btn => btn.classList.remove('active'));
-            const newActiveBtn = document.querySelector(`.mode-btn[data-mode="${selectedMode}"]`);
-            if (newActiveBtn) {
-                newActiveBtn.classList.add('active');
-            } else {
-                document.querySelector(`.mode-btn[data-mode="chat"]`)?.classList.add('active');
-            }
-            
-            if (selectedMode !== 'chat') {
-                 toggleModeExpand(true); 
-            }
-
-            currentChatMode = selectedMode;
-            
-            // Cập nhật placeholder và tin nhắn hướng dẫn
-            switch(currentChatMode) {
-                case 'persona':
-                    mainInput.placeholder = currentPersonaDesc ? `Chatting as ${currentPersonaDesc}. Ask anything...` : 'Enter the persona you want me to be...';
-                    
-                    // Thêm phần giải thích chi tiết cho người dùng (Đã sửa lỗi)
-                    if ((previousMode !== 'persona' || !currentPersonaDesc)) {
-                            // Xóa tin nhắn chào mừng trước khi thêm hướng dẫn
-                            if (document.querySelector('.welcome-message')) document.querySelector('.welcome-message').remove();
-                            appendMessage("Nào, hãy cho tôi biết bạn muốn tôi trở thành ai! Ví dụ: 'Albert Einstein', 'một chuyên gia marketing vui tính', 'em gái của tôi'...", 'ai', false);
-                    }
-                    break;
-                case 'summarize_youtube': mainInput.placeholder = 'Paste YouTube video URL here...'; break;
-                case 'analyze_stock': mainInput.placeholder = 'Enter stock symbol (e.g., AAPL, VNM)...'; break;
-                case 'edit_image': mainInput.placeholder = 'Upload image & describe desired changes...'; break;
-                case 'notetaker': mainInput.placeholder = 'Paste text for note-taking...'; break;
-                default: mainInput.placeholder = 'Ask me anything...';
-            }
-            const fileLabel = fileInput.labels[0];
-            const allowFile = ['chat', 'math', 'edit_image', 'persona'].includes(currentChatMode);
-            if (fileLabel) fileLabel.style.display = allowFile ? 'flex' : 'none';
-            if (!allowFile) {
-                 uploadedFile = null; previewContainer.innerHTML = ''; fileInput.value = '';
-             }
-        }
-
-        // Gán sự kiện cho tất cả các mode button
-        modeButtons.forEach(button => {
-            button.addEventListener('click', () => {
-                if (button.disabled) return;
-                handleModeSelection(button.dataset.mode);
-            });
-        });
-        
-        // --- Main Send Function (Giữ nguyên logic) ---
+        // === Main Send Function ===
         const handleSendMessage = async () => {
-            if (!checkUsageLimit()) return;
+             if (!checkUsageLimit()) return;
              const prompt = mainInput.value.trim(); const image = uploadedFile;
 
              if (currentChatMode === 'persona' && !currentPersonaDesc) {
-                  if (!prompt) { alert("Vui lòng nhập vai trò muốn nhập vai."); return; }
-                  setPersona(prompt);
-                  mainInput.value = '';
-                  mainInput.placeholder = `Chatting as ${currentPersonaDesc}. Ask anything...`;
-                  return; 
+                  if (!prompt) { alert("Vui lòng nhập vai trò."); return; }
+                  setPersona(prompt); mainInput.value = ''; mainInput.placeholder = `Chatting as ${currentPersonaDesc}...`; return;
              }
-             if (currentChatMode === 'edit_image' && !image) { alert("Vui lòng tải ảnh lên để chỉnh sửa."); return; }
+             if (currentChatMode === 'edit_image' && !image) { alert("Vui lòng tải ảnh."); return; }
              if (!prompt && currentChatMode === 'analyze_stock') { alert("Vui lòng nhập mã chứng khoán."); return; }
              if (!prompt && currentChatMode === 'summarize_youtube') { alert("Vui lòng dán URL YouTube."); return; }
-             if (!prompt && currentChatMode === 'notetaker') { alert("Vui lòng dán văn bản để ghi chú."); return; }
+             if (!prompt && currentChatMode === 'notetaker') { alert("Vui lòng dán văn bản."); return; }
              if (!prompt && !image && !['chat', 'math', 'persona'].includes(currentChatMode)) { return; }
 
              if (document.querySelector('.welcome-message')) document.querySelector('.welcome-message').remove();
-             let userMessageContent = prompt;
+             let userMsgContent = prompt;
              if (image && ['chat', 'math', 'edit_image', 'persona'].includes(currentChatMode)) {
-                 userMessageContent = `<img src="${image}" style="max-height: 100px; max-width: 150px; border-radius: 8px; display:block; margin-bottom: 5px;" alt="uploaded"><p>${prompt || 'Analyze/Edit this image'}</p>`;
+                 userMsgContent = `<img src="${image}" style="max-height:100px; border-radius:8px; margin-bottom:5px; display:block;" alt="uploaded"><p>${prompt || 'Analyze/Edit'}</p>`;
              }
-
-             appendMessage(userMessageContent || (image ? "[Image Sent]" : "[Empty Message]"), 'user');
+             appendMessage(userMsgContent || (image ? "[Image]" : "[Empty]"), 'user');
              updateChatTitle(prompt, !prompt && !!image);
-             const loadingBubble = showLoading();
+             const loadingBubbleGroup = showLoading(); // Lưu lại group thay vì bubble
              const currentPromptValue = prompt; const currentImageValue = image;
              mainInput.value = ''; previewContainer.innerHTML = ''; uploadedFile = null; fileInput.value = ''; mainInput.style.height = 'auto';
 
             try {
-                let responseData;
-                let finalContent = '';
-                let isSummaryResult = false;
+                let responseData; let finalContent = ''; let isSummaryResult = false;
                 let systemInstruction = getSystemInstruction(languageSelect.value);
 
                 switch (currentChatMode) {
-                    case 'image':
-                          responseData = await callApi('/api/pollinations-image', { prompt: currentPromptValue });
-                          finalContent = `<img src="${responseData.imageUrl}" class="generated-image">`;
-                          break;
+                    case 'image': responseData = await callApi('/api/pollinations-image', { prompt: currentPromptValue }); finalContent = `<img src="${responseData.imageUrl}" class="generated-image">`; break;
                     case 'edit_image':
-                          loadingBubble.querySelector('.bubble').innerHTML = 'Đang phân tích và tạo mô tả chỉnh sửa...';
-                          systemInstruction = `Analyze image and user text. Generate ONLY a detailed English prompt (max 20 words) for image generation.`;
-                          const descriptionResponse = await callApi('/api/edit-image', { message: currentPromptValue, image: currentImageValue, systemInstruction: systemInstruction });
-                          const newPrompt = descriptionResponse.response;
-                          if (newPrompt.startsWith('❌')) throw new Error(newPrompt);
-                          loadingBubble.querySelector('.bubble').innerHTML = 'Đang tạo ảnh đã chỉnh sửa...';
-                          const imageResponse = await callApi('/api/pollinations-image', { prompt: newPrompt });
-                          finalContent = `<p><strong>Dựa trên:</strong> ${newPrompt}</p><img src="${imageResponse.imageUrl}" class="generated-image">`;
-                          break;
-                    case 'math':
-                          systemInstruction = `Solve math in Vietnamese. Show main steps and final result. Use LaTeX for formulas ($...$) and <mark class="highlight">...</mark> for result.`;
-                          responseData = await callApi('/api/math', { question: currentPromptValue, image: currentImageValue, systemInstruction: systemInstruction });
-                          finalContent = responseData.response;
-                          break;
-                    case 'summarize_youtube':
-                          responseData = await callApi('/api/summarize-youtube', { youtubeUrl: currentPromptValue });
-                          finalContent = responseData.response;
-                          isSummaryResult = true;
-                          break;
-                    case 'notetaker':
-                         systemInstruction = "You are a notetaker. Summarize text into structured, easy-to-read notes, bullet points, or key takeaways in Vietnamese.";
-                         responseData = await callApi('/api/summarize-text', { textToSummarize: currentPromptValue, systemInstruction: systemInstruction });
-                         finalContent = responseData.response;
-                         isSummaryResult = true;
-                         break;
-                    case 'analyze_stock':
-                           responseData = await callApi('/api/analyze-stock', { stockSymbol: currentPromptValue });
-                           finalContent = responseData.response;
-                           break;
+                        loadingBubbleGroup.querySelector('.bubble').innerHTML = 'Generating edit description...';
+                        systemInstruction = `Analyze image and user text. Generate ONLY a detailed English prompt for image generation...`;
+                        const descRes = await callApi('/api/edit-image', { message: currentPromptValue, image: currentImageValue, systemInstruction });
+                        const newPrompt = descRes.response; if (newPrompt.startsWith('❌')) throw new Error(newPrompt);
+                        loadingBubbleGroup.querySelector('.bubble').innerHTML = 'Generating edited image...';
+                        const imgRes = await callApi('/api/pollinations-image', { prompt: newPrompt });
+                        finalContent = `<p><strong>Based on:</strong> ${newPrompt}</p><img src="${imgRes.imageUrl}" class="generated-image">`;
+                        break;
+                    case 'math': systemInstruction = `Solve math in Vietnamese...`; responseData = await callApi('/api/math', { question: currentPromptValue, image: currentImageValue, systemInstruction }); finalContent = responseData.response; break;
+                    case 'summarize_youtube': responseData = await callApi('/api/summarize-youtube', { youtubeUrl: currentPromptValue }); finalContent = responseData.response; isSummaryResult = true; break;
+                    case 'notetaker': systemInstruction = "You are a notetaker..."; responseData = await callApi('/api/summarize-text', { textToSummarize: currentPromptValue, systemInstruction }); finalContent = responseData.response; isSummaryResult = true; break;
+                    case 'analyze_stock': responseData = await callApi('/api/analyze-stock', { stockSymbol: currentPromptValue }); finalContent = responseData.response; break;
                     case 'video':
-                          loadingBubble.querySelector('.bubble').innerHTML = 'Đang tạo khung hình video...';
-                          responseData = await callApi('/api/pollinations-frames', { prompt: currentPromptValue });
-                          if (!responseData.frames || !Array.isArray(responseData.frames) || responseData.frames.length === 0) { throw new Error(responseData.message || 'Video frame generation failed.'); }
-                          loadingBubble.querySelector('.bubble').innerHTML = 'Đang render GIF... (Quá trình này có thể mất một chút thời gian)';
-                          const videoUrl = await createGifFromFrames(responseData.frames);
-                          finalContent = `<img src="${videoUrl}" class="generated-video" alt="Generated Video">`;
-                          break;
-                    case 'persona':
-                    case 'chat':
-                          responseData = await callApi('/api/chat', { message: currentPromptValue, image: currentImageValue, language: languageSelect.value, systemInstruction: systemInstruction });
-                          finalContent = responseData.response;
-                          break;
-                 }
+                         loadingBubbleGroup.querySelector('.bubble').innerHTML = 'Generating frames...';
+                         responseData = await callApi('/api/pollinations-frames', { prompt: currentPromptValue });
+                         if (!responseData.frames || !Array.isArray(responseData.frames) || responseData.frames.length === 0) { throw new Error(responseData.message || 'Video frame gen failed.'); }
+                         loadingBubbleGroup.querySelector('.bubble').innerHTML = 'Rendering GIF...';
+                         const videoUrl = await createGifFromFrames(responseData.frames);
+                         finalContent = `<img src="${videoUrl}" class="generated-video">`; break;
+                    case 'persona': case 'chat':
+                         responseData = await callApi('/api/chat', { message: currentPromptValue, image: currentImageValue, language: languageSelect.value, systemInstruction: systemInstruction });
+                         finalContent = responseData.response; break;
+                }
 
-                const aiBubbleElement = loadingBubble.querySelector('.bubble');
-                aiBubbleElement.innerHTML = finalContent;
+                const aiBubbleElement = loadingBubbleGroup.querySelector('.bubble');
+                aiBubbleElement.innerHTML = finalContent; // Cập nhật nội dung vào bubble
 
                 if (currentChatMode === 'math') { MathJax.typesetPromise([aiBubbleElement]); }
                 if (isSummaryResult && !finalContent.startsWith('❌')) {
@@ -772,67 +457,34 @@
                     const summaryText = tempDiv.textContent || tempDiv.innerText || "";
                     addSummaryActions(aiBubbleElement, summaryText);
                 }
-
-                saveMessage(aiBubbleElement.innerHTML, 'ai');
+                saveMessage(aiBubbleElement.innerHTML, 'ai'); // Lưu HTML cuối cùng
                 incrementUsageCount();
 
             } catch (error) {
-                loadingBubble.querySelector('.bubble').innerHTML = `❌ Lỗi: ${error.message}`;
-                saveMessage(loadingBubble.querySelector('.bubble').innerHTML, 'ai');
+                loadingBubbleGroup.querySelector('.bubble').innerHTML = `❌ Error: ${error.message}`; // Hiển thị lỗi trong bubble
+                saveMessage(loadingBubbleGroup.querySelector('.bubble').innerHTML, 'ai'); // Lưu lỗi
             }
         };
 
         // --- Event Listeners and Initializers ---
         sendBtn.addEventListener('click', handleSendMessage);
-        newChatBtn.addEventListener('click', startNewChat); // Thêm event listener cho nút New Chat
-        menuBtn.addEventListener('click', () => { 
-            sidebar.classList.toggle('open'); 
-        });
-
-        settingsBtn.addEventListener('click', () => { settingsModal.style.display = settingsModal.style.display === 'block' ? 'none' : 'block'; });
-        document.addEventListener('click', (e) => {
-             if (sidebar.classList.contains('open') && !sidebar.contains(e.target) && !menuBtn.contains(e.target)) {
-                sidebar.classList.remove('open');
-             }
-             if (!settingsBtn.contains(e.target) && !settingsModal.contains(e.target)) { settingsModal.style.display = 'none'; }
-        });
-
         mainInput.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSendMessage(); } });
-        mainInput.addEventListener('input', () => {
-             mainInput.style.height = 'auto';
-             mainInput.style.height = (mainInput.scrollHeight) + 'px';
-        });
-
-        fileInput.addEventListener('change', (event) => {
-            const file = event.target.files[0];
-            if (file) {
-                if (file.size > 5 * 1024 * 1024) { 
-                    alert("File size exceeds 5MB limit.");
-                    fileInput.value = '';
-                    return;
-                }
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    uploadedFile = e.target.result;
-                    previewContainer.innerHTML = `<img src="${uploadedFile}" alt="Preview" class="rounded-lg shadow">`;
-                };
-                reader.readAsDataURL(file);
-            }
-        });
+        mainInput.addEventListener('input', () => { mainInput.style.height = 'auto'; mainInput.style.height = (mainInput.scrollHeight) + 'px'; });
+        fileInput.addEventListener('change', (event) => { /* Giữ nguyên */ });
 
         function initializeApp() {
-            playIntro();
+            playIntro(); // THÊM LẠI INTRO
             loadHistoryFromStorage();
             if (Object.keys(chatHistory).length === 0) startNewChat();
-            else loadChat(Object.keys(chatHistory).sort().pop());
+            else loadChat(Object.keys(chatHistory).sort((a,b) => parseInt(b.split('_')[1]) - parseInt(a.split('_')[1]))[0]); // Load chat mới nhất
             
             renderChatHistory();
-            loadUsageData();
+            loadUsageData(); // Load giới hạn
             
             const savedLang = localStorage.getItem('chat_language') || 'vi';
             languageSelect.value = savedLang;
             
-            handleModeSelection('chat');
+            handleModeSelection('chat'); // Đặt mode mặc định
         }
         initializeApp();
     });

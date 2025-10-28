@@ -3,54 +3,46 @@ import bodyParser from "body-parser";
 import fetch from "node-fetch";
 import dotenv from "dotenv";
 import cors from "cors";
-// ✅ Sửa lỗi import YoutubeLoader
+// Import đã sửa lỗi
 import { YoutubeLoader } from "@langchain/community/document_loaders/web/youtube";
 
 dotenv.config();
 const app = express();
 
-// --- Middleware --- [cite: 1294-1296]
+// --- Middleware ---
 app.use(cors());
 app.use(bodyParser.json({ limit: "50mb" }));
 app.use(express.static(".")); // Phục vụ file tĩnh từ thư mục gốc
 
-// --- Configuration --- [cite: 1297-1303]
+// --- Configuration ---
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 const GEMINI_MODEL = "gemini-1.5-flash"; // Model hỗ trợ ảnh
 const GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`;
 
 if (!GEMINI_API_KEY) console.warn("⚠️ WARNING: GEMINI_API_KEY is not set!");
 
-// --- Helper Functions --- [cite: 1304-1371]
+// --- Helper Functions ---
 
-async function callGeminiAPI(contents, useWebSearch = false) { // Thêm cờ useWebSearch
+async function callGeminiAPI(contents, useWebSearch = false) {
     if (!GEMINI_API_KEY) return "❌ Error: GEMINI_API_KEY is missing.";
     try {
-        const tools = useWebSearch ? [{ "google_search_retrieval": {} }] : undefined; // Kích hoạt search nếu cần
-        const body = JSON.stringify({ contents, tools }); // Thêm tools vào body
+        const tools = useWebSearch ? [{ "google_search_retrieval": {} }] : undefined;
+        const body = JSON.stringify({ contents, tools });
 
         const response = await fetch(`${GEMINI_API_URL}?key=${GEMINI_API_KEY}`, {
             method: "POST", headers: { "Content-Type": "application/json" }, body: body,
         });
         const data = await response.json();
 
-        // Xử lý Function Calling (nếu Gemini yêu cầu tìm kiếm) - Tạm thời đơn giản hóa
+        // Xử lý Function Calling (nếu Gemini yêu cầu tìm kiếm)
         const functionCallPart = data.candidates?.[0]?.content?.parts?.find(part => part.functionCall);
         if (functionCallPart && functionCallPart.functionCall.name === 'google_search_retrieval') {
              console.log("Gemini requested function call (web search), responding automatically...");
-             // Tự động gọi lại API với function response (bước này quan trọng)
-             const functionResponse = {
-                 functionResponse: {
-                     name: functionCallPart.functionCall.name,
-                     // Nội dung response thường trống hoặc là xác nhận, tùy theo API
-                     response: { name: functionCallPart.functionCall.name, content: "Web search results will be used by the model." }
-                 }
-             };
-             // Quan trọng: Thêm function response vào cuối mảng contents hiện tại
+             const functionResponse = { functionResponse: { name: functionCallPart.functionCall.name, response: { name: functionCallPart.functionCall.name, content: "Web search performed." } } };
              contents.push({ role: "function", parts: [functionResponse] });
-             // Gọi lại API lần 2 với response
+             // Gọi lại API lần 2
              const response2 = await fetch(`${GEMINI_API_URL}?key=${GEMINI_API_KEY}`, {
-                method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ contents }), // Gửi lại contents đã cập nhật
+                method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ contents }),
              });
              const data2 = await response2.json();
              if (!response2.ok) throw new Error(data2.error?.message || `Gemini Function Response Error ${response2.status}`);
@@ -68,7 +60,6 @@ async function callGeminiAPI(contents, useWebSearch = false) { // Thêm cờ use
         return data.candidates?.[0]?.content?.parts?.[0]?.text || "❌ Không có phản hồi hợp lệ.";
     } catch (error) {
         console.error("🔥 Gemini Connection/Processing Error:", error);
-        // Trả về lỗi chi tiết hơn cho client
         return `❌ Lỗi kết nối/xử lý Gemini: ${error.message}`;
     }
 }
@@ -77,7 +68,6 @@ async function callGeminiAPI(contents, useWebSearch = false) { // Thêm cờ use
 function buildGeminiContent(text, image, systemInstruction) {
   let parts = [{ text: `${systemInstruction}\n\nUser Input: "${text || "No text provided."}"` }];
   if (image) {
-    // Sửa lỗi regex để bắt đúng mimeType và data
     const match = image.match(/data:(image\/.+);base64,(.*)/);
     if (match && match[1] && match[2]) {
       const mimeType = match[1];
@@ -104,18 +94,11 @@ async function translateToEnglish(text) {
 
 async function handleGeminiRequest(req, res, systemInstruction, inputField = 'message', useWebSearch = false) {
     const { image } = req.body;
-    // Lấy text từ nhiều trường có thể có
-    const text = req.body[inputField]
-              || req.body['message']
-              || req.body['question']
-              || req.body['textToSummarize']
-              || req.body['textToConvert']
-              || req.body['stockSymbol']; // Thêm stockSymbol
+    const text = req.body[inputField] || req.body['message'] || req.body['question'] || req.body['textToSummarize'] || req.body['textToConvert'] || req.body['stockSymbol'];
     try {
-        // Ưu tiên systemInstruction gửi từ client (cho personality)
         const finalSystemInstruction = req.body.systemInstruction || systemInstruction;
         const contents = buildGeminiContent(text, image, finalSystemInstruction);
-        const reply = await callGeminiAPI(contents, useWebSearch); // Truyền cờ useWebSearch
+        const reply = await callGeminiAPI(contents, useWebSearch);
         res.json({ response: reply });
     } catch (error) {
          console.error(`Error in handleGeminiRequest (${req.path}):`, error);
@@ -128,7 +111,7 @@ async function handleGeminiRequest(req, res, systemInstruction, inputField = 'me
 app.post("/api/chat", (req, res) => {
     const langName = { 'vi': 'Tiếng Việt', 'en': 'English', 'zh-CN': '简体中文' }[req.body.language] || 'Tiếng Việt';
     const baseInstruction = `You are a helpful AI assistant. Respond in **${langName}**. Be concise, use markdown, highlight <mark class="highlight">...</mark>. Analyze image if provided.`;
-    handleGeminiRequest(req, res, baseInstruction, 'message'); // Sẽ bị ghi đè bởi client nếu có personality
+    handleGeminiRequest(req, res, baseInstruction, 'message');
 });
 
 app.post("/api/math", (req, res) => {
@@ -136,12 +119,12 @@ app.post("/api/math", (req, res) => {
     handleGeminiRequest(req, res, instruction, 'question');
 });
 
-app.post("/api/edit-image", (req, res) => { // Gemini generates prompt for Pollinations
+app.post("/api/edit-image", (req, res) => {
     const instruction = `Analyze image and user text. Generate ONLY a detailed English prompt for an image generation model (like Pollinations) to create the edited image.`;
     handleGeminiRequest(req, res, instruction, 'message');
 });
 
-app.post("/api/summarize-text", (req, res) => { // Notetaker
+app.post("/api/summarize-text", (req, res) => {
     const instruction = "You are a notetaker. Extract key decisions, action items, main topics from the text. Format in Vietnamese with headings (## Decisions, ## Actions, ## Topics) and bullet points.";
     handleGeminiRequest(req, res, instruction, 'textToSummarize');
 });
@@ -166,7 +149,6 @@ app.post("/api/summarize-youtube", async (req, res) => {
         const transcript = docs.map(doc => doc.pageContent).join("\n");
         if (!transcript) return res.status(500).json({ response: "Could not get transcript." });
         const instruction = "Summarize key points of the YouTube transcript in Vietnamese. Start with title/channel.";
-        // Giới hạn độ dài transcript gửi cho Gemini
         const contents = buildGeminiContent(videoInfo + "Transcript:\n" + transcript.substring(0, 15000), null, instruction);
         const summary = await callGeminiAPI(contents);
         res.json({ response: summary });
@@ -186,7 +168,6 @@ Provide (in Vietnamese):
 3.  **Related:** Suggest 1-2 similar stocks.
 4.  **Chart Concept:** Suggest search query for a *general illustrative chart* (e.g., "stock chart uptrend example").
 5.  **Disclaimer:** MUST include: "**Disclaimer:** AI analysis, not financial advice. Consult a professional."`;
-    // Gọi handleGeminiRequest với cờ useWebSearch = true
     handleGeminiRequest(req, res, instruction, 'stockSymbol', true);
 });
 
@@ -205,12 +186,11 @@ app.post("/api/pollinations-image", async (req, res) => {
 });
 
 app.post("/api/pollinations-frames", async (req, res) => {
-    // Giữ nguyên placeholder hoặc logic tạo frame của bạn
     const { prompt } = req.body;
     if (!prompt) return res.status(400).json({ message: "A description is required." });
     try {
         const translatedPrompt = await translateToEnglish(prompt);
-        // Logic tạo frames (hiện tại là placeholder trả về mảng rỗng)
+        // Logic tạo frames (placeholder)
         console.warn("⚠️ /api/pollinations-frames needs implementation.");
         res.json({ frames: [] });
     } catch (error) {

@@ -8,15 +8,19 @@ import { YoutubeLoader } from "@langchain/community/document_loaders/web/youtube
 dotenv.config();
 const app = express();
 
+// --- Middleware ---
 app.use(cors());
 app.use(bodyParser.json({ limit: "50mb" }));
 app.use(express.static("."));
 
+// --- Configuration ---
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 const GEMINI_MODEL = "gemini-1.5-flash";
 const GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`;
 
 if (!GEMINI_API_KEY) console.warn("⚠️ WARNING: GEMINI_API_KEY is not set!");
+
+// --- Helper Functions ---
 
 async function callGeminiAPI(contents, useWebSearch = false) {
     if (!GEMINI_API_KEY) return "❌ Error: GEMINI_API_KEY is missing.";
@@ -77,7 +81,7 @@ async function translateToEnglish(text) {
 
 async function handleGeminiRequest(req, res, systemInstruction, inputField = 'message', useWebSearch = false) {
     const { image } = req.body;
-    const text = req.body[inputField] || req.body['message'] || req.body['question'] || req.body['textToSummarize'] || req.body['textToConvert'] || req.body['stockSymbol'] || req.body['marketingTopic'] || req.body['musicTopic']; // Thêm 2 field mới
+    const text = req.body[inputField] || req.body['message'] || req.body['question'] || req.body['textToSummarize'] || req.body['textToConvert'] || req.body['stockSymbol'] || req.body['marketingTopic'] || req.body['musicTopic'];
     try {
         const finalSystemInstruction = req.body.systemInstruction || systemInstruction;
         const contents = buildGeminiContent(text, image, finalSystemInstruction);
@@ -86,39 +90,41 @@ async function handleGeminiRequest(req, res, systemInstruction, inputField = 'me
     } catch (error) { res.status(500).json({ response: `Server error: ${error.message}` }); }
 }
 
+
 // --- API Endpoints ---
 app.post("/api/chat", (req, res) => {
     const langName = { 'vi': 'Tiếng Việt', 'en': 'English', 'zh-CN': '简体中文' }[req.body.language] || 'Tiếng Việt';
     const baseInstruction = `You are a helpful AI assistant. Respond in **${langName}**. Be concise, use markdown, highlight <mark class="highlight">...</mark>. Analyze image if provided.
-    **At the end of your response, ALWAYS suggest one related follow-up question in italics (e.g., *Bạn có muốn biết thêm về X không?*).**`;
+    **At the end of your response, always suggest one related follow-up question in italics (e.g., *Bạn có muốn biết thêm về X không?*).**`;
     handleGeminiRequest(req, res, baseInstruction, 'message');
 });
 
 app.post("/api/math", (req, res) => {
-    const instruction = `Solve math in Vietnamese. Show steps & final result. Use LaTeX ($...$) and <mark class="highlight">...</mark>. Analyze image if provided.
-    **At the end, ALWAYS suggest a related theorem or problem in italics (e.g., *Bạn có muốn xem một bài toán tương tự về định lý Pytago không?*).**`;
+    const instruction = `Solve math in Vietnamese. Show steps & final result. Use LaTeX ($...$) and <mark class="highlight">...</mark>.
+    **At the end, suggest a related theorem or problem in italics (e.g., *Bạn có muốn xem một bài toán tương tự về định lý Pytago không?*).**`;
     handleGeminiRequest(req, res, instruction, 'question');
 });
 
 app.post("/api/edit-image", (req, res) => {
     const instruction = `Analyze image and user text. Generate ONLY a detailed English prompt for an image generation model (like Pollinations) to create the edited image.`;
-    handleGeminiRequest(req, res, instruction, 'message'); // Không cần gợi ý
+    handleGeminiRequest(req, res, instruction, 'message');
 });
 
 app.post("/api/summarize-text", (req, res) => {
-    const instruction = "You are a notetaker. Extract key decisions, action items, main topics from the text. Format in Vietnamese with headings.
-    **At the end, ALWAYS suggest one key topic from the text to explore deeper in italics.**";
+    // Dòng này đã được sửa bằng backtick (`)
+    const instruction = `You are a notetaker. Extract key decisions, action items, main topics from the text. Format in Vietnamese with headings.
+    **At the end, ALWAYS suggest one key topic from the text to explore deeper in italics.**`;
     handleGeminiRequest(req, res, instruction, 'textToSummarize');
 });
 
 app.post("/api/generate-flashcards", (req, res) => {
     const instruction = "Based on the provided text, create flashcards in Vietnamese. Format clearly: 'Q: [Question]\\nA: [Answer]' separated by TWO newlines.";
-    handleGeminiRequest(req, res, instruction, 'textToConvert'); // Không cần gợi ý
+    handleGeminiRequest(req, res, instruction, 'textToConvert');
 });
 
 app.post("/api/generate-mindmap", (req, res) => {
-    const instruction = "Based on the provided text, generate a mind map structure in Vietnamese using markdown hierarchical lists (* Topic\n  * Subtopic\n    * Detail). Make it concise and logical.";
-    handleGeminiRequest(req, res, instruction, 'textToConvert'); // Không cần gợi ý
+    const instruction = "Based on the provided text, generate a mind map structure in Vietnamese using markdown hierarchical lists (* Topic\\n  * Subtopic\\n    * Detail). Make it concise and logical.";
+    handleGeminiRequest(req, res, instruction, 'textToConvert');
 });
 
 app.post("/api/summarize-youtube", async (req, res) => {
@@ -155,7 +161,6 @@ Provide (in Vietnamese):
     handleGeminiRequest(req, res, instruction, 'stockSymbol', true);
 });
 
-// THÊM MỚI: API cho Marketing
 app.post("/api/marketing-content", (req, res) => {
     const langName = { 'vi': 'Tiếng Việt', 'en': 'English', 'zh-CN': '简体中文' }[req.body.language] || 'Tiếng Việt';
     const instruction = `You are a professional Marketing Content Creator. Respond in **${langName}**.
@@ -165,7 +170,6 @@ Format clearly using markdown, lists, and <mark class="highlight">key phrases</m
     handleGeminiRequest(req, res, instruction, 'marketingTopic');
 });
 
-// THÊM MỚI: API cho Tạo nhạc (Mô phỏng)
 app.post("/api/music-generation", (req, res) => {
     const langName = { 'vi': 'Tiếng Việt', 'en': 'English', 'zh-CN': '简体中文' }[req.body.language] || 'Tiếng Việt';
     const instruction = `You are a music composer AI. Respond in **${langName}**.

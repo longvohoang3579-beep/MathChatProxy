@@ -3,7 +3,6 @@ import bodyParser from "body-parser";
 import fetch from "node-fetch";
 import dotenv from "dotenv";
 import cors from "cors";
-// Đã thay thế import LangChain bằng thư viện youtube-transcript
 import { YoutubeTranscript } from 'youtube-transcript'; 
 
 dotenv.config();
@@ -16,7 +15,6 @@ app.use(express.static("."));
 
 // --- Configuration ---
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-// Đã sử dụng 2.5-flash ổn định
 const GEMINI_MODEL = "gemini-2.5-flash"; 
 const GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`;
 
@@ -24,17 +22,17 @@ if (!GEMINI_API_KEY) console.warn("⚠️ WARNING: GEMINI_API_KEY is not set!");
 
 // --- Helper Functions ---
 
-// Hàm trợ giúp mới để trích xuất Video ID (Cần cho YoutubeTranscript)
 function extractYouTubeID(url) {
     const regex = /(?:youtube\.com\/(?:[^\/\n\s]+\/\S+\/|(?:v|e(?:mbed)?)\/|\S*?[?&]v=)|youtu\.be\/|youtube\.com\/shorts\/)([a-zA-Z0-9_-]{11})/;
     const match = url.match(regex);
     return (match && match[1]) ? match[1] : null;
 }
 
+// Hàm gọi Gemini API (Có hỗ trợ Web Search Tool)
 async function callGeminiAPI(contents, useWebSearch = false) {
     if (!GEMINI_API_KEY) return "❌ Error: GEMINI_API_KEY is missing.";
     try {
-        // Fix Chứng khoán: Đổi tên tool từ google_search_retrieval sang googleSearch
+        // Khai báo công cụ tìm kiếm
         const tools = useWebSearch ? [{ "googleSearch": {} }] : undefined; 
         
         const body = JSON.stringify({ contents, tools });
@@ -46,19 +44,23 @@ async function callGeminiAPI(contents, useWebSearch = false) {
         // Handle function calls (Google Search)
         const functionCallPart = data.candidates?.[0]?.content?.parts?.find(part => part.functionCall);
         if (functionCallPart) {
-             console.log("Gemini requested function call, responding automatically...");
-             const functionResponse = { functionResponse: { name: functionCallPart.functionCall.name, response: { name: functionCallPart.functionCall.name, content: "Web search performed." } } };
-             contents.push({ role: "function", parts: [functionResponse] });
-             const response2 = await fetch(`${GEMINI_API_URL}?key=${GEMINI_API_KEY}`, {
-                 method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ contents }),
-             });
-             const data2 = await response2.json();
-             if (!response2.ok) {
-                 const errorMsg = data2.error?.message || `Gemini Function Response Error ${response2.status}`;
-                 throw new Error(`❌ HTTP Error ${response2.status} (Search Tool): ${errorMsg}`);
-             }
-             if (data2.candidates && data2.candidates[0].finishReason === 'SAFETY') return "❌ Response blocked due to safety concerns.";
-             return data2.candidates?.[0]?.content?.parts?.[0]?.text || "❌ No valid response after search.";
+            console.log("Gemini requested function call, responding automatically...");
+            const functionResponse = { functionResponse: { name: functionCallPart.functionCall.name, response: { name: functionCallPart.functionCall.name, content: "Web search performed." } } };
+            
+            // Thêm phản hồi công cụ vào nội dung và gọi lại API lần 2
+            const contents2 = [...contents, { role: "function", parts: [functionResponse] }];
+            
+            const response2 = await fetch(`${GEMINI_API_URL}?key=${GEMINI_API_KEY}`, {
+                method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ contents: contents2 }),
+            });
+            const data2 = await response2.json();
+            
+            if (!response2.ok) {
+                const errorMsg = data2.error?.message || `Gemini Function Response Error ${response2.status}`;
+                throw new Error(`❌ HTTP Error ${response2.status} (Search Tool): ${errorMsg}`);
+            }
+            if (data2.candidates && data2.candidates[0].finishReason === 'SAFETY') return "❌ Response blocked due to safety concerns.";
+            return data2.candidates?.[0]?.content?.parts?.[0]?.text || "❌ No valid response after search.";
         }
         
         if (!response.ok) {
@@ -100,7 +102,6 @@ async function handleGeminiRequest(req, res, systemInstruction, inputField = 'me
     const { image } = req.body;
     const text = req.body[inputField] || req.body['message'] || req.body['question'] || req.body['textToSummarize'] || req.body['textToConvert'] || req.body['stockSymbol'] || req.body['marketingTopic'] || req.body['musicTopic'];
     try {
-        // Chú ý: systemInstruction từ client (req.body.systemInstruction) sẽ ưu tiên
         const finalSystemInstruction = req.body.systemInstruction || systemInstruction;
         const contents = buildGeminiContent(text, image, finalSystemInstruction);
         const reply = await callGeminiAPI(contents, useWebSearch);
@@ -112,10 +113,7 @@ async function handleGeminiRequest(req, res, systemInstruction, inputField = 'me
 // --- API Endpoints ---
 app.post("/api/chat", (req, res) => {
     const langName = { 'vi': 'Tiếng Việt', 'en': 'English', 'zh-CN': '简体中文' }[req.body.language] || 'Tiếng Việt';
-    
-    // Gợi ý tiếp theo
     const followUpSuggestion = `**At the end of your response, always suggest one logical follow-up topic or question for the user to explore next, enclosed in italics (e.g., *Bạn có muốn xem một ví dụ khác không?*).**`;
-    
     const baseInstruction = `You are a helpful AI assistant. Respond in **${langName}**. Be concise, use markdown, highlight <mark class="highlight">...</mark>. Analyze image if provided. ${followUpSuggestion}`;
     handleGeminiRequest(req, res, baseInstruction, 'message');
 });
@@ -127,7 +125,6 @@ app.post("/api/math", (req, res) => {
 });
 
 app.post("/api/edit-image", (req, res) => {
-    // Luôn giữ nguyên Instruction này vì client (index.html) đang gửi kèm ảnh
     const instruction = `Analyze image and user text. Generate ONLY a detailed English prompt (max 30 words) for an image generation model (like Midjourney or Pollinations) to create the edited image. DO NOT add any surrounding text.`;
     handleGeminiRequest(req, res, instruction, 'message');
 });
@@ -144,18 +141,17 @@ app.post("/api/generate-flashcards", (req, res) => {
 });
 
 app.post("/api/generate-mindmap", (req, res) => {
-    const instruction = "Based on the provided text, generate a mind map structure in Vietnamese using markdown hierarchical lists (* Topic\\n  * Subtopic\\n    * Detail). Make it concise and logical.";
+    const instruction = "Based on the provided text, generate a mind map structure in Vietnamese using markdown hierarchical lists (* Topic\\n * Subtopic\\n * Detail). Make it concise and logical.";
     handleGeminiRequest(req, res, instruction, 'textToConvert');
 });
 
-// FIX: Endpoint tóm tắt YouTube được viết lại để sử dụng youtube-transcript
+// FIX: Endpoint tóm tắt YouTube được viết lại để sử dụng Web Search Tool khi phụ đề tắt
 app.post("/api/summarize-youtube", async (req, res) => {
     const { youtubeUrl, language } = req.body;
     const langName = { 'vi': 'Tiếng Việt', 'en': 'English', 'zh-CN': '简体中文' }[language] || 'Tiếng Việt';
     
     if (!youtubeUrl) return res.status(400).json({ response: "YouTube URL required." });
 
-    // Trích xuất Video ID bằng hàm helper
     const videoId = extractYouTubeID(youtubeUrl);
     if (!videoId) {
         return res.status(400).json({ 
@@ -163,53 +159,79 @@ app.post("/api/summarize-youtube", async (req, res) => {
         });
     }
 
+    let fullTranscript = null;
+    let fallbackToSearch = false;
+
+    // --- BƯỚC 1: Cố gắng lấy phụ đề ---
     try {
-        // 1. Lấy phụ đề (Transcript) - Thử lấy theo ngôn ngữ của người dùng (ví dụ: 'vi')
         const transcriptArray = await YoutubeTranscript.fetchTranscript(videoId, { 
-            lang: language || 'vi' // Sử dụng ngôn ngữ được chọn hoặc mặc định là Tiếng Việt
+            lang: language || 'vi'
         });
         
-        if (!transcriptArray || transcriptArray.length === 0) {
-            // Trường hợp lỗi: Video không có phụ đề
-            return res.status(500).json({ 
-                response: `❌ Lỗi tóm tắt video: Video này không có phụ đề hoặc phụ đề đã bị tắt. Vui lòng thử video khác. (Mã lỗi: ${videoId})` 
-            });
+        if (transcriptArray && transcriptArray.length > 0) {
+            fullTranscript = transcriptArray.map(item => item.text).join(' ');
+        } else {
+            // Transcript không có nội dung, chuyển sang tìm kiếm
+            fallbackToSearch = true;
         }
-
-        // 2. Nối các phần phụ đề lại thành một đoạn văn bản dài
-        const fullTranscript = transcriptArray.map(item => item.text).join(' ');
-
-        // 3. Xây dựng System Instruction và nội dung
-        const instruction = `Bạn là một trợ lý chuyên tóm tắt video. Tóm tắt các điểm chính từ phụ đề sau bằng ${langName}. Sử dụng Markdown để trình bày rõ ràng.
-        **At the end, ALWAYS suggest a related video topic to search for in italics.**`;
-        
-        // Cắt bớt transcript nếu quá dài (> 15000 ký tự) để tránh lỗi API
-        const textForGemini = "Transcript:\n" + fullTranscript.substring(0, 15000);
-
-        const contents = buildGeminiContent(textForGemini, null, instruction);
-        
-        // 4. Gọi API Gemini để tóm tắt
-        const summary = await callGeminiAPI(contents);
-        
-        res.json({ response: summary });
 
     } catch (error) {
-        console.error("❌ YouTube Summarize Error:", error);
+        // Lỗi thường gặp: Transcript is disabled, 404, etc. Chuyển sang tìm kiếm
+        console.error(`❌ YouTube Transcript Failed (${videoId}):`, error.message);
+        fallbackToSearch = true;
+    }
+
+    let summary = "";
+    let instruction = "";
+    let useWebSearch = false;
+    let textForGemini = "";
+
+    // --- BƯỚC 2: Chuẩn bị Prompts cho Gemini (Có hoặc Không có Transcript) ---
+    if (fullTranscript) {
+        // Kịch bản A: Có Transcript
+        instruction = `Bạn là một trợ lý chuyên tóm tắt video. Tóm tắt các điểm chính từ phụ đề sau bằng ${langName}. Sử dụng Markdown để trình bày rõ ràng.
+        **At the end, ALWAYS suggest a related video topic to search for in italics.**`;
+        textForGemini = "Transcript:\n" + fullTranscript.substring(0, 15000);
+        useWebSearch = false;
         
-        let errorMsg = "Lỗi không xác định khi tóm tắt video.";
-        if (error.message.includes('Transcript is disabled')) {
-            errorMsg = `Lỗi: Video này đã tắt phụ đề. Không thể tóm tắt. (Mã lỗi: ${videoId})`;
-        } else if (error.message.includes('not a valid YouTube URL') || error.message.includes('404')) {
-             errorMsg = `Lỗi: Video không khả dụng (URL không hợp lệ, bị xóa hoặc bị chặn theo khu vực).`;
+    } else if (fallbackToSearch) {
+        // Kịch bản B: KHÔNG CÓ Transcript -> Kích hoạt Web Search
+        instruction = `Bạn là một trợ lý tóm tắt thông minh. Video với ID '${videoId}' đã tắt phụ đề.
+        Sử dụng **Công cụ Tìm kiếm Web** (Google Search Tool) để tìm kiếm nội dung (ví dụ: mô tả, tóm tắt) của video này trên các trang web khác.
+        Từ kết quả tìm kiếm, hãy tổng hợp thông tin quan trọng nhất về nội dung video.
+        **LƯU Ý:** Trả lời bằng ${langName}. Nếu không tìm thấy thông tin nào về video, hãy thông báo lỗi.`;
+        textForGemini = `Vui lòng tìm kiếm thông tin về video YouTube này: ${youtubeUrl}`; 
+        useWebSearch = true; // BẬT CÔNG CỤ TÌM KIẾM!
+    } else {
+        // Kịch bản C: Lỗi không xác định
+        return res.status(500).json({ 
+            response: `Error summarizing video: Lỗi không xác định khi truy xuất thông tin video ${videoId}.` 
+        });
+    }
+
+    // --- BƯỚC 3: Gọi Gemini ---
+    try {
+        const contents = buildGeminiContent(textForGemini, null, instruction);
+        summary = await callGeminiAPI(contents, useWebSearch); // Kích hoạt Web Search nếu cần
+        
+        // Kiểm tra nếu Web Search thất bại
+        if (useWebSearch && summary.startsWith("❌")) {
+             return res.status(500).json({ 
+                response: `Error summarizing video: Lỗi tìm kiếm web cho video ${videoId}. Gemini không thể tìm thấy thông tin tóm tắt bên ngoài.` 
+            });
         }
         
-        res.status(500).json({ response: `Error summarizing video: ${errorMsg}` });
+        res.json({ response: summary });
+    } catch (error) {
+        console.error("🔥 Gemini Summary/Search Error:", error);
+        res.status(500).json({ 
+            response: `Error summarizing video: Lỗi xử lý Gemini. Vui lòng kiểm tra API Key hoặc mạng lưới. Chi tiết: ${error.message}` 
+        });
     }
 });
 
 
 app.post("/api/analyze-stock", (req, res) => {
-    // FIX 4: Phân tích Chứng khoán chuyên sâu
     const instruction = `
 You are a stock analyst AI. Analyze the symbol based on knowledge and recent web search.
 Provide a **deep and specific analysis in Vietnamese** that includes:
@@ -237,7 +259,6 @@ app.post("/api/music-generation", (req, res) => {
     const langName = { 'vi': 'Tiếng Việt', 'en': 'English', 'zh-CN': '简体中文' }[req.body.language] || 'Tiếng Việt';
     const instruction = `You are a music composer AI. Respond in **${langName}**.
     
-    // Xác nhận giới hạn: Chỉ tạo lời và hợp âm
     **Ghi chú:** Bạn chỉ có thể tạo lời và hợp âm, không thể tạo ra file âm thanh.
     
 1.  **Write Lyrics:** Write a short verse (4-6 lines) based on the user's prompt.
@@ -254,7 +275,6 @@ app.post("/api/pollinations-image", async (req, res) => {
     try {
         const translatedPrompt = await translateToEnglish(prompt);
         const safePrompt = encodeURIComponent(translatedPrompt);
-        // Sử dụng kích thước 512x512 là phổ biến và ổn định hơn 1024x1024 cho Pollinations
         const imageUrl = `https://image.pollinations.ai/prompt/${safePrompt}?nologo=true&width=512&height=512`;
         res.json({ imageUrl });
     } catch (error) {

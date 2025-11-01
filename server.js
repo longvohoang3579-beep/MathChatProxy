@@ -3,7 +3,8 @@ import bodyParser from "body-parser";
 import fetch from "node-fetch";
 import dotenv from "dotenv";
 import cors from "cors";
-import { YoutubeLoader } from "@langchain/community/document_loaders/web/youtube";
+// Đã thay thế import LangChain bằng thư viện youtube-transcript
+import { YoutubeTranscript } from 'youtube-transcript'; 
 
 dotenv.config();
 const app = express();
@@ -23,10 +24,17 @@ if (!GEMINI_API_KEY) console.warn("⚠️ WARNING: GEMINI_API_KEY is not set!");
 
 // --- Helper Functions ---
 
+// Hàm trợ giúp mới để trích xuất Video ID (Cần cho YoutubeTranscript)
+function extractYouTubeID(url) {
+    const regex = /(?:youtube\.com\/(?:[^\/\n\s]+\/\S+\/|(?:v|e(?:mbed)?)\/|\S*?[?&]v=)|youtu\.be\/|youtube\.com\/shorts\/)([a-zA-Z0-9_-]{11})/;
+    const match = url.match(regex);
+    return (match && match[1]) ? match[1] : null;
+}
+
 async function callGeminiAPI(contents, useWebSearch = false) {
     if (!GEMINI_API_KEY) return "❌ Error: GEMINI_API_KEY is missing.";
     try {
-        // 📌 FIX 7: Chứng khoán - Đổi tên tool từ google_search_retrieval sang googleSearch
+        // Fix Chứng khoán: Đổi tên tool từ google_search_retrieval sang googleSearch
         const tools = useWebSearch ? [{ "googleSearch": {} }] : undefined; 
         
         const body = JSON.stringify({ contents, tools });
@@ -42,7 +50,7 @@ async function callGeminiAPI(contents, useWebSearch = false) {
              const functionResponse = { functionResponse: { name: functionCallPart.functionCall.name, response: { name: functionCallPart.functionCall.name, content: "Web search performed." } } };
              contents.push({ role: "function", parts: [functionResponse] });
              const response2 = await fetch(`${GEMINI_API_URL}?key=${GEMINI_API_KEY}`, {
-                method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ contents }),
+                 method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ contents }),
              });
              const data2 = await response2.json();
              if (!response2.ok) {
@@ -105,7 +113,7 @@ async function handleGeminiRequest(req, res, systemInstruction, inputField = 'me
 app.post("/api/chat", (req, res) => {
     const langName = { 'vi': 'Tiếng Việt', 'en': 'English', 'zh-CN': '简体中文' }[req.body.language] || 'Tiếng Việt';
     
-    // 📌 FIX 3B: Gợi ý tiếp theo không tự nhiên
+    // Gợi ý tiếp theo
     const followUpSuggestion = `**At the end of your response, always suggest one logical follow-up topic or question for the user to explore next, enclosed in italics (e.g., *Bạn có muốn xem một ví dụ khác không?*).**`;
     
     const baseInstruction = `You are a helpful AI assistant. Respond in **${langName}**. Be concise, use markdown, highlight <mark class="highlight">...</mark>. Analyze image if provided. ${followUpSuggestion}`;
@@ -140,63 +148,78 @@ app.post("/api/generate-mindmap", (req, res) => {
     handleGeminiRequest(req, res, instruction, 'textToConvert');
 });
 
+// FIX: Endpoint tóm tắt YouTube được viết lại để sử dụng youtube-transcript
 app.post("/api/summarize-youtube", async (req, res) => {
-    let { youtubeUrl } = req.body;
+    const { youtubeUrl, language } = req.body;
+    const langName = { 'vi': 'Tiếng Việt', 'en': 'English', 'zh-CN': '简体中文' }[language] || 'Tiếng Việt';
+    
     if (!youtubeUrl) return res.status(400).json({ response: "YouTube URL required." });
 
-    // 📌 FIX 6: Tóm tắt YT - Robust URL parsing
+    // Trích xuất Video ID bằng hàm helper
+    const videoId = extractYouTubeID(youtubeUrl);
+    if (!videoId) {
+        return res.status(400).json({ 
+            response: "Lỗi: URL YouTube không hợp lệ. Vui lòng kiểm tra lại định dạng URL." 
+        });
+    }
+
     try {
-        let videoId = null;
-        const urlObj = new URL(youtubeUrl);
+        // 1. Lấy phụ đề (Transcript) - Thử lấy theo ngôn ngữ của người dùng (ví dụ: 'vi')
+        const transcriptArray = await YoutubeTranscript.fetchTranscript(videoId, { 
+            lang: language || 'vi' // Sử dụng ngôn ngữ được chọn hoặc mặc định là Tiếng Việt
+        });
         
-        // 1. Check standard 'v' parameter (e.g., ?v=ID)
-        videoId = urlObj.searchParams.get('v');
-        
-        // 2. Check short URLs (e.g., youtu.be/ID)
-        if (!videoId && urlObj.hostname.includes('youtu.be')) {
-             const pathParts = urlObj.pathname.split('/');
-             const shortId = pathParts[pathParts.length - 1];
-             if (shortId && shortId.length === 11) { videoId = shortId; }
+        if (!transcriptArray || transcriptArray.length === 0) {
+            // Trường hợp lỗi: Video không có phụ đề
+            return res.status(500).json({ 
+                response: `❌ Lỗi tóm tắt video: Video này không có phụ đề hoặc phụ đề đã bị tắt. Vui lòng thử video khác. (Mã lỗi: ${videoId})` 
+            });
         }
 
-        if (!videoId) {
-            throw new Error("Failed to get YouTube video id from the url (missing 'v=' or invalid short URL format).");
-        }
-        
-        // Reconstruct URL to a clean format for the loader
-        youtubeUrl = `https://www.youtube.com/watch?v=${videoId}`;
-    } catch(e) { 
-        // Lỗi nếu URL không hợp lệ hoặc không tìm thấy ID
-        return res.status(500).json({ response: `Error summarizing video: Failed to get youtube video id from the url. Please check the URL format. (${e.message})` });
-    }
-    
-    try {
-        const loader = YoutubeLoader.createFromUrl(youtubeUrl, { language: "en", addVideoInfo: true });
-        const docs = await loader.load();
-        let videoInfo = docs[0]?.metadata?.title ? `Video Title: ${docs[0].metadata.title}\nChannel: ${docs[0].metadata.author}\n\n` : "";
-        const transcript = docs.map(doc => doc.pageContent).join("\n");
-        if (!transcript) return res.status(500).json({ response: "❌ Lỗi: Video không có bản ghi (transcript) hoặc video riêng tư/bị hạn chế. Vui lòng thử video khác." });
-        const instruction = `Summarize key points of the YouTube transcript in Vietnamese. Start with title/channel.
+        // 2. Nối các phần phụ đề lại thành một đoạn văn bản dài
+        const fullTranscript = transcriptArray.map(item => item.text).join(' ');
+
+        // 3. Xây dựng System Instruction và nội dung
+        const instruction = `Bạn là một trợ lý chuyên tóm tắt video. Tóm tắt các điểm chính từ phụ đề sau bằng ${langName}. Sử dụng Markdown để trình bày rõ ràng.
         **At the end, ALWAYS suggest a related video topic to search for in italics.**`;
-        const contents = buildGeminiContent(videoInfo + "Transcript:\n" + transcript.substring(0, 15000), null, instruction);
+        
+        // Cắt bớt transcript nếu quá dài (> 15000 ký tự) để tránh lỗi API
+        const textForGemini = "Transcript:\n" + fullTranscript.substring(0, 15000);
+
+        const contents = buildGeminiContent(textForGemini, null, instruction);
+        
+        // 4. Gọi API Gemini để tóm tắt
         const summary = await callGeminiAPI(contents);
+        
         res.json({ response: summary });
+
     } catch (error) {
         console.error("❌ YouTube Summarize Error:", error);
-        const errorMsg = error.message.includes('transcript disabled') ? "Transcript disabled." : error.message.includes('404') ? "Video not found." : error.message;
+        
+        let errorMsg = "Lỗi không xác định khi tóm tắt video.";
+        if (error.message.includes('Transcript is disabled')) {
+            errorMsg = `Lỗi: Video này đã tắt phụ đề. Không thể tóm tắt. (Mã lỗi: ${videoId})`;
+        } else if (error.message.includes('not a valid YouTube URL') || error.message.includes('404')) {
+             errorMsg = `Lỗi: Video không khả dụng (URL không hợp lệ, bị xóa hoặc bị chặn theo khu vực).`;
+        }
+        
         res.status(500).json({ response: `Error summarizing video: ${errorMsg}` });
     }
 });
 
+
 app.post("/api/analyze-stock", (req, res) => {
+    // FIX 4: Phân tích Chứng khoán chuyên sâu
     const instruction = `
 You are a stock analyst AI. Analyze the symbol based on knowledge and recent web search.
-Provide (in Vietnamese):
-1.  **Trend:** Recent trend & timeframe.
-2.  **Factors:** 1-2 key influencing factors.
-3.  **Related:** Suggest 1-2 similar stocks.
-4.  **Chart Concept:** Suggest search query for a *general illustrative chart* (e.g., "stock chart uptrend example").
-5.  **Disclaimer:** MUST include: "**Disclaimer:** AI analysis, not financial advice. Consult a professional."
+Provide a **deep and specific analysis in Vietnamese** that includes:
+1.  **Price Movement (Hôm nay):** Current price and the **exact percentage** increase or decrease today (use Google Search for current data).
+2.  **Trend:** Recent trend (short-term and long-term outlook).
+3.  **Factors:** 2-3 key influencing factors (macro/micro).
+4.  **Highlights:** Use <mark class="highlight">...</mark> to emphasize all key financial numbers and important analysis points.
+5.  **Related:** Suggest 1-2 similar stocks.
+6.  **Chart Concept:** Suggest search query for a *general illustrative chart* (e.g., "stock chart uptrend example").
+7.  **Disclaimer:** MUST include: "**Disclaimer:** AI analysis, not financial advice. Consult a professional."
     **At the end, ALWAYS suggest one related company or metric to check in italics.**`;
     handleGeminiRequest(req, res, instruction, 'stockSymbol', true);
 });
@@ -214,8 +237,8 @@ app.post("/api/music-generation", (req, res) => {
     const langName = { 'vi': 'Tiếng Việt', 'en': 'English', 'zh-CN': '简体中文' }[req.body.language] || 'Tiếng Việt';
     const instruction = `You are a music composer AI. Respond in **${langName}**.
     
-    // 📌 FIX 2: Tạo nhạc (Giải thích giới hạn)
-    Since you cannot generate audio files, you must only provide the musical composition in a textual format.
+    // Xác nhận giới hạn: Chỉ tạo lời và hợp âm
+    **Ghi chú:** Bạn chỉ có thể tạo lời và hợp âm, không thể tạo ra file âm thanh.
     
 1.  **Write Lyrics:** Write a short verse (4-6 lines) based on the user's prompt.
 2.  **Suggest Chords:** Suggest a simple chord progression (e.g., C - G - Am - F).
@@ -226,18 +249,18 @@ Format the response clearly using markdown.
 });
 
 app.post("/api/pollinations-image", async (req, res) => {
-  const { prompt } = req.body;
-  if (!prompt) return res.status(400).json({ message: "A description is required." });
-  try {
-    const translatedPrompt = await translateToEnglish(prompt);
-    const safePrompt = encodeURIComponent(translatedPrompt);
-    // Sử dụng kích thước 512x512 là phổ biến và ổn định hơn 1024x1024 cho Pollinations
-    const imageUrl = `https://image.pollinations.ai/prompt/${safePrompt}?nologo=true&width=512&height=512`;
-    res.json({ imageUrl });
-  } catch (error) {
-      console.error("Pollinations Image Error:", error);
-    res.status(500).json({ message: "Could not create image via Pollinations." });
-  }
+    const { prompt } = req.body;
+    if (!prompt) return res.status(400).json({ message: "A description is required." });
+    try {
+        const translatedPrompt = await translateToEnglish(prompt);
+        const safePrompt = encodeURIComponent(translatedPrompt);
+        // Sử dụng kích thước 512x512 là phổ biến và ổn định hơn 1024x1024 cho Pollinations
+        const imageUrl = `https://image.pollinations.ai/prompt/${safePrompt}?nologo=true&width=512&height=512`;
+        res.json({ imageUrl });
+    } catch (error) {
+         console.error("Pollinations Image Error:", error);
+        res.status(500).json({ message: "Could not create image via Pollinations." });
+    }
 });
 
 app.post("/api/pollinations-frames", async (req, res) => {
@@ -246,9 +269,7 @@ app.post("/api/pollinations-frames", async (req, res) => {
     try {
         const translatedPrompt = await translateToEnglish(prompt);
         console.warn("⚠️ /api/pollinations-frames needs implementation.");
-        // Ghi chú: Vì Pollinations API không có endpoint tạo GIF/video trực tiếp,
-        // chúng ta chỉ có thể trả về một mảng rỗng để không phá vỡ client
-        // hoặc implement logic tạo frame nếu bạn có quyền truy cập API khác.
+        // Giữ nguyên logic trả về frames rỗng vì chưa có API tạo GIF bên Pollinations
         res.json({ frames: [] });
     } catch (error) {
         res.status(500).json({ message: "Could not create video frames." });

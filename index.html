@@ -7,6 +7,9 @@
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet" />
     <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" integrity="sha512-Fo3rlrZj/k7ujTnHg4CGR2D7kSs0v4LLanw2qksYuRlEzO+tcaEPQogQ0KaoGN26/zrn20ImR1DfuLWnOo7aBA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    
+    <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+    <script>mermaid.initialize({ startOnLoad: true });</script>
     <style>
         /* --- Giữ nguyên toàn bộ CSS từ file doc --- */
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap');
@@ -183,7 +186,6 @@
     </div>
 
     <script>
-    // --- Khôi phục toàn bộ JavaScript từ file doc ---
     document.addEventListener('DOMContentLoaded', () => {
         // --- Khai báo biến DOM ---
         const getEl = (id) => document.getElementById(id);
@@ -333,6 +335,9 @@
 
         // === Logic Voice Chat ===
         let conversationMode = false; let silenceTimeout;
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        let recognition;
+        
         if (SpeechRecognition) {
             recognition = new SpeechRecognition(); recognition.continuous = false; recognition.interimResults = false; recognition.lang = 'vi-VN';
             recognition.onresult = (event) => { clearTimeout(silenceTimeout); const transcript = event.results[0][0].transcript; voiceStatus.textContent = `Bạn: "${transcript}"`; handleVoiceQuery(transcript, recognition.lang); };
@@ -370,7 +375,78 @@
         voiceMicIcon.addEventListener('click', () => { if (isRecording) recognition.stop(); else startListening(); });
         voiceCloseBtn.addEventListener('click', () => { conversationMode = false; if (isRecording) recognition.stop(); speechSynthesis.cancel(); voiceOverlay.style.display = 'none'; });
 
-        // === Flashcard/Mindmap ===
+        // === Flashcard & Mindmap Rendering (Đã sửa lỗi hiển thị ngay đáp án và lỗi không vẽ được) ===
+        function renderFlashcards(rawText) {
+            const cardPairs = rawText.split('\nQ:').filter(c => c.trim()).map(c => {
+                if (!c.startsWith('Q:')) c = 'Q:' + c;
+                const parts = c.split('\nA:');
+                const question = parts[0].replace('Q:', '').trim();
+                const answer = parts[1] ? parts[1].trim() : 'No Answer Provided';
+                return { question, answer };
+            });
+
+            let html = `<div class="flashcard-list grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">`;
+
+            cardPairs.forEach((pair, index) => {
+                const cardId = `card-${Date.now()}-${index}-${Math.floor(Math.random() * 1000)}`;
+                html += `
+                    <div class="flashcard-item bg-gray-700 rounded-lg shadow-lg overflow-hidden border-2 border-gray-600">
+                        <div id="${cardId}-q" class="p-4 bg-gray-800 text-white font-bold cursor-pointer hover:bg-gray-700 transition" onclick="
+                            const a = document.getElementById('${cardId}-a');
+                            const q = document.getElementById('${cardId}-q');
+                            if (a.style.display === 'none') {
+                                a.style.display = 'block';
+                                q.style.backgroundColor = '#1f2937'; // bg-gray-800 on click
+                                q.classList.remove('font-bold');
+                            } else {
+                                a.style.display = 'none';
+                                q.style.backgroundColor = '#1f2937'; // bg-gray-800
+                                q.classList.add('font-bold');
+                            }
+                        ">
+                            <span class="text-yellow-400">Q:</span> ${pair.question}
+                        </div>
+                        <div id="${cardId}-a" class="p-4 bg-gray-900 text-yellow-400" style="display:none;">
+                            <span class="text-gray-400">A:</span> ${pair.answer}
+                        </div>
+                    </div>`;
+            });
+
+            html += `</div>`;
+            return html;
+        }
+
+        function renderMindmap(rawText) {
+            // Chuyển đổi Markdown List sang định dạng Mindmap của Mermaid
+            let mindmapText = "mindmap\n";
+            const lines = rawText.split('\n');
+            let rootNode = null;
+
+            for (const line of lines) {
+                const match = line.match(/^(\s*)[\*\-]\s+(.*)$/);
+                if (!match) continue;
+
+                const indentLevel = match[1].length / 2; // Giả sử 2 space/tab cho mỗi cấp
+                const text = match[2].trim().replace(/[\[\]\(\)]/g, ''); // Loại bỏ ký tự xung đột
+
+                if (indentLevel === 0) {
+                    if (!rootNode) {
+                        rootNode = text;
+                        mindmapText += `  root((${text}))\n`;
+                    } else {
+                        // Xử lý nếu có nhiều root (chuyển thành nhánh lớn)
+                        mindmapText += `  ${text}((${text}))\n`;
+                    }
+                } else if (rootNode) {
+                    const indent = '  '.repeat(indentLevel + 1);
+                    mindmapText += `${indent}${text}\n`;
+                }
+            }
+            
+            // Trả về HTML với class="mermaid" để thư viện tự render
+            return `<div class="mermaid text-center p-4" style="background-color: #1a1a1e; border-radius: 8px; border: 1px solid #333; overflow-x: auto; max-width: 100%;">${mindmapText}</div>`;
+        }
+
         function addSummaryActions(bubbleElement, summaryText) {
             const actionsDiv = document.createElement('div');
             actionsDiv.className = 'summary-actions';
@@ -385,11 +461,34 @@
                     const endpoint = action === 'flashcard' ? '/api/generate-flashcards' : '/api/generate-mindmap';
                     button.textContent = 'Đang tạo...'; button.disabled = true;
                     const loadingBubble = showLoading();
+                    
                     try {
                         const response = await callApi(endpoint, { textToConvert: summaryText });
-                        loadingBubble.querySelector('.bubble').innerHTML = response.response;
-                        saveMessage(response.response, 'ai');
-                        incrementUsageCount(); // Tăng XP và lượt dùng
+                        if (response.response.startsWith('❌')) throw new Error(response.response);
+                        
+                        let finalHtml = '';
+                        let saveTag = '';
+                        
+                        if (action === 'flashcard') {
+                            finalHtml = renderFlashcards(response.response);
+                            saveTag = `[FLASHCARD_START]${response.response}[FLASHCARD_END]`;
+                        } else { // mindmap
+                            finalHtml = renderMindmap(response.response);
+                            saveTag = `[MINDMAP_START]${response.response}[MINDMAP_END]`;
+                        }
+                        
+                        loadingBubble.querySelector('.bubble').innerHTML = finalHtml;
+                        saveMessage(saveTag, 'ai');
+                        
+                        // Manually re-init Mermaid if mindmap
+                        if (action === 'mindmap' && window.mermaid) {
+                             setTimeout(() => {
+                                 window.mermaid.contentLoaded();
+                                 window.mermaid.init(undefined, loadingBubble.querySelector('.mermaid'));
+                             }, 100);
+                        }
+
+                        incrementUsageCount(); 
                     } catch (error) {
                         loadingBubble.querySelector('.bubble').innerHTML = `❌ Lỗi tạo ${action}: ${error.message}`;
                         saveMessage(loadingBubble.querySelector('.bubble').innerHTML, 'ai');
@@ -402,10 +501,10 @@
             bubbleElement.appendChild(actionsDiv);
         }
 
-        // === Cá nhân hóa AI ===
+        // === Cá nhân hóa AI (Đã sửa lỗi bị ghi đè vai trò) ===
         function getSystemInstruction(lang) {
             const langName = { 'vi': 'Tiếng Việt', 'en': 'English', 'zh-CN': '简体中文' }[lang] || 'Tiếng Việt';
-            let baseInstruction = `Respond in **${langName}**. Be concise, use markdown, highlight <mark class="highlight">...</mark>. Analyze image if provided.
+            let baseInstruction = `You are a helpful AI assistant. Respond in **${langName}**. Be concise, use markdown, highlight <mark class="highlight">...</mark>. Analyze image if provided.
             **At the end of your response, ALWAYS suggest one related follow-up question in italics (e.g., *Bạn có muốn biết thêm về X không?*).**`;
 
             if (currentChatMode === 'persona' && currentPersonaDesc) {
@@ -419,6 +518,7 @@
             currentPersonaDesc = description.trim();
             localStorage.setItem('ai_pro_persona_desc', currentPersonaDesc);
             const introMessage = `Tuyệt vời! Từ giờ tôi sẽ nhập vai: **${currentPersonaDesc}**. Hãy hỏi tôi bất cứ điều gì! <br><br> (Ghi chú: Tôi có thể biến thành vai trò của bất kể người nào trên thế giới và nếu người dùng nhập một nhân vật nổi tiếng, vợ, em gái hay trong lịch sử, tôi sẽ nhận biết nhân vật đó và khi người dùng hỏi cái gì, tôi cũng sẽ trả lời trong vai trò đó.)
+            <br><br>Gõ **!clearpersona** để tôi trở lại thành trợ lý AI.
             <br><br>*Bạn muốn bắt đầu với câu hỏi gì trong vai trò này?*`;
             appendMessage(introMessage, 'ai', true); // Lưu tin nhắn này vào history
         }
@@ -460,17 +560,46 @@
             const messages = chatHistory[activeChatId].messages || [];
             if (messages.length === 0) displayWelcomeMessage();
             else messages.forEach(msg => {
-                const msgGroup = appendMessage(msg.content, msg.type, false);
-                // Thêm lại nút action nếu là summary
+                let content = msg.content;
+                let isFlashcard = false;
+                let isMindmap = false;
+                
+                // 1. Check for Flashcard History
+                if (content.startsWith('[FLASHCARD_START]') && content.endsWith('[FLASHCARD_END]')) {
+                    const rawText = content.substring('[FLASHCARD_START]'.length, content.length - '[FLASHCARD_END]'.length);
+                    content = renderFlashcards(rawText);
+                    isFlashcard = true;
+                }
+                
+                // 2. Check for Mindmap History
+                else if (content.startsWith('[MINDMAP_START]') && content.endsWith('[MINDMAP_END]')) {
+                    const rawText = content.substring('[MINDMAP_START]'.length, content.length - '[MINDMAP_END]'.length);
+                    content = renderMindmap(rawText);
+                    isMindmap = true;
+                }
+
+                const msgGroup = appendMessage(content, msg.type, false);
+                
+                // 3. Thêm lại nút action nếu là summary (và chưa chuyển đổi)
                 const isSummary = msg.type === 'ai' && (msg.content.includes("key points") || msg.content.includes("## Key Points") || msg.content.includes("Tóm tắt") || msg.content.includes("Marketing"));
-                if (isSummary && !msg.content.startsWith('❌')) {
+                if (isSummary && !msg.content.startsWith('❌') && !isFlashcard && !isMindmap) {
                     const tempDiv = document.createElement('div'); tempDiv.innerHTML = msg.content;
                     const summaryText = tempDiv.textContent || tempDiv.innerText || "";
                     addSummaryActions(msgGroup.querySelector('.bubble'), summaryText);
                 }
             });
+            
+            // Re-render Mermaid sau khi tải lịch sử
+            setTimeout(() => {
+                if (window.mermaid) {
+                    window.mermaid.contentLoaded();
+                    window.mermaid.init(undefined, document.querySelectorAll('.mermaid'));
+                }
+            }, 50);
+
             renderChatHistory();
-            handleModeSelection('chat');
+            // Không chuyển mode khi load chat để giữ lại mode hiện tại nếu là persona/stock
+            // handleModeSelection('chat'); 
         }
          function renderChatHistory() {
              chatHistoryContainer.innerHTML = '';
@@ -567,7 +696,7 @@
 
              switch(currentChatMode) {
                  case 'persona':
-                     mainInput.placeholder = currentPersonaDesc ? `Chatting as ${currentPersonaDesc}...` : 'Nhập vai trò bạn muốn tôi đóng (vd: Einstein)...';
+                     mainInput.placeholder = currentPersonaDesc ? `Chatting as ${currentPersonaDesc} (gõ !clearpersona để reset)...` : 'Nhập vai trò bạn muốn tôi đóng (vd: Einstein)...';
                      if ((previousMode !== 'persona' || !currentPersonaDesc) && activeChatId) {
                          const lastMsg = chatHistory[activeChatId]?.messages.slice(-1)[0];
                          if (!lastMsg || !lastMsg.content.includes("Nào, hãy cho tôi biết")) {
@@ -595,9 +724,20 @@
         const handleSendMessage = async () => {
              if (!checkUsageLimit()) return;
              const prompt = mainInput.value.trim(); const image = uploadedFile;
+             
+             // 📌 FIX 1: Thêm lệnh xóa vai trò (clear persona)
+             if (currentChatMode === 'persona' && currentPersonaDesc && prompt.toLowerCase().includes('!clearpersona')) {
+                 currentPersonaDesc = '';
+                 localStorage.removeItem('ai_pro_persona_desc');
+                 appendMessage("Đã xóa vai trò nhập vai. Tôi đã trở lại thành trợ lý AI thông thường.", 'ai', true);
+                 mainInput.value = '';
+                 mainInput.placeholder = 'Nhập vai trò bạn muốn tôi đóng (vd: Einstein)...';
+                 return;
+             }
+
              if (currentChatMode === 'persona' && !currentPersonaDesc) {
                   if (!prompt) { alert("Vui lòng nhập vai trò."); return; }
-                  setPersona(prompt); mainInput.value = ''; mainInput.placeholder = `Chatting as ${currentPersonaDesc}...`; return;
+                  setPersona(prompt); mainInput.value = ''; mainInput.placeholder = `Chatting as ${currentPersonaDesc} (gõ !clearpersona để reset)...`; return;
              }
              if (currentChatMode === 'edit_image' && !image) { alert("Vui lòng tải ảnh."); return; }
              if (!prompt && currentChatMode === 'analyze_stock') { alert("Vui lòng nhập mã chứng khoán."); return; }
@@ -651,15 +791,29 @@
                 }
 
                 const aiBubbleElement = loadingBubbleGroup.querySelector('.bubble');
-                aiBubbleElement.innerHTML = finalContent;
-
-                if (currentChatMode === 'math') { MathJax.typesetPromise([aiBubbleElement]); }
+                
+                // Lưu nội dung thô hoặc HTML tùy theo chế độ
                 if (isSummaryResult && !finalContent.startsWith('❌')) {
+                    // Xử lý nội dung tóm tắt để thêm nút hành động
                     const tempDiv = document.createElement('div'); tempDiv.innerHTML = finalContent;
                     const summaryText = tempDiv.textContent || tempDiv.innerText || "";
+                    
+                    aiBubbleElement.innerHTML = finalContent;
                     addSummaryActions(aiBubbleElement, summaryText);
+                    saveMessage(finalContent, 'ai');
+
+                } else if (currentChatMode === 'math') { 
+                    // Xử lý MathJax
+                    aiBubbleElement.innerHTML = finalContent;
+                    MathJax.typesetPromise([aiBubbleElement]); 
+                    saveMessage(finalContent, 'ai');
+                    
+                } else {
+                    // Nội dung thường, chỉ gán và lưu
+                    aiBubbleElement.innerHTML = finalContent;
+                    saveMessage(finalContent, 'ai');
                 }
-                saveMessage(aiBubbleElement.innerHTML, 'ai');
+                
                 incrementUsageCount(); // Tăng XP và lượt dùng
 
             } catch (error) {

@@ -15,7 +15,8 @@ app.use(express.static("."));
 
 // --- Configuration ---
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-const GEMINI_MODEL = "gemini-1.5-flash";
+// Đã thay đổi model name sang 2.5-flash để tăng độ ổn định
+const GEMINI_MODEL = "gemini-2.5-flash"; 
 const GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`;
 
 if (!GEMINI_API_KEY) console.warn("⚠️ WARNING: GEMINI_API_KEY is not set!");
@@ -111,7 +112,6 @@ app.post("/api/edit-image", (req, res) => {
 });
 
 app.post("/api/summarize-text", (req, res) => {
-    // Dòng này đã được sửa bằng backtick (`)
     const instruction = `You are a notetaker. Extract key decisions, action items, main topics from the text. Format in Vietnamese with headings.
     **At the end, ALWAYS suggest one key topic from the text to explore deeper in italics.**`;
     handleGeminiRequest(req, res, instruction, 'textToSummarize');
@@ -128,14 +128,26 @@ app.post("/api/generate-mindmap", (req, res) => {
 });
 
 app.post("/api/summarize-youtube", async (req, res) => {
-    const { youtubeUrl } = req.body;
+    let { youtubeUrl } = req.body;
     if (!youtubeUrl) return res.status(400).json({ response: "YouTube URL required." });
+
+    // NEW: Clean the URL to ensure only the video ID is passed to the loader
+    try {
+        const urlObj = new URL(youtubeUrl);
+        const videoId = urlObj.searchParams.get('v');
+        if (videoId) {
+            youtubeUrl = `https://www.youtube.com/watch?v=${videoId}`;
+        }
+    } catch(e) { 
+        // Bỏ qua lỗi nếu URL bị sai cấu trúc, dùng URL gốc
+    }
+    
     try {
         const loader = YoutubeLoader.createFromUrl(youtubeUrl, { language: "en", addVideoInfo: true });
         const docs = await loader.load();
         let videoInfo = docs[0]?.metadata?.title ? `Video Title: ${docs[0].metadata.title}\nChannel: ${docs[0].metadata.author}\n\n` : "";
         const transcript = docs.map(doc => doc.pageContent).join("\n");
-        if (!transcript) return res.status(500).json({ response: "Could not get transcript." });
+        if (!transcript) return res.status(500).json({ response: "❌ Lỗi: Video không có bản ghi (transcript) hoặc video riêng tư/bị hạn chế. Vui lòng thử video khác." });
         const instruction = `Summarize key points of the YouTube transcript in Vietnamese. Start with title/channel.
         **At the end, ALWAYS suggest a related video topic to search for in italics.**`;
         const contents = buildGeminiContent(videoInfo + "Transcript:\n" + transcript.substring(0, 15000), null, instruction);

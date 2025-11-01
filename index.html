@@ -348,8 +348,8 @@
              if (!recognition || isRecording) { if(isRecording) recognition.stop(); return; }
              voiceStatus.textContent = "Đang Nghe..."; micWave.classList.add('listening'); voiceMicIcon.textContent = '🔴'; isRecording = true;
              recognition.lang = languageSelect.value === 'en' ? 'en-US' : (languageSelect.value === 'zh-CN' ? 'zh-CN' : 'vi-VN');
-             try { recognition.start(); } catch(e) { voiceStatus.textContent = `Lỗi: ${e.message}`; isRecording = false; micWave.classList.remove('listening'); voiceMicIcon.textContent = '🎤'; }
              clearTimeout(silenceTimeout); silenceTimeout = setTimeout(() => { if (isRecording) recognition.stop(); voiceStatus.textContent = "Hết thời gian chờ."; }, 7000);
+             try { recognition.start(); } catch(e) { voiceStatus.textContent = `Lỗi: ${e.message}`; isRecording = false; micWave.classList.remove('listening'); voiceMicIcon.textContent = '🎤'; }
         }
         function speak(text, lang) { return new Promise(resolve => { if (!speechSynthesis) { resolve(); return; } speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(text); u.lang = lang.includes('-') ? lang : (lang === 'en' ? 'en-US' : (lang === 'zh-CN' ? 'zh-CN' : 'vi-VN')); u.onstart = () => voiceStatus.textContent = "AI Đang Phản Hồi..."; u.onend = () => { voiceStatus.textContent = "Nhấn Mic để Bắt đầu Nói..."; resolve(); }; u.onerror = (e) => { console.error("Speak Error:", e); voiceStatus.textContent = `Lỗi phát âm: ${e.error}`; resolve(); }; setTimeout(() => speechSynthesis.speak(u), 100); }); }
         async function handleVoiceQuery(transcript, langCode) {
@@ -483,6 +483,7 @@
                         // Manually re-init Mermaid if mindmap
                         if (action === 'mindmap' && window.mermaid) {
                              setTimeout(() => {
+                                 // Tắt tự động khởi tạo trước khi gọi init
                                  window.mermaid.contentLoaded();
                                  window.mermaid.init(undefined, loadingBubble.querySelector('.mermaid'));
                              }, 100);
@@ -504,13 +505,20 @@
         // === Cá nhân hóa AI (Đã sửa lỗi bị ghi đè vai trò) ===
         function getSystemInstruction(lang) {
             const langName = { 'vi': 'Tiếng Việt', 'en': 'English', 'zh-CN': '简体中文' }[lang] || 'Tiếng Việt';
-            let baseInstruction = `You are a helpful AI assistant. Respond in **${langName}**. Be concise, use markdown, highlight <mark class="highlight">...</mark>. Analyze image if provided.
-            **At the end of your response, ALWAYS suggest one related follow-up question in italics (e.g., *Bạn có muốn biết thêm về X không?*).**`;
+            
+            // 📌 FIX 3B: Gợi ý tiếp theo không tự nhiên
+            let followUpSuggestion = `**At the end of your response, always suggest one logical follow-up topic or question for the user to explore next, enclosed in italics (e.g., *Bạn có muốn xem một ví dụ khác không?*).**`;
+
+
+            let baseInstruction = `You are a helpful AI assistant. Respond in **${langName}**. Be concise, use markdown, highlight <mark class="highlight">...</mark>. Analyze image if provided. ${followUpSuggestion}`;
 
             if (currentChatMode === 'persona' && currentPersonaDesc) {
+                // 📌 FIX 3A: Cải thiện Nhập vai (Inhuman response)
                 const personaIntro = "I can become any role in the world. If the user enters a famous person, wife, sister, or historical figure, I will recognize that character and answer all questions in that role.";
-                baseInstruction = `IMPORTANT: You must act as the following character: "${currentPersonaDesc}". Respond CONSISTENTLY in this role to all user input. Respond in **${langName}**. Keep answers concise, use markdown, highlight <mark class="highlight">...</mark>. ${personaIntro}
+                const personaInstruction = `IMPORTANT: You must act as the following character: "${currentPersonaDesc}". Respond CONSISTENTLY in this role to all user input. Respond in **${langName}**. Keep answers concise, use markdown, highlight <mark class="highlight">...</mark>. ${personaIntro}
+                **SENSITIVE TOPICS RULE:** If the user asks a sensitive or inappropriate question, do NOT revert to stating you are an AI model. Instead, handle the situation *in character* by deflecting, avoiding, expressing offense, or responding creatively as the persona.
                 **At the end, suggest one follow-up question *in character* (e.g., *Ngươi có muốn hỏi thêm về định luật vạn vật hấp dẫn không?*).**`;
+                baseInstruction = personaInstruction;
             }
             return baseInstruction;
         }
@@ -547,12 +555,16 @@
             chatBox.innerHTML = `<div class="welcome-message"><h2>AI Assistant Pro 🤖</h2><p class="mt-4">How can I help you today?</p><p class="mt-2 text-sm text-gray-500">(Sử dụng nút <span class="text-yellow-500 font-bold">+</span> để khám phá các chức năng...)</p></div>`;
         }
         function startNewChat() {
+            // 📌 FIX 2: Reset Persona khi tạo chat mới
+            currentPersonaDesc = ''; 
+            localStorage.removeItem('ai_pro_persona_desc');
+            
             activeChatId = `chat_${Date.now()}`;
             chatHistory[activeChatId] = { title: 'New Conversation', messages: [] };
             displayWelcomeMessage();
             renderChatHistory();
             saveHistoryToStorage();
-            handleModeSelection('chat');
+            handleModeSelection('chat'); // Quay về chế độ chat mặc định
         }
         function loadChat(chatId) {
             if (!chatHistory[chatId]) return startNewChat();
@@ -705,12 +717,12 @@
                          }
                      }
                      break;
-                 case 'summarize_youtube': mainInput.placeholder = 'Dán URL video YouTube...'; break;
+                 case 'summarize_youtube': mainInput.placeholder = 'Dán URL video YouTube (kèm ID video)...'; break;
                  case 'analyze_stock': mainInput.placeholder = 'Nhập mã chứng khoán (vd: AAPL, VNM)...'; break;
-                 case 'edit_image': mainInput.placeholder = 'Tải ảnh & mô tả chỉnh sửa...'; break;
+                 case 'edit_image': mainInput.placeholder = 'Tải ảnh & mô tả chỉnh sửa (vd: "biến anh ấy thành người máy")...'; break;
                  case 'notetaker': mainInput.placeholder = 'Dán văn bản cần ghi chú...'; break;
                  case 'marketing': mainInput.placeholder = 'Nhập chủ đề/sản phẩm cần viết content...'; break;
-                 case 'music': mainInput.placeholder = 'Nhập chủ đề/tâm trạng cho bài nhạc...'; break;
+                 case 'music': mainInput.placeholder = 'Nhập chủ đề/tâm trạng cho bài nhạc (Chỉ tạo lời & hợp âm, không tạo âm thanh)...'; break;
                  default: mainInput.placeholder = 'Hỏi tôi bất cứ điều gì...';
              }
              const fileLabel = fileInput.labels[0];
@@ -765,19 +777,37 @@
                 switch (currentChatMode) {
                     case 'image': responseData = await callApi('/api/pollinations-image', { prompt: currentPromptValue }); finalContent = `<img src="${responseData.imageUrl}" class="generated-image">`; break;
                     case 'edit_image':
+                        // 📌 FIX 4: Sửa ảnh (Image Editing) - Đảm bảo hình ảnh được trả về
                         loadingBubbleGroup.querySelector('.bubble').innerHTML = 'Generating edit description...';
-                        systemInstruction = `Analyze image and user text. Generate ONLY a detailed English prompt (max 20 words) for image generation.`;
-                        const descRes = await callApi('/api/edit-image', { message: currentPromptValue, image: currentImageValue, systemInstruction });
-                        const newPrompt = descRes.response; if (newPrompt.startsWith('❌')) throw new Error(newPrompt);
+                        // System instruction cứng để đảm bảo prompt đầu ra là text tiếng Anh thuần
+                        const editImageInstruction = `Analyze the uploaded image and the user's text description. Your task is to generate ONLY the best, most detailed English prompt (max 30 words) for a powerful text-to-image model (like Midjourney or DALL-E) to create the *edited* image. DO NOT add any surrounding text, just the prompt.`;
+                        
+                        const descRes = await callApi('/api/edit-image', { message: currentPromptValue, image: currentImageValue, systemInstruction: editImageInstruction });
+                        const newPrompt = descRes.response; 
+                        
+                        if (newPrompt.startsWith('❌')) throw new Error(newPrompt);
+                        
                         loadingBubbleGroup.querySelector('.bubble').innerHTML = 'Generating edited image...';
                         const imgRes = await callApi('/api/pollinations-image', { prompt: newPrompt });
-                        finalContent = `<p><strong>Based on:</strong> ${newPrompt}</p><img src="${imgRes.imageUrl}" class="generated-image">`; break;
+
+                        // Kiểm tra lại URL hình ảnh trước khi hiển thị
+                        if (!imgRes.imageUrl || imgRes.imageUrl.includes('Could not create image')) {
+                            throw new Error("Image generation failed or returned an invalid URL.");
+                        }
+
+                        // Xây dựng finalContent với cả prompt và hình ảnh
+                        finalContent = `<p><strong>Based on:</strong> <mark class="highlight">${newPrompt}</mark></p><img src="${imgRes.imageUrl}" class="generated-image">`;
+                        
+                        break;
                     case 'math': systemInstruction = `Solve math in Vietnamese...`; responseData = await callApi('/api/math', { question: currentPromptValue, image: currentImageValue, systemInstruction }); finalContent = responseData.response; break;
                     case 'summarize_youtube': responseData = await callApi('/api/summarize-youtube', { youtubeUrl: currentPromptValue }); finalContent = responseData.response; isSummaryResult = true; break;
                     case 'notetaker': systemInstruction = "You are a notetaker..."; responseData = await callApi('/api/summarize-text', { textToSummarize: currentPromptValue, systemInstruction }); finalContent = responseData.response; isSummaryResult = true; break;
                     case 'analyze_stock': responseData = await callApi('/api/analyze-stock', { stockSymbol: currentPromptValue }); finalContent = responseData.response; break;
                     case 'marketing': responseData = await callApi('/api/marketing-content', { marketingTopic: currentPromptValue, language: languageSelect.value }); finalContent = responseData.response; isSummaryResult = true; break;
-                    case 'music': responseData = await callApi('/api/music-generation', { musicTopic: currentPromptValue, language: languageSelect.value }); finalContent = responseData.response; break;
+                    case 'music': responseData = await callApi('/api/music-generation', { musicTopic: currentPromptValue, language: languageSelect.value }); 
+                        // FIX 1: Nhạc (Giải thích giới hạn)
+                        finalContent = `**Ghi chú:** Gemini AI chỉ có thể tạo lời và hợp âm, không thể tạo ra file âm thanh.\n\n${responseData.response}`; 
+                        break;
                     case 'video':
                          loadingBubbleGroup.querySelector('.bubble').innerHTML = 'Generating frames...';
                          responseData = await callApi('/api/pollinations-frames', { prompt: currentPromptValue });

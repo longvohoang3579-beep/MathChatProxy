@@ -15,7 +15,7 @@ app.use(express.static("."));
 
 // --- Configuration ---
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-// Đã thay đổi model name sang 2.5-flash để tăng độ ổn định
+// Đã sử dụng 2.5-flash ổn định
 const GEMINI_MODEL = "gemini-2.5-flash"; 
 const GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`;
 
@@ -26,12 +26,16 @@ if (!GEMINI_API_KEY) console.warn("⚠️ WARNING: GEMINI_API_KEY is not set!");
 async function callGeminiAPI(contents, useWebSearch = false) {
     if (!GEMINI_API_KEY) return "❌ Error: GEMINI_API_KEY is missing.";
     try {
-        const tools = useWebSearch ? [{ "google_search_retrieval": {} }] : undefined;
+        // 📌 FIX 7: Chứng khoán - Đổi tên tool từ google_search_retrieval sang googleSearch
+        const tools = useWebSearch ? [{ "googleSearch": {} }] : undefined; 
+        
         const body = JSON.stringify({ contents, tools });
         const response = await fetch(`${GEMINI_API_URL}?key=${GEMINI_API_KEY}`, {
             method: "POST", headers: { "Content-Type": "application/json" }, body: body,
         });
         const data = await response.json();
+        
+        // Handle function calls (Google Search)
         const functionCallPart = data.candidates?.[0]?.content?.parts?.find(part => part.functionCall);
         if (functionCallPart) {
              console.log("Gemini requested function call, responding automatically...");
@@ -41,12 +45,16 @@ async function callGeminiAPI(contents, useWebSearch = false) {
                 method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ contents }),
              });
              const data2 = await response2.json();
-             if (!response2.ok) throw new Error(data2.error?.message || `Gemini Function Response Error ${response2.status}`);
+             if (!response2.ok) {
+                 const errorMsg = data2.error?.message || `Gemini Function Response Error ${response2.status}`;
+                 throw new Error(`❌ HTTP Error ${response2.status} (Search Tool): ${errorMsg}`);
+             }
              if (data2.candidates && data2.candidates[0].finishReason === 'SAFETY') return "❌ Response blocked due to safety concerns.";
              return data2.candidates?.[0]?.content?.parts?.[0]?.text || "❌ No valid response after search.";
         }
+        
         if (!response.ok) {
-            const errorMsg = data.error?.message || 'Check API Key & ensure "Vertex AI API" + Billing are enabled.';
+            const errorMsg = data.error?.message || `Check API Key & ensure "Vertex AI API" + Billing are enabled. ${data.error?.message || ''}`;
             return `❌ HTTP Error ${response.status}: ${errorMsg}`;
         }
         if (data.candidates && data.candidates[0].finishReason === 'SAFETY') return "❌ Response blocked due to safety concerns.";
@@ -84,6 +92,7 @@ async function handleGeminiRequest(req, res, systemInstruction, inputField = 'me
     const { image } = req.body;
     const text = req.body[inputField] || req.body['message'] || req.body['question'] || req.body['textToSummarize'] || req.body['textToConvert'] || req.body['stockSymbol'] || req.body['marketingTopic'] || req.body['musicTopic'];
     try {
+        // Chú ý: systemInstruction từ client (req.body.systemInstruction) sẽ ưu tiên
         const finalSystemInstruction = req.body.systemInstruction || systemInstruction;
         const contents = buildGeminiContent(text, image, finalSystemInstruction);
         const reply = await callGeminiAPI(contents, useWebSearch);
@@ -95,8 +104,11 @@ async function handleGeminiRequest(req, res, systemInstruction, inputField = 'me
 // --- API Endpoints ---
 app.post("/api/chat", (req, res) => {
     const langName = { 'vi': 'Tiếng Việt', 'en': 'English', 'zh-CN': '简体中文' }[req.body.language] || 'Tiếng Việt';
-    const baseInstruction = `You are a helpful AI assistant. Respond in **${langName}**. Be concise, use markdown, highlight <mark class="highlight">...</mark>. Analyze image if provided.
-    **At the end of your response, always suggest one related follow-up question in italics (e.g., *Bạn có muốn biết thêm về X không?*).**`;
+    
+    // 📌 FIX 3B: Gợi ý tiếp theo không tự nhiên
+    const followUpSuggestion = `**At the end of your response, always suggest one logical follow-up topic or question for the user to explore next, enclosed in italics (e.g., *Bạn có muốn xem một ví dụ khác không?*).**`;
+    
+    const baseInstruction = `You are a helpful AI assistant. Respond in **${langName}**. Be concise, use markdown, highlight <mark class="highlight">...</mark>. Analyze image if provided. ${followUpSuggestion}`;
     handleGeminiRequest(req, res, baseInstruction, 'message');
 });
 
@@ -107,7 +119,8 @@ app.post("/api/math", (req, res) => {
 });
 
 app.post("/api/edit-image", (req, res) => {
-    const instruction = `Analyze image and user text. Generate ONLY a detailed English prompt for an image generation model (like Pollinations) to create the edited image.`;
+    // Luôn giữ nguyên Instruction này vì client (index.html) đang gửi kèm ảnh
+    const instruction = `Analyze image and user text. Generate ONLY a detailed English prompt (max 30 words) for an image generation model (like Midjourney or Pollinations) to create the edited image. DO NOT add any surrounding text.`;
     handleGeminiRequest(req, res, instruction, 'message');
 });
 
@@ -131,15 +144,30 @@ app.post("/api/summarize-youtube", async (req, res) => {
     let { youtubeUrl } = req.body;
     if (!youtubeUrl) return res.status(400).json({ response: "YouTube URL required." });
 
-    // NEW: Clean the URL to ensure only the video ID is passed to the loader
+    // 📌 FIX 6: Tóm tắt YT - Robust URL parsing
     try {
+        let videoId = null;
         const urlObj = new URL(youtubeUrl);
-        const videoId = urlObj.searchParams.get('v');
-        if (videoId) {
-            youtubeUrl = `https://www.youtube.com/watch?v=${videoId}`;
+        
+        // 1. Check standard 'v' parameter (e.g., ?v=ID)
+        videoId = urlObj.searchParams.get('v');
+        
+        // 2. Check short URLs (e.g., youtu.be/ID)
+        if (!videoId && urlObj.hostname.includes('youtu.be')) {
+             const pathParts = urlObj.pathname.split('/');
+             const shortId = pathParts[pathParts.length - 1];
+             if (shortId && shortId.length === 11) { videoId = shortId; }
         }
+
+        if (!videoId) {
+            throw new Error("Failed to get YouTube video id from the url (missing 'v=' or invalid short URL format).");
+        }
+        
+        // Reconstruct URL to a clean format for the loader
+        youtubeUrl = `https://www.youtube.com/watch?v=${videoId}`;
     } catch(e) { 
-        // Bỏ qua lỗi nếu URL bị sai cấu trúc, dùng URL gốc
+        // Lỗi nếu URL không hợp lệ hoặc không tìm thấy ID
+        return res.status(500).json({ response: `Error summarizing video: Failed to get youtube video id from the url. Please check the URL format. (${e.message})` });
     }
     
     try {
@@ -185,7 +213,10 @@ Format clearly using markdown, lists, and <mark class="highlight">key phrases</m
 app.post("/api/music-generation", (req, res) => {
     const langName = { 'vi': 'Tiếng Việt', 'en': 'English', 'zh-CN': '简体中文' }[req.body.language] || 'Tiếng Việt';
     const instruction = `You are a music composer AI. Respond in **${langName}**.
-Since you cannot generate audio, instead, do the following:
+    
+    // 📌 FIX 2: Tạo nhạc (Giải thích giới hạn)
+    Since you cannot generate audio files, you must only provide the musical composition in a textual format.
+    
 1.  **Write Lyrics:** Write a short verse (4-6 lines) based on the user's prompt.
 2.  **Suggest Chords:** Suggest a simple chord progression (e.g., C - G - Am - F).
 3.  **Describe Vibe:** Describe the mood/vibe (e.g., "upbeat pop", "lo-fi chill").
@@ -200,7 +231,8 @@ app.post("/api/pollinations-image", async (req, res) => {
   try {
     const translatedPrompt = await translateToEnglish(prompt);
     const safePrompt = encodeURIComponent(translatedPrompt);
-    const imageUrl = `https://image.pollinations.ai/prompt/${safePrompt}?nologo=true&width=1024&height=1024`;
+    // Sử dụng kích thước 512x512 là phổ biến và ổn định hơn 1024x1024 cho Pollinations
+    const imageUrl = `https://image.pollinations.ai/prompt/${safePrompt}?nologo=true&width=512&height=512`;
     res.json({ imageUrl });
   } catch (error) {
       console.error("Pollinations Image Error:", error);
@@ -214,6 +246,9 @@ app.post("/api/pollinations-frames", async (req, res) => {
     try {
         const translatedPrompt = await translateToEnglish(prompt);
         console.warn("⚠️ /api/pollinations-frames needs implementation.");
+        // Ghi chú: Vì Pollinations API không có endpoint tạo GIF/video trực tiếp,
+        // chúng ta chỉ có thể trả về một mảng rỗng để không phá vỡ client
+        // hoặc implement logic tạo frame nếu bạn có quyền truy cập API khác.
         res.json({ frames: [] });
     } catch (error) {
         res.status(500).json({ message: "Could not create video frames." });

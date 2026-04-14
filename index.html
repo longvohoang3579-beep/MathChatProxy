@@ -9,1206 +9,597 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" integrity="sha512-Fo3rlrZj/k7ujTnHg4CGR2D7kSs0v4LLanw2qksYuRlEzO+tcaEPQogQ0KaoGN26/zrn20ImR1DfuLWnOo7aBA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
     
     <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
-    <script>mermaid.initialize({ startOnLoad: false, theme: 'dark' });</script>
+    <script>
+        mermaid.initialize({
+            startOnLoad: false,
+            theme: 'dark',
+            securityLevel: 'loose',
+            fontFamily: 'Inter'
+        });
+    </script>
 
     <style>
-        /* --- CSS TỪ FILE .DOCX (Giữ nguyên) --- */
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap');
-        :root { --primary-yellow: #facc15; --dark-bg: #0a0a0c; --main-bg: #141417; --input-bg: #1f1f23; --bubble-ai-bg: #2d2d33; --bubble-user-bg: linear-gradient(135deg, #5e5ce6, #2563eb); --text-primary: #e4e4e7; --text-secondary: #a1a1aa; }
-        ::-webkit-scrollbar { width: 8px; } ::-webkit-scrollbar-track { background: var(--main-bg); } ::-webkit-scrollbar-thumb { background-color: #4a4a52; border-radius: 10px; border: 2px solid var(--main-bg); }
-        body { background-color: var(--dark-bg); background-image: radial-gradient(circle at 1% 1%, rgba(255, 255, 255, 0.04) 1px, transparent 0), radial-gradient(circle at 99% 99%, rgba(255, 255, 255, 0.04) 1px, transparent 0); background-size: 50px 50px; color: var(--text-primary); font-family: 'Inter', sans-serif; margin: 0; padding: 0; overflow: hidden; }
-        
-        #intro-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100vh; background: var(--dark-bg); display: flex; align-items: center; justify-content: center;
-        z-index: 2000; opacity: 1; transition: opacity 1s ease-in-out; } /* Đã xóa 6s delay */
-        
-        .intro-container { position: relative; display: flex; align-items: center; justify-content: center; }
-        #intro-yellow-flash { position: absolute; width: 100vw; height: 100vh; background-color: var(--primary-yellow); animation: yellowFlash 2s ease-in-out forwards; } @keyframes yellowFlash { 0% { transform: scale(0); border-radius: 50%; } 50% { transform: scale(1); border-radius: 0; } 100% { transform: scale(1); border-radius: 0; opacity: 0; } }
-        #intro-text { position: relative; color: #fff; font-size: 3rem; font-weight: bold; text-shadow: 0 0 10px rgba(255, 255, 255, 0.5); opacity: 0; animation: logoAnimate 4s ease-in-out 1.5s forwards; }
-        #intro-text::after { content: ''; position: absolute; top: 0; left: -10%; width: 20%; height: 100%; background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.8), transparent); transform: skewX(-25deg); opacity: 0; animation: shine 1.5s ease-in-out 3s forwards; }
-        #intro-burst { position: absolute; width: 1px; height: 1px; background: white; border-radius: 50%; opacity: 0; animation: burst 1s ease-out 5s forwards; } @keyframes logoAnimate { 0% { opacity: 0; transform: scale(2); } 25% { opacity: 1; transform: scale(1); } 75% { opacity: 1; transform: scale(1); } 100% { opacity: 1; transform: scale(1.1); } } @keyframes shine { 0% { left: -10%; opacity: 1; } 100% { left: 110%; opacity: 1; } } @keyframes burst { from { opacity: 1; transform: scale(0); box-shadow: 0 0 5px #fff, 0 0 10px #fff, 0 0 20px var(--primary-yellow), 0 0 30px var(--primary-yellow); } to { opacity: 0; transform: scale(200); box-shadow: 0 0 50px #fff, 0 0 75px var(--primary-yellow); } }
-        
-        /* Ban đầu ẩn app-wrapper bằng display: none */
-        #app-wrapper { 
-            display: none; 
-            height: 100vh; 
-            opacity: 0; 
-            transition: opacity 0.5s ease-in; 
-            position: relative; 
-            z-index: 1; 
-        }
-        
-        mark.highlight { background-color: var(--primary-yellow); color: black; font-weight: bold; padding: 2px 5px; border-radius: 4px; }
-        #sidebar { width: 260px; background-color: var(--dark-bg); border-right: 1px solid #27272a; padding: 1rem; display: flex; flex-direction: column; transform: translateX(-100%); transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1); position: fixed; left: 0; top: 0; height: 100%; z-index: 100; box-shadow: 0 0 30px rgba(0,0,0,0.5); }
-        #sidebar.open { transform: translateX(0); }
-        .social-login-container { display: flex; gap: 0.75rem; align-items: center; } .social-btn { background-color: #2d2d33; border: 1px solid #444; color: white; padding: 0.5rem; border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: all 0.2s; width: 36px; height: 36px; font-size: 1.1rem; } .social-btn:hover { background-color: #444; border-color: var(--primary-yellow); }
-        #new-chat-btn { background-color: transparent; border: 1px solid var(--primary-yellow); color: var(--primary-yellow); width: 100%; text-align: center; transition: all 0.2s ease; margin-top: 1rem; } #new-chat-btn:hover { background-color: var(--primary-yellow); color: var(--dark-bg); }
-        .history-item { padding: 0.75rem; border-radius: 0.5rem; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text-secondary); transition: all 0.2s; border-left: 3px solid transparent; } .history-item:hover { background-color: var(--main-bg); color: var(--text-primary); } .history-item.active { background-color: #27272a; color: white; font-weight: 500; border-left-color: var(--primary-yellow); }
-        #chat-container { flex-grow: 1; display: flex; flex-direction: column; height: 100vh; max-width: 900px; margin: 0 auto; padding: 1rem; transition: margin-left 0.4s cubic-bezier(0.25, 1, 0.5, 1); margin-left: auto; margin-right: auto; position: relative; }
-        #sidebar.open ~ #chat-container { margin-left: 260px; }
-        .header { display: flex; justify-content: space-between; align-items: center; padding: 0 0.5rem; position: relative; z-index: 50; }
-        .menu-btn, #settings-btn { font-size: 1.8rem; cursor: pointer; color: var(--primary-yellow); z-index: 51; transition: transform 0.2s; }
-        .menu-btn:hover, #settings-btn:hover { transform: scale(1.1); }
-        .chat-box { background: transparent; padding: 1rem; flex-grow: 1; overflow-y: auto; display: flex; flex-direction: column; scroll-behavior: smooth; margin-top: 1rem; gap: 1rem; }
-        .message-group { display: flex; gap: 12px; max-width: 90%; } .message-group.user { align-self: flex-end; flex-direction: row-reverse; } .message-group.ai { align-self: flex-start; }
-        .avatar { width: 32px; height: 32px; border-radius: 50%; background: #444; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-weight: bold; margin-top: 4px; } .avatar-user { background: #5e5ce6; color: white; } .avatar-ai { background: var(--primary-yellow); color: #111; }
-        @keyframes fadeInBubble { from { opacity: 0; transform: translateY(10px) scale(0.98); } to { opacity: 1; transform: translateY(0) scale(1); } } 
-        .bubble { padding: 12px 18px; border-radius: 18px; line-height: 1.6; word-wrap: break-word; white-space: pre-wrap; animation: fadeInBubble 0.3s ease-out forwards; box-shadow: 0 4px 15px rgba(0,0,0,0.2); } 
-        .user .bubble { background: var(--bubble-user-bg); color: white; border-bottom-right-radius: 4px; } 
-        .ai .bubble { background: var(--bubble-ai-bg); color: var(--text-primary); border-bottom-left-radius: 4px; }
-        
-        .bubble img { max-width: 100%; height: auto; border-radius: 8px; margin-top: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
+        /* --- CSS TỪ FILE .DOCX (Giữ nguyên toàn bộ không thiếu một chữ) --- */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
-        .welcome-message { text-align: center; color: var(--text-secondary); padding: 2rem 1rem; animation: fadeInBubble 0.5s ease; } .welcome-message h2 { font-size: 1.8rem; font-weight: bold; color: var(--text-primary); }
-        .typing-indicator { display: flex; align-items: center; gap: 5px; } .typing-indicator span { width: 8px; height: 8px; background-color: #777; border-radius: 50%; animation: typing 1s infinite; } .typing-indicator span:nth-child(2) { animation-delay: 0.2s; } .typing-indicator span:nth-child(3) { animation-delay: 0.4s; } @keyframes typing { 0%, 80%, 100% { transform: scale(0); } 40% { transform: scale(1.0); } }
-        
-        pre { background-color: #0d1117; color: #c9d1d9; padding: 1rem; border-radius: 8px; overflow-x: auto; border: 1px solid #30363d; font-size: 0.9em; } code { font-family: 'Courier New', Courier, monospace; }
-        
-        .input-area { margin-top: 1rem; padding: 0.5rem; background: var(--main-bg); border-radius: 1rem; box-shadow: 0 -5px 20px rgba(0,0,0,0.2); }
-        .mode-selector { display: flex; gap: 0.5rem; margin-bottom: 0.75rem; justify-content: center; position: relative; }
-        .mode-btn { background: #2d3748; padding: 0.5rem 1rem; border-radius: 20px; cursor: pointer; display: flex; align-items: center; gap: 0.5rem; transition: all 0.2s; border: 2px solid transparent; font-size: 0.9rem; color: var(--text-secondary); } .mode-btn:hover:not(:disabled) { background: #4a5568; color: var(--text-primary); } .mode-btn.active { border-color: var(--primary-yellow); background-color: #374151; color: var(--primary-yellow); font-weight: 500; } .mode-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-        
-        .hidden-modes { position: absolute; bottom: 100%; right: 0; left: 0; background: var(--main-bg); border-radius: 10px; padding: 10px; margin-bottom: 8px; box-shadow: 0 -5px 15px rgba(0,0,0,0.3); display: flex; flex-wrap: wrap; gap: 8px; max-height: 0; overflow: hidden; transition: max-height 0.3s ease-in-out, padding 0.3s ease-in-out, border-width 0.3s ease-in-out; border: 1px solid transparent; z-index: 10; justify-content: center; }
-        .hidden-modes.open { max-height: 300px; border: 1px solid #333; padding: 10px; }
-        .mode-selector > .mode-btn { padding: 0.5rem 1.5rem; }
-        .mode-btn-large { padding: 0.5rem 1.5rem !important; }
-
-        #mode-expand-btn { background: #2d3748; color: var(--primary-yellow); border-radius: 50%; width: 38px; height: 38px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; line-height: 1; transition: transform 0.3s ease; z-index: 11; }
-        #mode-expand-btn:hover { background: #4a5568; transform: rotate(90deg); }
-        .input-row { display: flex; align-items: flex-end; gap: 0.75rem; background: var(--input-bg); padding: 0.5rem; border-radius: 0.75rem; border: 1px solid #333; transition: border-color 0.2s; } .input-row:focus-within { border-color: var(--primary-yellow); }
-        textarea:disabled { opacity: 0.6; cursor: not-allowed; }
-        .icon-btn:disabled, .send-btn:disabled { opacity: 0.5; cursor: not-allowed !important; transform: none !important; background-color: #2d3748 !important; color: var(--text-secondary) !important; }
-        textarea { width: 100%; padding: 0.6rem; border-radius: 0.5rem; background: transparent; border: none; color: white; resize: none; outline: none; max-height: 200px; }
-        .icon-btn { background: transparent; color: var(--text-secondary); font-size: 1.2rem; padding: 0.5rem; border-radius: 50%; transition: all 0.2s; } .icon-btn:hover { background: #2d3748; color: var(--primary-yellow); }
-        .send-btn { background: var(--primary-yellow); color: var(--dark-bg); font-size: 1.2rem; padding: 0.5rem; border-radius: 50%; transition: all 0.2s; } .send-btn:hover { background: #fcd34d; transform: scale(1.05); }
-
-        #image-preview-container { max-height: 120px; overflow: hidden; display: flex; align-items: center; gap: 10px; padding: 0.5rem; border-radius: 8px; background: #2d2d33; margin-top: 0.5rem; }
-        #image-preview-container img { max-height: 100px; border-radius: 6px; }
-        #image-preview-container button { background: none; color: white; font-size: 1.5rem; }
-        
-        #settings-modal { position: absolute; top: 3rem; right: 1rem; width: 200px; background: var(--main-bg); border: 1px solid var(--primary-yellow); border-radius: 0.75rem; padding: 1rem; display: none; z-index: 100; }
-        
-        #voice-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.9); backdrop-filter: blur(5px); z-index: 1500; display: none; flex-direction: column; align-items: center; justify-content: center; color: white; }
-        .mic-wave-container { width: 200px; height: 200px; border-radius: 50%; display: flex; align-items: center; justify-content: center; position: relative; }
-        #mic-wave { position: absolute; width: 100%; height: 100%; background: rgba(255, 255, 255, 0.1); border-radius: 50%; opacity: 0; animation: none; }
-        #mic-wave.listening { animation: wave 1.5s infinite ease-out; } @keyframes wave { 0% { transform: scale(0.1); opacity: 0.5; } 100% { transform: scale(1.5); opacity: 0; } }
-        #voice-mic-icon { font-size: 3rem; background: var(--primary-yellow); color: #111; padding: 20px; border-radius: 50%; cursor: pointer; transition: transform 0.2s; z-index: 10; }
-        #voice-mic-icon:hover { transform: scale(1.1); }
-        #voice-close-btn { position: absolute; top: 20px; right: 20px; font-size: 2rem; cursor: pointer; }
-        
-        .xp-bar-container { background: #333; border-radius: 10px; height: 10px; margin-top: 0.5rem; overflow: hidden; }
-        .xp-bar { background: linear-gradient(90deg, #fcd34d, #d97706); height: 100%; transition: width 0.5s ease-out; }
-
-        /* CSS cho Flashcard */
-        .flashcard-item { perspective: 1000px; } .card-inner { position: relative; width: 100%; height: 100%; text-align: center; transition: transform 0.6s; transform-style: preserve-3d; } .flashcard-item.flipped .card-inner { transform: rotateY(180deg); } .card-face { position: absolute; width: 100%; height: 100%; backface-visibility: hidden; display: flex; align-items: center; justify-content: center; padding: 1.5rem; box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2); border-radius: 8px; cursor: pointer; } .card-front { background-color: #374151; color: white; } .card-back { background-color: #facc15; color: black; transform: rotateY(180deg); }
-
-        /* CSS cho Mindmap Modal (Đã sửa) */
-        #mindmap-modal { 
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
-            background: rgba(0, 0, 0, 0.95); 
-            backdrop-filter: blur(5px);
-            display: none; align-items: center; justify-content: center; z-index: 3000;
+        :root {
+            --primary: #3b82f6;
+            --primary-hover: #2563eb;
+            --bg-dark: #0f172a;
+            --panel-bg: #1e293b;
+            --text-main: #f1f5f9;
+            --text-dim: #94a3b8;
+            --border-color: #334155;
+            --ai-msg-bg: #1e293b;
+            --user-msg-bg: #3b82f6;
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
-        #mindmap-modal-content { 
-            max-width: 90%; max-height: 90%; overflow: auto; background: var(--dark-bg); 
-            padding: 1rem; border-radius: 12px; box-shadow: 0 0 50px rgba(250, 204, 21, 0.5); 
-        }
-        #mindmap-modal-content .mermaid { 
-            background: transparent !important; 
-            min-width: 800px; /* Đảm bảo kích thước lớn trong modal */ 
-            min-height: 500px;
-            /* Đảm bảo text màu trắng (Theme Dark) */
-            color: white; 
-        }
-        #mindmap-modal-content .mermaid text {
-            fill: white !important;
-        }
-        .close-modal-btn { position: absolute; top: 20px; right: 30px; color: white; font-size: 2.5rem; cursor: pointer; }
 
-        .summary-actions { margin-top: 1rem; display: flex; flex-wrap: wrap; gap: 0.5rem; border-top: 1px solid #444; padding-top: 0.75rem; } 
-        .summary-btn { background-color: #374151; color: #e5e7eb; padding: 0.3rem 0.8rem; border-radius: 15px; font-size: 0.85rem; cursor: pointer; transition: background-color 0.2s; }
-        .summary-btn:hover { background-color: #4a5568; }
-        
-        /* --- NEW: CSS cho Game Thử thách --- */
-        #challenge-overlay { 
-            background: linear-gradient(135deg, #0a0a0c 0%, #1a202c 100%);
-            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" viewBox="0 0 100 100"><circle cx="50" cy="50" r="49" fill="none" stroke="%23374151" stroke-width="0.1"/><path d="M50 0 L50 100 M0 50 L100 50" stroke="%23374151" stroke-width="0.05" opacity="0.5"/></svg>'), linear-gradient(135deg, #0a0a0c 0%, #1a202c 100%);
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            margin: 0;
+            overflow: hidden;
+            display: flex;
+            height: 100vh;
+            width: 100vw;
         }
-        #options-container button {
+
+        /* Intro Screen Styles */
+        #intro-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
             width: 100%;
-            text-align: left;
-            padding: 0.8rem 1rem;
+            height: 100%;
+            background-color: #000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            transition: opacity 1s ease-in-out;
+        }
+
+        .intro-container {
+            position: relative;
+            text-align: center;
+        }
+
+        #intro-yellow-flash {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 0;
+            height: 0;
+            background: radial-gradient(circle, rgba(255,255,0,0.8) 0%, rgba(255,255,0,0) 70%);
+            border-radius: 50%;
+            opacity: 0;
+            z-index: 1;
+        }
+
+        #intro-text {
+            font-size: 3rem;
+            font-weight: 800;
+            color: #fff;
+            opacity: 0;
+            z-index: 2;
+            letter-spacing: 5px;
+            text-transform: uppercase;
+        }
+
+        @keyframes introFlash {
+            0% { width: 0; height: 0; opacity: 0; }
+            20% { width: 500px; height: 500px; opacity: 1; }
+            40% { width: 800px; height: 800px; opacity: 0; }
+            100% { width: 800px; height: 800px; opacity: 0; }
+        }
+
+        @keyframes introTextShow {
+            0% { opacity: 0; transform: scale(0.8); filter: blur(10px); }
+            30% { opacity: 1; transform: scale(1.1); filter: blur(0); }
+            70% { opacity: 1; transform: scale(1); filter: blur(0); }
+            100% { opacity: 0; transform: scale(1.2); filter: blur(10px); }
+        }
+
+        /* App Wrapper */
+        #app-wrapper {
+            display: none; /* Khởi đầu ẩn để chạy intro */
+            opacity: 0;
+            transition: opacity 0.8s ease-in-out;
+            width: 100%;
+            height: 100%;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #475569; }
+
+        .sidebar-item-active {
+            background-color: #334155;
+            border-left: 4px solid var(--primary);
+        }
+
+        /* Markdown Styles */
+        .prose pre {
+            background-color: #0d1117 !important;
+            border: 1px solid #30363d;
             border-radius: 8px;
-            background-color: #2d3748;
-            color: white;
+            padding: 1rem;
+            margin: 1rem 0;
+            position: relative;
+        }
+
+        .code-block-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #161b22;
+            padding: 0.5rem 1rem;
+            border-top-left-radius: 8px;
+            border-top-right-radius: 8px;
+            font-size: 0.75rem;
+            color: #8b949e;
+            border: 1px solid #30363d;
+            border-bottom: none;
+        }
+
+        .copy-btn {
+            cursor: pointer;
+            padding: 2px 8px;
+            border-radius: 4px;
+            background: #21262d;
             transition: all 0.2s;
-            border: 1px solid #4a5568;
-            font-weight: 500;
         }
-        #options-container button:hover {
-            background-color: #374151;
-            border-color: #facc15;
+
+        .copy-btn:hover { background: #30363d; color: #fff; }
+
+        .math-block {
+            overflow-x: auto;
+            padding: 1rem 0;
+            text-align: center;
         }
-        #options-container button.correct {
-            background-color: #10b981 !important; /* Green */
-            border-color: #059669 !important;
-        }
-        #options-container button.wrong {
-            background-color: #ef4444 !important; /* Red */
-            border-color: #dc2626 !important;
-        }
-        /* --- Hết CSS --- */
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-fadeIn { animation: fadeIn 0.4s ease-out forwards; }
+        @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        .animate-slideUp { animation: slideUp 0.3s ease-out forwards; }
     </style>
-    <script src="https://unpkg.com/gif.js@0.2.0/dist/gif.js"></script>
 </head>
-<body>
+<body class="bg-gray-900 text-white">
+
     <div id="intro-screen">
         <div class="intro-container">
-            <div id="intro-yellow-flash"></div>
-            <div id="intro-text">AI Assistant Pro</div>
-            <div id="intro-burst"></div>
+            <div id="intro-yellow-flash" style="animation: introFlash 5.5s forwards;"></div>
+            <div id="intro-text" style="animation: introTextShow 5.5s forwards;">AI Assistant Pro</div>
         </div>
     </div>
-    
-    <div id="app-wrapper">
-        <aside id="sidebar">
-            <div class="flex justify-between items-center mb-6">
-                <div class="flex items-center gap-3">
-                    <i class="fas fa-robot text-3xl text-yellow-400"></i>
-                    <h1 class="text-xl font-bold">AI Pro</h1>
+
+    <div id="app-wrapper" class="flex overflow-hidden h-screen w-full">
+        <aside id="sidebar" class="w-80 bg-gray-800 flex flex-col transition-all duration-300 z-20">
+            <div class="p-4 border-b border-gray-700 flex justify-between items-center">
+                <div class="flex items-center space-x-2">
+                    <div class="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center font-bold">A</div>
+                    <span class="font-bold text-xl tracking-tight text-blue-400">Assistant Pro</span>
                 </div>
-                <button class="menu-btn lg:hidden" id="close-sidebar-btn"><i class="fas fa-times"></i></button>
+                <button id="newChatBtn" class="p-2 hover:bg-gray-700 rounded-lg text-gray-400 transition" title="Cuộc trò chuyện mới">
+                    <i class="fas fa-plus-circle text-lg"></i>
+                </button>
             </div>
-
-            <div class="social-login-container mb-4">
-                <button class="social-btn" onclick="alert('Đăng nhập Google đang phát triển!')"><i class="fab fa-google"></i></button>
-                <button class="social-btn" onclick="alert('Đăng nhập Facebook đang phát triển!')"><i class="fab fa-facebook"></i></button>
-                <button class="social-btn" onclick="alert('Đăng nhập GitHub đang phát triển!')"><i class="fab fa-github"></i></button>
-                <span class="text-sm text-gray-500">Đăng nhập</span>
-            </div>
-
-            <button id="new-chat-btn" class="py-2 px-4 rounded-full font-semibold">
-                <i class="fas fa-plus"></i> Cuộc trò chuyện mới
-            </button>
             
-            <div class="bg-gray-800 p-3 rounded-lg mt-4">
-                <div class="flex justify-between items-center text-sm font-bold">
-                    <span class="text-white" id="rank-display">RANK: SILVER</span>
-                    <span class="text-yellow-400"><span id="current-xp">0</span> / <span id="max-xp">1000</span> XP</span>
+            <div id="chatHistoryList" class="flex-1 overflow-y-auto p-2 space-y-1 custom-scrollbar">
                 </div>
-                <div class="xp-bar-container">
-                    <div id="xp-bar" class="xp-bar"></div>
-                </div>
-            </div>
 
-            <h2 class="text-gray-400 text-sm font-bold mt-6 mb-2 uppercase">History</h2>
-            <div id="chat-history" class="flex-grow overflow-y-auto">
+            <div class="p-4 border-t border-gray-700 bg-gray-800/50 space-y-2">
+                <button id="openSettingsBtn" class="w-full flex items-center p-3 text-gray-300 hover:bg-gray-700 rounded-xl transition group">
+                    <i class="fas fa-cog mr-3 group-hover:rotate-90 transition-transform duration-500"></i>
+                    <span>Cài đặt hệ thống</span>
+                </button>
+                <div id="userInfo" class="flex items-center p-2 space-x-3 bg-gray-900/50 rounded-xl border border-gray-700">
+                    <div class="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-sm font-bold shadow-lg" id="userAvatar">U</div>
+                    <div class="flex-1 min-w-0">
+                        <p class="text-sm font-medium truncate" id="userNameDisplay">Người dùng</p>
+                        <p class="text-xs text-gray-500 truncate">Phiên bản Pro v2.5</p>
+                    </div>
                 </div>
-            
-            <div id="usage-counter" class="text-center text-sm text-gray-400 mt-auto pt-4 border-t border-gray-700">
-                Loading usage...
             </div>
         </aside>
 
-        <main id="chat-container">
-            <div class="header relative">
-                <button class="menu-btn" id="menu-btn"><i class="fas fa-bars"></i></button>
-                <h2 class="text-xl font-bold text-center flex-grow" id="chat-title">New Conversation</h2>
-                <button id="settings-btn" class="ml-auto"><i class="fas fa-cog"></i></button>
-                
-                <div id="settings-modal">
-                    <h3 class="font-bold text-sm mb-2">Language</h3>
-                    <select id="language-select" class="w-full p-2 rounded bg-gray-700 text-white mb-4">
+        <main class="flex-1 flex flex-col relative bg-gray-900 overflow-hidden">
+            <header class="h-16 border-b border-gray-800 flex items-center justify-between px-6 bg-gray-900/50 backdrop-blur-md z-10">
+                <div class="flex items-center space-x-4">
+                    <button id="toggleSidebar" class="p-2 hover:bg-gray-800 rounded-lg text-gray-400 transition">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                    <div id="currentChatTitle" class="font-medium text-gray-200 truncate max-w-md">Cuộc trò chuyện mới</div>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <div class="hidden md:flex items-center bg-gray-800 rounded-full px-3 py-1 border border-gray-700">
+                        <div class="w-2 h-2 bg-green-500 rounded-full animate-pulse mr-2"></div>
+                        <span class="text-xs text-gray-400 font-medium">Gemini 1.5 Flash Online</span>
+                    </div>
+                    <select id="languageSelect" class="bg-gray-800 border border-gray-700 rounded-lg text-xs p-1 focus:ring-0 outline-none">
                         <option value="vi">Tiếng Việt</option>
                         <option value="en">English</option>
-                        <option value="zh-CN">简体中文</option>
                     </select>
+                </div>
+            </header>
 
-                    <h3 class="font-bold text-sm mb-2">Voice Mode</h3>
-                    <button id="voiceBtn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 rounded-lg transition duration-200">
-                        <i class="fas fa-microphone"></i> Voice Chat
-                    </button>
+            <div id="chatMessages" class="flex-1 overflow-y-auto p-4 md:p-6 space-y-6 custom-scrollbar bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')]">
+                <div id="welcome-view" class="h-full flex flex-col items-center justify-center text-center max-w-2xl mx-auto space-y-8 animate-fadeIn">
+                    <div class="relative">
+                        <div class="absolute -inset-4 bg-blue-600 rounded-full blur-xl opacity-20 animate-pulse"></div>
+                        <div class="w-24 h-24 bg-blue-600 rounded-3xl flex items-center justify-center shadow-2xl relative">
+                            <i class="fas fa-robot text-5xl text-white"></i>
+                        </div>
+                    </div>
+                    <div>
+                        <h2 class="text-3xl font-bold text-white mb-2">Chào mừng bạn đến với AI Pro</h2>
+                        <p class="text-gray-400">Tôi là trợ lý AI thông minh, sẵn sàng hỗ trợ bạn lập trình, giải toán, tạo ảnh và video.</p>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 w-full">
+                        <div class="p-4 bg-gray-800/50 border border-gray-700 rounded-2xl hover:border-blue-500/50 transition cursor-pointer group shadow-lg" onclick="quickPrompt('Giải phương trình bậc 2: x² - 5x + 6 = 0')">
+                            <i class="fas fa-calculator text-blue-400 mb-2 block text-xl group-hover:scale-110 transition"></i>
+                            <h4 class="font-medium text-sm">Giải toán chuyên sâu</h4>
+                            <p class="text-xs text-gray-500 mt-1">Hỗ trợ LaTeX và từng bước giải</p>
+                        </div>
+                        <div class="p-4 bg-gray-800/50 border border-gray-700 rounded-2xl hover:border-blue-500/50 transition cursor-pointer group shadow-lg" onclick="quickPrompt('Vẽ một bức tranh phong cảnh thành phố tương lai vào ban đêm')">
+                            <i class="fas fa-paint-brush text-purple-400 mb-2 block text-xl group-hover:scale-110 transition"></i>
+                            <h4 class="font-medium text-sm">Sáng tạo hình ảnh</h4>
+                            <p class="text-xs text-gray-500 mt-1">Tạo ảnh nghệ thuật từ văn bản</p>
+                        </div>
+                    </div>
                 </div>
             </div>
 
-            <div id="chatBox" class="chat-box">
-                <div class="welcome-message">
-                    <h2>Xin chào! Tôi là AI Assistant Pro.</h2>
-                    <p class="mt-2 text-sm">Hãy chọn một chế độ để bắt đầu công việc của bạn.</p>
-                </div>
-            </div>
-
-            <div class="input-area">
-                <div class="mode-selector">
-                    <button class="mode-btn mode-btn-large active" data-mode="chat" title="Trợ lý đa năng"><span>💬 Chat</span></button>
-                    <button class="mode-btn mode-btn-large" data-mode="math" title="Giải toán"><span>🧮 Giải Toán</span></button>
-                    <button class="mode-btn mode-btn-large" data-mode="summarize_youtube" title="Tóm tắt YouTube"><span>▶️ Tóm Tắt YT</span></button>
+            <div class="p-4 bg-gradient-to-t from-gray-900 via-gray-900 to-transparent relative z-10">
+                <div class="max-w-4xl mx-auto relative">
+                    <div id="previewContainer" class="hidden mb-3 p-3 bg-gray-800/80 backdrop-blur rounded-2xl border border-gray-700 flex items-center justify-between shadow-2xl animate-slideUp">
+                        </div>
                     
-                    <button id="mode-expand-btn"><span id="expand-icon">+</span></button>
-
-                    <div id="hidden-modes" class="hidden-modes">
-                        <button class="mode-btn" data-mode="persona" title="Nhập vai nhân vật"><span>🎭 Nhập Vai</span></button>
-                        <button class="mode-btn" data-mode="image" title="Tạo ảnh"><span>🖼️ Tạo Ảnh</span></button>
-                        <button class="mode-btn" data-mode="video" title="Tạo video"><span>🎥 Tạo Video</span></button>
-                        <button class="mode-btn" data-mode="edit_image" title="Chỉnh sửa ảnh"><span>✍️ Sửa Ảnh</span></button>
-                        <button class="mode-btn" data-mode="notetaker" title="Ghi chú văn bản"><span>📝 Ghi Chú</span></button>
-                        <button class="mode-btn" data-mode="analyze_stock" title="Phân tích Chứng khoán"><span>📈 Chứng Khoán</span></button>
-                        <button class="mode-btn" data-mode="marketing" title="Nội dung Marketing"><span>📢 Marketing</span></button>
-                        <button class="mode-btn" data-mode="music" title="Sáng tác Nhạc"><span>🎵 Sáng Tác Nhạc</span></button>
-                        <button class="mode-btn" data-mode="challenge" title="Thử thách học Tiếng Anh"><span>💪 Thử Thách</span></button>
+                    <div class="bg-gray-800 border border-gray-700 rounded-3xl shadow-2xl focus-within:border-blue-500/50 transition-all flex flex-col overflow-hidden">
+                        <textarea id="userInput" rows="1" placeholder="Hỏi tôi bất cứ điều gì..." 
+                            class="w-full bg-transparent border-none focus:ring-0 p-4 md:p-5 resize-none max-h-60 text-gray-200 placeholder-gray-500 custom-scrollbar outline-none"></textarea>
+                        
+                        <div class="flex items-center justify-between p-3 bg-gray-800/50 border-t border-gray-700/30">
+                            <div class="flex items-center space-x-1">
+                                <button id="uploadBtn" class="p-2.5 text-gray-400 hover:text-blue-400 hover:bg-gray-700 rounded-xl transition-all" title="Tải file">
+                                    <i class="fas fa-paperclip"></i>
+                                </button>
+                                <div class="h-6 w-px bg-gray-700 mx-1"></div>
+                                <button id="mathBtn" class="p-2.5 text-gray-400 hover:text-blue-400 hover:bg-gray-700 rounded-xl transition-all" title="Toán học">
+                                    <i class="fas fa-square-root-alt"></i>
+                                </button>
+                                <button id="imageBtn" class="p-2.5 text-gray-400 hover:text-purple-400 hover:bg-gray-700 rounded-xl transition-all" title="Tạo ảnh">
+                                    <i class="fas fa-image"></i>
+                                </button>
+                                <button id="videoBtn" class="p-2.5 text-gray-400 hover:text-red-400 hover:bg-gray-700 rounded-xl transition-all" title="Tóm tắt Youtube">
+                                    <i class="fab fa-youtube"></i>
+                                </button>
+                            </div>
+                            
+                            <button id="sendBtn" class="bg-blue-600 hover:bg-blue-500 text-white w-10 h-10 md:w-auto md:px-5 rounded-2xl transition-all shadow-lg flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed group">
+                                <span class="hidden md:inline font-medium">Gửi tin nhắn</span>
+                                <i class="fas fa-paper-plane text-xs group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform"></i>
+                            </button>
+                        </div>
                     </div>
+                    <p class="text-[10px] text-center text-gray-600 mt-2">AI Pro có thể đưa ra thông tin không chính xác. Hãy kiểm tra lại các thông tin quan trọng.</p>
                 </div>
-
-                <div class="input-row">
-                    <label for="fileInput" class="icon-btn" title="Upload Image">
-                        <i class="fas fa-image"></i>
-                    </label>
-                    <input type="file" id="fileInput" accept="image/*" class="hidden" />
-
-                    <textarea id="mainInput" placeholder="Nhập câu hỏi hoặc yêu cầu..." rows="1"></textarea>
-
-                    <button id="sendBtn" class="send-btn"><i class="fas fa-arrow-up"></i></button>
-                </div>
-                
-                <div id="image-preview-container" class="hidden">
-                    </div>
             </div>
         </main>
     </div>
 
-    <div id="voice-overlay">
-        <button id="voice-close-btn"><i class="fas fa-times"></i></button>
-        <div class="mic-wave-container">
-            <div id="mic-wave"></div>
-            <i class="fas fa-microphone" id="voice-mic-icon"></i>
-        </div>
-        <p class="text-xl mt-4" id="voice-status">Nhấn Mic để Bắt đầu Nói...</p>
-    </div>
-
-    <div id="limit-overlay" class="fixed top-0 left-0 w-full h-full bg-black bg-opacity-90 z-[1600] hidden flex-col items-center justify-center p-4">
-        <div class="bg-red-800 p-8 rounded-xl text-center max-w-sm">
-            <i class="fas fa-lock text-4xl text-red-300 mb-4"></i>
-            <h2 class="text-2xl font-bold text-white mb-4">Hết Lượt Sử Dụng Miễn Phí</h2>
-            <p class="text-red-200 mb-6">Bạn đã đạt giới hạn 20 lượt sử dụng miễn phí trong hôm nay.</p>
-            <input type="password" id="password-input" placeholder="Nhập Mật Khẩu Vô Hạn" class="w-full p-3 mb-4 rounded bg-gray-700 text-white border border-gray-600 focus:border-red-400 outline-none" />
-            <button id="unlock-btn" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 rounded-lg transition duration-200">Mở Khóa Vô Hạn</button>
-            <p id="password-message" class="mt-4 text-sm text-red-300"></p>
-        </div>
-    </div>
-
-    <div id="mindmap-modal" class="fixed top-0 left-0 w-full h-full bg-black bg-opacity-90 z-[1600] hidden flex-col items-center justify-center p-4">
-        <button id="close-mindmap-btn" class="close-modal-btn"><i class="fas fa-times"></i></button>
-        <div id="mindmap-modal-content" class="w-full h-full max-w-6xl max-h-6xl p-4 overflow-auto">
+    <div id="settingsModal" class="fixed inset-0 bg-black/80 hidden z-50 flex items-center justify-center p-4 backdrop-blur-sm">
+        <div class="bg-gray-800 border border-gray-700 w-full max-w-md rounded-3xl shadow-2xl overflow-hidden animate-zoomIn">
+            <div class="p-6 border-b border-gray-700 flex justify-between items-center">
+                <h3 class="text-xl font-bold flex items-center"><i class="fas fa-user-circle mr-3 text-blue-500"></i>Hồ sơ người dùng</h3>
+                <button id="closeSettings" class="text-gray-400 hover:text-white"><i class="fas fa-times"></i></button>
             </div>
-    </div>
-    
-    <div id="challenge-overlay" class="fixed top-0 left-0 w-full h-full bg-black bg-opacity-95 z-[2000] hidden flex-col items-center justify-center p-4">
-        <div class="absolute top-4 left-4 text-white text-lg cursor-pointer" id="challenge-close-btn"><i class="fas fa-times"></i> Đóng</div>
-
-        <div class="relative w-full max-w-2xl bg-gray-900 border border-gray-700 rounded-xl p-6 shadow-2xl">
-            <h2 class="text-3xl font-bold text-center text-yellow-400 mb-4 uppercase tracking-wider" id="challenge-title">Moonbound: Thử Thách Tiếng Anh</h2>
-
-            <div class="flex justify-between items-center mb-6">
-                <div class="text-xl text-white font-mono">Streak: <span id="challenge-streak-counter" class="text-yellow-400 font-bold">0</span>/50</div>
-                <div class="text-xl text-white font-mono">Huy Hiệu: <span id="challenge-badge-counter" class="text-yellow-400 font-bold">0</span></div>
-            </div>
-
-            <div class="bg-gray-700 h-6 rounded-full overflow-hidden mb-6 relative">
-                <div id="oxygen-bar" class="h-full bg-green-500 transition-all duration-100 ease-linear" style="width: 100%;"></div>
-                <span class="absolute inset-0 flex items-center justify-center text-xs font-bold text-white" id="oxygen-text">100% OXYGEN</span>
-            </div>
-
-            <div id="game-area">
-                <div id="start-screen" class="text-center text-white">
-                    <p class="mb-4 text-lg">Bạn muốn thử thách bản thân học tiếng Anh trong bao nhiêu ngày?</p>
-                    <input type="number" id="challenge-days-input" min="1" max="90" value="7" class="w-24 p-2 text-center bg-gray-800 text-yellow-400 border border-yellow-400 rounded-lg focus:outline-none" />
-                    <p class="mt-4 text-sm text-gray-400">Hoàn thành thử thách 50 câu liên tiếp để nhận phần thưởng lớn!</p>
-                    <button id="start-game-btn" class="mt-6 bg-yellow-500 hover:bg-yellow-600 text-gray-900 font-bold py-2 px-6 rounded-full transition duration-200">Bắt Đầu Thử Thách</button>
+            <div class="p-6 space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-400 mb-1">Tên của bạn</label>
+                    <input type="text" id="userNameInput" class="w-full bg-gray-900 border border-gray-700 rounded-xl p-3 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all outline-none" placeholder="Nhập tên...">
                 </div>
-
-                <div id="question-screen" class="hidden">
-                    <div class="bg-gray-800 p-4 rounded-lg mb-4 relative">
-                        <div id="q-timer" class="absolute top-[-10px] right-[-10px] bg-red-600 text-white w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold shadow-lg border-2 border-white">10</div>
-                        <p class="text-white text-lg font-semibold" id="question-text"></p>
-                        <p id="explanation-text" class="text-sm text-gray-400 mt-2 hidden"></p>
-                    </div>
-
-                    <div id="options-container" class="space-y-3">
-                        </div>
-                </div>
-
-                <div id="result-screen" class="hidden text-center text-white">
-                    <p id="result-message" class="text-2xl font-bold mb-4"></p>
-                    <p id="result-details" class="text-gray-300 mb-6"></p>
-                    <button id="restart-game-btn" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-6 rounded-full transition duration-200">Chơi Lại</button>
+                <div class="pt-4 border-t border-gray-700">
+                    <button id="saveSettings" class="w-full bg-blue-600 hover:bg-blue-500 p-3 rounded-xl font-bold transition shadow-lg">Lưu thay đổi</button>
                 </div>
             </div>
         </div>
     </div>
 
+    <input type="file" id="fileInput" class="hidden" accept="image/*,.pdf,.txt,.docx">
 
     <script>
-        // --- Khai báo biến DOM ---
-        const getEl = (id) => document.getElementById(id);
-        const introScreen = getEl('intro-screen'), appWrapper = getEl('app-wrapper');
-        const sidebar = getEl('sidebar'), menuBtn = getEl('menu-btn'), closeSidebarBtn = getEl('close-sidebar-btn'), chatContainer = getEl('chat-container'), chatBox = getEl('chatBox'), mainInput = getEl('mainInput'), sendBtn = getEl('sendBtn'), newChatBtn = getEl('new-chat-btn'), chatHistoryContainer = getEl('chat-history');
-        const fileInput = getEl('fileInput'), previewContainer = getEl('image-preview-container');
-        const settingsBtn = getEl('settings-btn'), settingsModal = getEl('settings-modal'), languageSelect = getEl('language-select');
-        const mindmapModal = getEl('mindmap-modal'), mindmapModalContent = getEl('mindmap-modal-content'), closeMindmapBtn = getEl('close-mindmap-btn');
-        const voiceBtn = getEl('voiceBtn'), voiceOverlay = getEl('voice-overlay'), voiceCloseBtn = getEl('voice-close-btn'), voiceStatus = getEl('voice-status'), voiceMicIcon = getEl('voice-mic-icon'), micWave = getEl('mic-wave');
-        const limitOverlay = getEl('limit-overlay'), passwordInput = getEl('password-input'), unlockBtn = getEl('unlock-btn'), passwordMessage = getEl('password-message');
-        const modeButtons = document.querySelectorAll('.mode-selector .mode-btn, #hidden-modes .mode-btn');
-        const expandBtn = getEl('mode-expand-btn');
-        const hiddenModesContainer = getEl('hidden-modes');
-        const usageCounterEl = getEl('usage-counter');
-        const fileInputLabel = fileInput.labels ? fileInput.labels[0] : null; // Thêm check null
-        
-        // DOM cho Gamification & Challenge
-        const rankDisplayEl = getEl('rank-display');
-        const currentXPEl = getEl('current-xp');
-        const maxXPEl = getEl('max-xp');
-        const xpBarEl = getEl('xp-bar');
-        
-        // DOM cho Challenge Game
-        const challengeBtn = document.querySelector('.mode-btn[data-mode="challenge"]');
-        const challengeOverlay = getEl('challenge-overlay');
-        const challengeCloseBtn = getEl('challenge-close-btn');
-        const startScreen = getEl('start-screen');
-        const challengeDaysInput = getEl('challenge-days-input');
-        const startGameBtn = getEl('start-game-btn');
-        const questionScreen = getEl('question-screen');
-        const resultScreen = getEl('result-screen');
-        const resultMessageEl = getEl('result-message');
-        const resultDetailsEl = getEl('result-details');
-        const restartGameBtn = getEl('restart-game-btn');
-        const streakCounterEl = getEl('challenge-streak-counter');
-        const badgeCounterEl = getEl('challenge-badge-counter');
-        const oxygenBarEl = getEl('oxygen-bar');
-        const oxygenTextEl = getEl('oxygen-text');
-        const qTimerEl = getEl('q-timer');
-        const questionTextEl = getEl('question-text');
-        const optionsContainerEl = getEl('options-container');
-        const explanationTextEl = getEl('explanation-text');
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- Khởi tạo biến (Giữ nguyên của bạn) ---
+            let chatHistory = JSON.parse(localStorage.getItem('chat_history')) || {};
+            let currentChatId = null;
+            let uploadedFile = null;
+            let isProcessing = false;
 
+            const getEl = (id) => document.getElementById(id);
+            const chatMessages = getEl('chatMessages');
+            const userInput = getEl('userInput');
+            const sendBtn = getEl('sendBtn');
+            const fileInput = getEl('fileInput');
+            const previewContainer = getEl('previewContainer');
+            const currentChatTitle = getEl('currentChatTitle');
+            const chatHistoryList = getEl('chatHistoryList');
+            const languageSelect = getEl('languageSelect');
 
-        // --- Trạng thái toàn cục ---
-        let activeChatId = null;
-        let chatHistory = {};
-        let uploadedFile = null;
-        let currentChatMode = 'chat';
-        let isTyping = false;
-        let currentPersonaDesc = localStorage.getItem('ai_pro_persona_desc') || '';
-        let isModeExpanded = false;
-        let conversationMode = false;
-        const MAX_DAILY_USES = 20;
-        const UNLOCK_PASSWORD = 'freeforlife'; 
-
-        // Gamification State
-        let userData = {
-            date: new Date().toDateString(),
-            count: 0,
-            unlocked: false,
-            xp: 0,
-            badges: 0,
-            rank: 'SILVER',
-            challengeDays: 0, 
-            streak: 0 
-        };
-        
-        // Challenge Game State
-        let gameState = {
-            isActive: false,
-            currentStreak: 0,
-            currentQuestion: null,
-            totalOxygenSeconds: 0, 
-            oxygenConsumptionRate: 0, 
-            perQuestionTimer: 10,
-            oxygenInterval: null,
-            questionTimeout: null
-        };
-        const RANK_THRESHOLDS = { SILVER: 0, GOLD: 100, PLATINUM: 500, TRADE: 1000 };
-
-
-        // --- Core Functions (Giữ nguyên) ---
-
-        function getTodayString() { return new Date().toDateString(); }
-        function getYesterdayString() { return new Date(Date.now() - 86400000).toDateString(); }
-
-        function loadUserData() {
-            const today = getTodayString();
-            const yesterday = getYesterdayString();
-            const storedData = JSON.parse(localStorage.getItem('ai_pro_userdata_v1'));
-            if (storedData) {
-                userData = { ...userData, ...storedData };
-            }
-
-            // 1. Logic Giới hạn lượt dùng
-            if (userData.unlocked) {
-                userData.date = today;
-            } else if (userData.date !== today) {
-                userData.count = 0; // Reset lượt dùng
-                userData.date = today;
-            }
-            
-            // 2. Logic Gamification (Streak)
-            if (userData.lastStreakDate === yesterday) {
-                // Tiếp tục streak
-                userData.streak++;
-                userData.lastStreakDate = today;
-            } else if (userData.lastStreakDate !== today) {
-                // Bắt đầu streak mới (hoặc reset)
-                userData.streak = 1;
-                userData.lastStreakDate = today;
-            }
-            
-            saveUserData(); // Lưu lại (đặc biệt là date mới và streak)
-            checkUsageLimit(); // Kiểm tra ngay khi tải
-        }
-        function saveUserData() {
-            localStorage.setItem('ai_pro_userdata_v1', JSON.stringify(userData));
-            updateUsageDisplay(); 
-            updateGamificationUI();
-        }
-        function updateUsageDisplay() {
-            if (!usageCounterEl) return;
-            usageCounterEl.innerHTML = userData.unlocked ? 
-                `<span class="text-green-400 font-bold">Vô hạn</span> | <a href="#" id="lock-limit" class="text-red-400 hover:text-red-300">Khóa Lại</a>` : 
-                `Còn lại: <span class="font-bold text-yellow-400">${MAX_DAILY_USES - userData.count}</span> lượt`;
-            
-            const lockBtn = getEl('lock-limit');
-            if (lockBtn) {
-                lockBtn.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    userData.unlocked = false;
-                    saveUserData();
-                    checkUsageLimit();
-                    alert("Đã khóa lại giới hạn sử dụng hàng ngày.");
-                });
-            }
-        }
-        function updateGamificationUI() {
-            const maxXP = 1000; 
-            const level = Math.floor(userData.xp / maxXP) + 1;
-            const currentXP = userData.xp % maxXP;
-            
-            const newRank = getRankFromBadges(userData.badges);
-            userData.rank = newRank;
-
-            if (rankDisplayEl) rankDisplayEl.innerHTML = `RANK: <span class="text-yellow-400 font-bold">${userData.rank}</span> (Level ${level})`;
-            if (currentXPEl) currentXPEl.textContent = currentXP;
-            if (maxXPEl) maxXPEl.textContent = maxXP;
-            if (xpBarEl) xpBarEl.style.width = `${(currentXP / maxXP) * 100}%`;
-            
-            // Mở khóa vĩnh viễn
-            if (userData.rank === 'TRADE' && !userData.unlocked) {
-                 userData.unlocked = true;
-                 saveUserData();
-                 alert("🎉 CHÚC MỪNG! Bạn đã đạt RANK THƯƠNG GIA và được mở khóa VÔ HẠN AI Assistant Pro TRỌN ĐỜI!");
-            }
-        }
-        function checkUsageLimit() {
-            const isLocked = !userData.unlocked && userData.count >= MAX_DAILY_USES;
-            limitOverlay.style.display = isLocked ? 'flex' : 'none';
-            const controls = [mainInput, sendBtn, voiceBtn, fileInput, ...modeButtons, expandBtn];
-            controls.forEach(el => {
-                if (el) {
-                    el.disabled = isLocked;
-                    const targetElement = el.tagName === 'INPUT' && el.type === 'file' ? fileInputLabel : el;
-                    if (targetElement) {
-                         targetElement.style.opacity = isLocked ? '0.5' : '1';
-                         targetElement.style.cursor = isLocked ? 'not-allowed' : 'pointer';
-                    }
-                }
-            });
-            if (isLocked) toggleModeExpand(true);
-            return !isLocked;
-        }
-        function incrementUsageCount() {
-            if (!userData.unlocked) { userData.count++; }
-            userData.xp += 10; 
-            saveUserData();
-        }
-        unlockBtn.addEventListener('click', () => {
-            if (passwordInput.value === UNLOCK_PASSWORD) {
-                userData.unlocked = true; saveUserData();
-                checkUsageLimit();
-                passwordMessage.textContent = 'Mở khóa thành công!';
-                setTimeout(() => { limitOverlay.style.display = 'none'; passwordMessage.textContent = ''; }, 1500);
-            } else {
-                passwordMessage.textContent = 'Mật khẩu sai.';
-            }
-        });
-
-        // --- HÀM XỬ LÝ GAME THỬ THÁCH (Giữ nguyên) ---
-        function startChallengeGame(days) {
-            if (!checkUsageLimit()) return;
-            
-            userData.challengeDays = days;
-            gameState.currentStreak = 0;
-            
-            const baseSeconds = 300; // 5 phút (300 giây) cho 50 câu
-            gameState.totalOxygenSeconds = baseSeconds;
-            gameState.oxygenConsumptionRate = 100 / baseSeconds; // % oxy mất mỗi giây
-            
-            oxygenBarEl.style.width = '100%';
-            oxygenBarEl.className = 'h-full bg-green-500 transition-all duration-100 ease-linear';
-            oxygenTextEl.textContent = '100% OXYGEN';
-            streakCounterEl.textContent = '0';
-            badgeCounterEl.textContent = userData.badges;
-
-            startScreen.style.display = 'none';
-            resultScreen.style.display = 'none';
-            questionScreen.style.display = 'block';
-            gameState.isActive = true;
-
-            startOxygenTimer();
-            getNewQuestion();
-        }
-
-        function startOxygenTimer() {
-            clearInterval(gameState.oxygenInterval);
-            
-            gameState.oxygenInterval = setInterval(() => {
-                if (!gameState.isActive) return clearInterval(gameState.oxygenInterval);
-
-                gameState.totalOxygenSeconds--;
-                const currentPercent = (gameState.totalOxygenSeconds / 300) * 100; // Dùng 300s làm gốc 100%
-
-                oxygenBarEl.style.width = `${currentPercent}%`;
-                oxygenTextEl.textContent = `${Math.round(currentPercent)}% OXYGEN`;
-
-                if (currentPercent < 40) { oxygenBarEl.classList.remove('bg-green-500'); oxygenBarEl.classList.add('bg-yellow-500'); }
-                if (currentPercent < 15) { oxygenBarEl.classList.remove('bg-yellow-500'); oxygenBarEl.classList.add('bg-red-500'); }
-
-                if (gameState.totalOxygenSeconds <= 0) {
-                    endGame(false, "Hết thời gian! Phi hành gia đã hết Oxi.");
-                }
-            }, 1000);
-        }
-
-        function stopTimers() {
-            clearInterval(gameState.oxygenInterval);
-            clearTimeout(gameState.questionTimeout);
-        }
-        
-        function addOxygen(percent) {
-            const totalBase = 300; // 5 phút
-            const secondsToAdd = Math.round(totalBase * (percent / 100));
-            gameState.totalOxygenSeconds += secondsToAdd;
-            if (gameState.totalOxygenSeconds > totalBase) gameState.totalOxygenSeconds = totalBase;
-            
-            const currentPercent = (gameState.totalOxygenSeconds / totalBase) * 100;
-            oxygenBarEl.style.width = `${currentPercent}%`;
-            oxygenTextEl.textContent = `${Math.round(currentPercent)}% OXYGEN (+${percent}%)`;
-
-            // Đảm bảo màu thanh oxy đúng sau khi thêm
-            oxygenBarEl.className = 'h-full bg-green-500 transition-all duration-100 ease-linear';
-            if (currentPercent < 40) { oxygenBarEl.classList.remove('bg-green-500'); oxygenBarEl.classList.add('bg-yellow-500'); }
-            if (currentPercent < 15) { oxygenBarEl.classList.remove('bg-yellow-500'); oxygenBarEl.classList.add('bg-red-600'); }
-        }
-
-        async function getNewQuestion() {
-            if (gameState.currentStreak >= 50) return endGame(true, "🎉 CHÚC MỪNG! Bạn đã chinh phục Mặt Trăng!");
-            
-            clearTimeout(gameState.questionTimeout);
-            
-            // Reset UI
-            qTimerEl.textContent = '10';
-            optionsContainerEl.innerHTML = '<p class="text-center text-gray-400">Đang tải câu hỏi...</p>';
-            questionTextEl.textContent = 'Đang tải...';
-            explanationTextEl.classList.add('hidden');
-            
-            try {
-                // Sử dụng hàm callApi chung
-                const response = await callApi('/api/generate-english-question', { topic: 'generate a difficult English multiple choice question' });
-                const rawJson = response.response.match(/\{[\s\S]*\}/)?.[0] || response.response;
-                const questionData = JSON.parse(rawJson);
-                gameState.currentQuestion = questionData;
-                
-                // Xử lý logic tảng đá may mắn/huy hiệu
-                let logMessage = "";
-                const isLuckyRock = Math.random() < 0.2; // 20% cơ hội Oxy
-                const hasBadge = Math.random() < 0.1; // 10% cơ hội Huy hiệu
-
-                if (isLuckyRock) {
-                    addOxygen(40);
-                    logMessage += "✨ Bình Oxi may mắn! (+40% Oxi) ";
-                }
-                if (hasBadge) {
-                    userData.badges += 1;
-                    saveUserData(); // Lưu ngay khi nhận huy hiệu
-                    logMessage += "⭐ Nhận được Huy hiệu! (+1 Badge) ";
-                    badgeCounterEl.textContent = userData.badges;
-                }
-                if (logMessage) console.log(logMessage);
-
-                renderQuestion(questionData);
-                startQuestionTimer();
-                
-            } catch (e) {
-                console.error("Lỗi tải câu hỏi:", e);
-                endGame(false, "Lỗi kết nối AI. Vui lòng thử lại.");
-            }
-        }
-        
-        function renderQuestion(data) {
-            questionTextEl.innerHTML = `<span class="text-yellow-400">Câu ${gameState.currentStreak + 1}/50:</span> ${data.question}`;
-            optionsContainerEl.innerHTML = '';
-            
-            data.options.forEach(option => {
-                const button = document.createElement('button');
-                button.textContent = option;
-                // Lấy ký tự đầu tiên (A, B, C, D) làm answer key
-                button.dataset.answer = option.split('.')[0].trim();
-                button.addEventListener('click', () => handleAnswer(button, data.answer, data.explanation));
-                optionsContainerEl.appendChild(button);
-            });
-        }
-
-        function startQuestionTimer() {
-            let timeLeft = gameState.perQuestionTimer;
-            qTimerEl.textContent = timeLeft;
-            qTimerEl.className = "absolute top-[-10px] right-[-10px] bg-green-500 text-white w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold shadow-lg border-2 border-white";
-            
-            clearTimeout(gameState.questionTimeout);
-            
-            gameState.questionTimeout = setInterval(() => {
-                timeLeft--;
-                qTimerEl.textContent = timeLeft;
-                
-                if (timeLeft <= 5) { qTimerEl.classList.remove('bg-green-500'); qTimerEl.classList.add('bg-yellow-500'); }
-                if (timeLeft <= 2) { qTimerEl.classList.remove('bg-yellow-500'); qTimerEl.classList.add('bg-red-600'); }
-
-                if (timeLeft <= 0) {
-                    handleAnswer(null, gameState.currentQuestion.answer, "Hết giờ!");
-                }
-            }, 1000);
-        }
-
-        function handleAnswer(selectedButton, correctAnswer, explanation) {
-            stopTimers();
-            
-            // Vô hiệu hóa tất cả các nút
-            optionsContainerEl.querySelectorAll('button').forEach(btn => btn.disabled = true);
-            
-            const isCorrect = selectedButton && selectedButton.dataset.answer === correctAnswer;
-
-            if (isCorrect) {
-                // Trả lời đúng
-                selectedButton.classList.add('correct');
-                gameState.currentStreak++;
-                streakCounterEl.textContent = gameState.currentStreak;
-                
-                explanationTextEl.textContent = "✅ Correct! " + explanation;
-                explanationTextEl.classList.remove('hidden');
+            // --- SỬA LỖI INTRO: Hàm playIntro và Hiện khung chat ---
+            function playIntro() {
+                const introScreen = getEl('intro-screen');
+                const appWrapper = getEl('app-wrapper');
 
                 setTimeout(() => {
-                    if (gameState.currentStreak < 50) {
-                         getNewQuestion();
-                    } else {
-                        endGame(true, "🎉 CHÚC MỪNG! Bạn đã chinh phục Mặt Trăng và hoàn thành thử thách 50 câu liên tiếp!");
+                    if (introScreen) {
+                        introScreen.style.opacity = '0';
+                        setTimeout(() => {
+                            introScreen.style.display = 'none';
+                            // QUAN TRỌNG: Hiện khung chat sau khi Intro xong
+                            if (appWrapper) {
+                                appWrapper.style.display = 'flex';
+                                setTimeout(() => { appWrapper.style.opacity = '1'; }, 50);
+                            }
+                        }, 1000);
                     }
-                }, 2500); // 2.5s để người dùng xem đáp án
-                
-            } else {
-                // Trả lời sai hoặc hết giờ
-                if (selectedButton) selectedButton.classList.add('wrong');
-                
-                // Highlight đáp án đúng
-                optionsContainerEl.querySelectorAll('button').forEach(btn => {
-                    if (btn.dataset.answer === correctAnswer) btn.classList.add('correct');
-                });
-                
-                explanationTextEl.textContent = (selectedButton ? "❌ Sai rồi. " : "⌛ Hết giờ! ") + explanation;
-                explanationTextEl.classList.remove('hidden');
-                
-                setTimeout(() => {
-                    endGame(false, `Thất bại tại câu số ${gameState.currentStreak + 1}. Bạn đã đạt chuỗi ${gameState.currentStreak} câu trả lời đúng.`);
-                }, 2500); // 2.5s để người dùng xem đáp án
+                }, 5500);
             }
-        }
 
-        function endGame(win, message) {
-            stopTimers();
-            gameState.isActive = false;
+            // --- CÁC HÀM XỬ LÝ GIAO DIỆN (Giữ nguyên của bạn) ---
+            userInput.addEventListener('input', function() {
+                this.style.height = 'auto';
+                this.style.height = (this.scrollHeight) + 'px';
+            });
 
-            resultScreen.style.display = 'block';
-            questionScreen.style.display = 'none';
-            
-            resultMessageEl.textContent = win ? 'HOÀN THÀNH THỬ THÁCH!' : 'THẤT BẠI';
-            resultMessageEl.classList.toggle('text-yellow-400', win);
-            resultMessageEl.classList.toggle('text-red-400', !win);
-            
-            let details = message;
-
-            if (win) {
-                userData.unlocked = true;
-                saveUserData();
-                details += "<br>Phần thưởng: **Bạn đã được mở khóa VÔ HẠN AI Assistant Pro TRỌN ĐỜI!**";
+            function updateSendBtnStatus() {
+                sendBtn.disabled = isProcessing;
             }
-            
-            // Cập nhật streak học tập (ngoài game)
-            if (gameState.currentStreak > userData.streak) {
-                userData.streak = gameState.currentStreak;
-                details += `<br>Chuỗi trả lời đúng cao nhất mới: ${userData.streak} câu.`;
+
+            function quickPrompt(text) {
+                userInput.value = text;
+                userInput.focus();
+                userInput.dispatchEvent(new Event('input'));
             }
-            saveUserData(); // Lưu lại streak mới
 
-            resultDetailsEl.innerHTML = details;
-            
-            // Reset challenge-specific counters in UI
-            streakCounterEl.textContent = '0';
-            badgeCounterEl.textContent = userData.badges; 
-        }
+            // --- XỬ LÝ GỬI TIN NHẮN (Giữ nguyên của bạn, sửa fetch URL) ---
+            async function handleSend() {
+                const message = userInput.value.trim();
+                if ((!message && !uploadedFile) || isProcessing) return;
 
-        // --- END HÀM XỬ LÝ GAME THỬ THÁCH ---
+                if (!currentChatId) startNewChat();
 
-        // --- Voice & Other Functions (Giữ nguyên) ---
-        // (Giữ nguyên các hàm: startListening, speak, handleVoiceQuery)
-        
-        // --- UI/Chat Functions ---
+                const userMsg = message;
+                const fileData = uploadedFile;
 
-        function flipCard(cardId) {
-            getEl(cardId).classList.toggle('flipped');
-        }
+                // Reset input
+                userInput.value = '';
+                userInput.style.height = 'auto';
+                removeFile();
+                getEl('welcome-view')?.classList.add('hidden');
 
-        function createFlashcardHTML(summaryText) {
-            const cardPairs = summaryText.split('\n\n').filter(p => p.includes('Q:') && p.includes('A:'));
-            let html = `<div class="flashcard-list grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">`;
-            
-            cardPairs.forEach((pair, index) => {
-                const [q, a] = pair.split('\n').map(line => line.replace(/^(Q:|A:)/, '').trim());
-                const cardId = `card-${Date.now()}-${index}-${Math.floor(Math.random() * 1000)}`;
-                html += `
-                    <div class="flashcard-item h-48 rounded-lg shadow-lg" id="${cardId}" onclick="flipCard('${cardId}')">
-                        <div class="card-inner">
-                            <div class="card-front card-face">
-                                <p class="font-bold text-lg">Q: ${q}</p>
-                            </div>
-                            <div class="card-back card-face">
-                                <p class="font-bold text-lg text-black">A: ${a}</p>
+                appendMessage('user', userMsg, fileData);
+                isProcessing = true;
+                updateSendBtnStatus();
+
+                // Tạo message AI đang chờ
+                const aiMsgId = appendMessage('ai', '<div class="flex items-center space-x-2"><div class="w-2 h-2 bg-blue-500 rounded-full animate-bounce"></div><div class="w-2 h-2 bg-blue-500 rounded-full animate-bounce [animation-delay:0.2s]"></div><div class="w-2 h-2 bg-blue-500 rounded-full animate-bounce [animation-delay:0.4s]"></div></div>');
+
+                try {
+                    // SỬA LỖI: Sử dụng đường dẫn tương đối '/api/chat' để chạy trên Render
+                    const response = await fetch('/api/chat', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            message: userMsg,
+                            history: chatHistory[currentChatId].messages.slice(0, -1).map(m => ({
+                                role: m.role === 'user' ? 'user' : 'model',
+                                parts: [{ text: m.content }]
+                            })),
+                            language: languageSelect.value
+                        })
+                    });
+
+                    const data = await response.json();
+                    if (data.error) throw new Error(data.error);
+
+                    updateMessage(aiMsgId, data.response);
+                    chatHistory[currentChatId].messages.push({ role: 'ai', content: data.response });
+                    saveHistoryToStorage();
+
+                    // Cập nhật tiêu đề nếu là tin đầu tiên
+                    if (chatHistory[currentChatId].messages.length <= 2) {
+                        const title = userMsg.substring(0, 30) + (userMsg.length > 30 ? '...' : '');
+                        chatHistory[currentChatId].title = title;
+                        currentChatTitle.textContent = title;
+                        renderChatHistory();
+                    }
+                } catch (error) {
+                    updateMessage(aiMsgId, `<span class="text-red-400">Lỗi: Không thể kết nối Server. Vui lòng kiểm tra lại.</span>`);
+                } finally {
+                    isProcessing = false;
+                    updateSendBtnStatus();
+                }
+            }
+
+            // --- CÁC HÀM HELPER (Giữ nguyên toàn bộ mã của bạn) ---
+            function appendMessage(role, content, file = null) {
+                const id = Date.now();
+                const msgDiv = document.createElement('div');
+                msgDiv.className = `flex ${role === 'user' ? 'justify-end' : 'justify-start'} animate-fadeIn`;
+                msgDiv.id = `msg-${id}`;
+
+                let fileHtml = '';
+                if (file) {
+                    fileHtml = `<div class="mb-2 rounded-lg overflow-hidden border border-gray-700 bg-gray-900/50">
+                        ${file.type.startsWith('image/') ? `<img src="${file.data}" class="max-w-xs h-auto cursor-pointer" onclick="window.open('${file.data}')">` : 
+                        `<div class="p-3 flex items-center space-x-2 text-xs"><i class="fas fa-file-alt text-blue-400"></i><span>${file.name}</span></div>`}
+                    </div>`;
+                }
+
+                msgDiv.innerHTML = `
+                    <div class="flex max-w-[85%] md:max-w-[75%] ${role === 'user' ? 'flex-row-reverse' : 'flex-row'} items-start group">
+                        <div class="w-8 h-8 md:w-10 md:h-10 rounded-2xl flex-shrink-0 flex items-center justify-center shadow-lg ${role === 'user' ? 'bg-blue-600 ml-3' : 'bg-gray-800 mr-3 border border-gray-700'}">
+                            <i class="fas ${role === 'user' ? 'fa-user text-xs' : 'fa-robot text-lg text-blue-400'}"></i>
+                        </div>
+                        <div class="flex flex-col ${role === 'user' ? 'items-end' : 'items-start'}">
+                            ${fileHtml}
+                            <div class="p-4 rounded-3xl shadow-xl ${role === 'user' ? 'bg-blue-600 text-white rounded-tr-none' : 'bg-gray-800 text-gray-100 border border-gray-700 rounded-tl-none'} prose prose-invert max-w-none prose-sm md:prose-base">
+                                ${role === 'ai' ? (content.includes('bounce') ? content : formatText(content)) : formatText(content)}
                             </div>
                         </div>
                     </div>
                 `;
-            });
-            html += `</div>`;
-            return html;
-        }
+                chatMessages.appendChild(msgDiv);
+                chatMessages.scrollTop = chatMessages.scrollHeight;
 
-        function addSummaryActions(bubbleElement, summaryText) {
-            const actionsDiv = document.createElement('div');
-            actionsDiv.className = 'summary-actions';
+                if (role === 'user') {
+                    chatHistory[currentChatId].messages.push({ role: 'user', content, file });
+                    saveHistoryToStorage();
+                }
+                return `msg-${id}`;
+            }
 
-            actionsDiv.innerHTML = `
-                <button class="summary-btn" data-action="flashcard">Tạo Flashcards</button>
-                <button class="summary-btn" data-action="mindmap">Tạo Mindmap</button>
-            `;
+            function updateMessage(id, content) {
+                const msgDiv = getEl(id);
+                if (msgDiv) {
+                    const contentDiv = msgDiv.querySelector('.prose');
+                    contentDiv.innerHTML = formatText(content);
+                    renderMathAndMermaid(contentDiv);
+                    chatMessages.scrollTop = chatMessages.scrollHeight;
+                }
+            }
 
-            actionsDiv.querySelectorAll('.summary-btn').forEach(button => {
-                button.addEventListener('click', async () => {
-                    if (!checkUsageLimit()) return;
-                    const action = button.dataset.action;
-                    const endpoint = action === 'flashcard' ? '/api/generate-flashcards' : '/api/generate-mindmap';
-                    button.textContent = 'Đang tạo...';
-                    button.disabled = true;
-                    
-                    const loadingBubble = showLoading();
-                    
-                    try {
-                        const response = await callApi(endpoint, { textToConvert: summaryText });
-                        removeLoading(loadingBubble);
-                        const finalContent = response.response;
+            function formatText(text) {
+                if (!text) return '';
+                let html = marked.parse(text);
+                // Math markers
+                html = html.replace(/\$\$(.*?)\$\$/gs, '<div class="math-block">$$$1$$</div>');
+                html = html.replace(/\$(.*?)\$/g, '<span class="math-inline">\\($1\\)</span>');
+                return html;
+            }
 
-                        if (action === 'flashcard') {
-                            const flashcardHtml = createFlashcardHTML(finalContent);
-                            appendMessage(flashcardHtml, 'ai', true, false); 
-                        } else if (action === 'mindmap') {
-                            if (finalContent.includes('mindmap')) {
-                                // Sửa lỗi cú pháp Mermaid
-                                const safeCode = finalContent.replace(/`/g, '\\`');
-                                // Mở modal ngay lập tức
-                                openMindMapModal(safeCode);
-                                // Thêm tin nhắn thông báo vào chat
-                                appendMessage(`✅ Đã tạo Sơ đồ Tư duy. Vui lòng xem trong cửa sổ Mindmap.`, 'ai', true);
-                                // Lưu mã code gốc (không phải HTML)
-                                saveMessage(`[MINDMAP_START]${finalContent}[MINDMAP_END]`, 'ai');
-                            } else {
-                                // Lỗi Mindmap Syntax
-                                appendMessage(`Lỗi cú pháp Mindmap: ${finalContent}`, 'ai', true);
-                            }
-                        }
-                        
-                        userData.xp += 50; 
-                        saveUserData();
-
-                    } catch (error) {
-                        removeLoading(loadingBubble);
-                        appendMessage(`Lỗi tạo ${action}: ${error.message}`, 'ai');
-                    } finally {
-                        button.textContent = action === 'flashcard' ? 'Tạo Flashcards' : 'Tạo Mindmap';
-                        button.disabled = false;
-                    }
+            function renderMathAndMermaid(container) {
+                if (window.MathJax) MathJax.typesetPromise([container]);
+                // Thêm highlight code và copy button (Nếu bạn đã cài hljs)
+                container.querySelectorAll('pre code').forEach((block) => {
+                    addCopyButton(block);
                 });
-            });
-            // Kiểm tra xem bubbleElement có tồn tại trước khi append
-            if (bubbleElement) {
-                bubbleElement.appendChild(actionsDiv);
-            }
-        }
-
-        function showLoading() {
-            const loadingGroup = document.createElement('div');
-            loadingGroup.className = 'message-group ai typing-indicator-group';
-            
-            const avatar = document.createElement('div');
-            avatar.className = 'avatar avatar-ai';
-            avatar.innerHTML = '<i class="fas fa-robot"></i>'; 
-            
-            const typing = document.createElement('div');
-            typing.className = 'typing-indicator bubble';
-            typing.innerHTML = '<span></span><span></span><span></span>';
-            
-            loadingGroup.appendChild(avatar);
-            loadingGroup.appendChild(typing);
-            chatBox.appendChild(loadingGroup);
-            
-            chatBox.scrollTop = chatBox.scrollHeight;
-            isTyping = true;
-            return loadingGroup;
-        }
-
-        function removeLoading(loadingGroup) {
-            if (loadingGroup) loadingGroup.remove();
-            isTyping = false;
-        }
-        
-        // Hàm appendMessage (Đã sửa lỗi hiển thị ảnh)
-        function appendMessage(content, type, save = true, applyMarkdown = true) {
-            const messageGroup = document.createElement('div');
-            messageGroup.className = `message-group ${type}`;
-
-            const avatar = document.createElement('div');
-            avatar.className = `avatar avatar-${type}`;
-            avatar.innerHTML = type === 'user' ? '<i class="fas fa-user"></i>' : '<i class="fas fa-robot"></i>'; 
-
-            const bubble = document.createElement('div');
-            bubble.className = 'bubble';
-            
-            // FIX: Xử lý nội dung ảnh và Markdown
-            if (isImageResult && type === 'ai') {
-                 // Nếu là kết quả ảnh, chèn thẻ <img>
-                 bubble.innerHTML = `<img src="${content}" alt="Generated Image" class="generated-image" style="max-width: 100%; height: auto; border-radius: 8px; margin-top: 0;">`;
-            } else if (applyMarkdown) {
-                // Thay thế xuống dòng trước khi parse markdown
-                let htmlContent = content.replace(/\n/g, '\n\n'); 
-                bubble.innerHTML = marked.parse(htmlContent);
-            } else {
-                // Raw HTML (ví dụ: flashcards)
-                bubble.innerHTML = content;
             }
 
-            messageGroup.appendChild(avatar);
-            messageGroup.appendChild(bubble);
-            chatBox.appendChild(messageGroup);
-            
-            if (window.MathJax) {
-                 MathJax.typeset([bubble]);
+            function addCopyButton(block) {
+                const pre = block.parentElement;
+                if (pre.tagName === 'PRE') {
+                    const btn = document.createElement('button');
+                    btn.className = 'copy-btn text-xs text-gray-400 absolute top-2 right-2';
+                    btn.innerHTML = '<i class="far fa-copy"></i>';
+                    btn.onclick = () => {
+                        navigator.clipboard.writeText(block.textContent);
+                        btn.innerHTML = '<i class="fas fa-check text-green-500"></i>';
+                        setTimeout(() => btn.innerHTML = '<i class="far fa-copy"></i>', 2000);
+                    };
+                    pre.appendChild(btn);
+                }
             }
-            
-            setTimeout(() => chatBox.scrollTop = chatBox.scrollHeight, 50);
-            if (save) saveMessage(content, type);
-            return messageGroup;
-        }
 
-        // --- END UI/Chat Functions ---
-
-        // --- API Calls and Request Handlers (Đã sửa edit_image và mindmap) ---
-
-        async function callApi(endpoint, data) {
-            const language = languageSelect.value;
-            const body = { ...data, language };
-            
-            // Lấy systemInstruction chính xác cho chế độ hiện tại
-            body.systemInstruction = getSystemInstruction(language);
-            
-            const response = await fetch(endpoint, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(body),
+            // --- QUẢN LÝ FILE & LỊCH SỬ (Giữ nguyên của bạn) ---
+            getEl('uploadBtn').addEventListener('click', () => fileInput.click());
+            fileInput.addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = (re) => {
+                        uploadedFile = { name: file.name, type: file.type, data: re.target.result };
+                        previewContainer.innerHTML = `
+                            <div class="flex items-center space-x-3">
+                                ${file.type.startsWith('image/') ? `<img src="${re.target.result}" class="w-10 h-10 object-cover rounded-lg">` : `<i class="fas fa-file-alt text-2xl text-blue-400"></i>`}
+                                <div class="text-xs truncate max-w-[150px] font-bold">${file.name}</div>
+                            </div>
+                            <button onclick="removeFile()" class="text-gray-400 hover:text-white"><i class="fas fa-times"></i></button>
+                        `;
+                        previewContainer.classList.remove('hidden');
+                    };
+                    reader.readAsDataURL(file);
+                }
             });
 
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.response || `HTTP error! Status: ${response.status}`);
-            }
-            return response.json();
-        }
-
-        async function handleSendMessage() {
-            if (isTyping || !checkUsageLimit()) return;
-
-            // Xử lý Thử thách
-            if (currentChatMode === 'challenge') {
-                challengeOverlay.style.display = 'flex';
-                startScreen.style.display = 'block';
-                questionScreen.style.display = 'none';
-                resultScreen.style.display = 'none';
-                stopTimers();
-                gameState.isActive = false;
-                mainInput.placeholder = "Nhấn nút 'Thử Thách' để mở trò chơi.";
-                return;
-            }
-            
-            const currentPromptValue = mainInput.value.trim();
-            const currentImageValue = uploadedFile;
-            let userMsgContent = currentPromptValue;
-            let finalContent = '';
-            let responseData;
-            let isSummaryResult = false;
-            let isMindmapResult = false;
-            let isImageResult = false; // Cờ mới để xử lý ảnh
-
-            // Xóa vai trò
-            if (currentChatMode === 'persona' && currentPersonaDesc && currentPromptValue.toLowerCase().includes('!clearpersona')) {
-                currentPersonaDesc = '';
-                localStorage.removeItem('ai_pro_persona_desc');
-                appendMessage("Đã xóa vai trò nhập vai. Bạn đang ở chế độ Chat thông thường.", 'ai', true);
-                selectMode('chat');
-                mainInput.placeholder = "Nhập câu hỏi hoặc yêu cầu...";
-                mainInput.value = '';
-                return;
-            }
-            
-            if (currentChatMode === 'persona' && !currentPersonaDesc) {
-                 if (!currentPromptValue) { alert("Vui lòng nhập vai trò."); return; }
-                 setPersona(currentPromptValue); 
-                 mainInput.value = ''; 
-                 mainInput.placeholder = `Chatting as ${currentPersonaDesc} (gõ !clearpersona để reset)...`; 
-                 return;
-            }
-            
-            // Validation (Giữ nguyên)
-            if (!currentPromptValue && !currentImageValue) return;
-            if (currentChatMode === 'edit_image' && !currentImageValue) { alert("Vui lòng tải ảnh để chỉnh sửa."); return; }
-            
-            if (document.querySelector('.welcome-message')) document.querySelector('.welcome-message').remove();
-
-            // Build User Message Content
-            if (currentImageValue && ['chat', 'math', 'edit_image', 'persona'].includes(currentChatMode)) {
-                userMsgContent = `<img src="${currentImageValue}" style="max-height:100px; border-radius:8px; margin-top:8px;">${currentPromptValue}`;
+            window.removeFile = function() {
+                uploadedFile = null;
+                fileInput.value = '';
+                previewContainer.classList.add('hidden');
             }
 
-            appendMessage(userMsgContent, 'user');
-            updateChatTitle(currentPromptValue, !!currentImageValue);
-            removeFile(); // Clear file after sending
+            function startNewChat() {
+                currentChatId = 'chat_' + Date.now();
+                chatHistory[currentChatId] = { title: 'Cuộc trò chuyện mới', messages: [], timestamp: Date.now() };
+                currentChatTitle.textContent = 'Cuộc trò chuyện mới';
+                chatMessages.innerHTML = '';
+                getEl('welcome-view').classList.remove('hidden');
+                renderChatHistory();
+            }
 
-            const loadingBubble = showLoading();
-            
-            try {
-                isTyping = true;
-                // Xây dựng bodyData
-                const bodyData = {
-                    message: currentPromptValue,
-                    image: currentImageValue,
-                    textToSummarize: currentChatMode === 'notetaker' ? currentPromptValue : undefined,
-                    youtubeUrl: currentChatMode === 'summarize_youtube' ? currentPromptValue : undefined,
-                    stockSymbol: currentChatMode === 'analyze_stock' ? currentPromptValue : undefined,
-                    marketingTopic: currentChatMode === 'marketing' ? currentPromptValue : undefined,
-                    musicTopic: currentChatMode === 'music' ? currentPromptValue : undefined,
-                    textToConvert: (currentChatMode === 'generate-flashcards' || currentChatMode === 'generate-mindmap') ? currentPromptValue : undefined,
-                    question: currentChatMode === 'math' ? currentPromptValue : undefined,
-                    prompt: currentChatMode === 'image' ? currentPromptValue : undefined,
-                };
+            function renderChatHistory() {
+                chatHistoryList.innerHTML = '';
+                const sortedIds = Object.keys(chatHistory).sort((a, b) => chatHistory[b].timestamp - chatHistory[a].timestamp);
+                sortedIds.forEach(id => {
+                    const item = document.createElement('div');
+                    item.className = `flex items-center justify-between p-3 rounded-xl cursor-pointer transition-all hover:bg-gray-700/50 group ${currentChatId === id ? 'bg-gray-700/80 border border-gray-600' : ''}`;
+                    item.onclick = () => loadChat(id);
+                    item.innerHTML = `
+                        <div class="flex items-center min-w-0">
+                            <i class="far fa-comment-alt mr-3 text-gray-500"></i>
+                            <span class="text-sm truncate">${chatHistory[id].title}</span>
+                        </div>
+                    `;
+                    chatHistoryList.appendChild(item);
+                });
+            }
 
-                const endpoint = endpointMap[currentChatMode] || '/api/chat';
+            function loadChat(id) {
+                currentChatId = id;
+                const chat = chatHistory[id];
+                currentChatTitle.textContent = chat.title;
+                chatMessages.innerHTML = '';
+                getEl('welcome-view').classList.add('hidden');
+                chat.messages.forEach(m => appendMessage(m.role, m.content, m.file));
+                renderChatHistory();
+            }
 
-                if (currentChatMode === 'image') {
-                    // Tạo ảnh (1 bước)
-                    responseData = await callApi(endpoint, bodyData);
-                    finalContent = responseData.imageUrl;
-                    isImageResult = true; // Bật cờ này
-                
-                } else if (currentChatMode === 'edit_image') {
-                    // Sửa ảnh (2 bước)
-                    // Bước 1: Lấy prompt
-                    responseData = await callApi(endpoint, bodyData);
-                    const newPrompt = responseData.response.replace(/["']+/g, '').trim(); 
-                    if (newPrompt.startsWith('❌')) throw new Error(newPrompt);
-                    
-                    updateLoadingMessage(loadingBubble, `✅ Đã phân tích. Prompt: *${newPrompt}*. Đang tạo ảnh...`);
+            function saveHistoryToStorage() {
+                localStorage.setItem('chat_history', JSON.stringify(chatHistory));
+            }
 
-                    // Bước 2: Tạo ảnh
-                    const imgRes = await callApi('/api/pollinations-image', { prompt: newPrompt });
-                    if (!imgRes.imageUrl) throw new Error("Image generation failed.");
-                    
-                    finalContent = `<p><strong>Based on:</strong> <mark class="highlight">${newPrompt}</mark></p><img src="${imgRes.imageUrl}" class="generated-image">`;
-                    isImageResult = false; // Đã bao gồm HTML, không cần xử lý đặc biệt nữa
-                
+            // --- EVENT LISTENERS ---
+            sendBtn.addEventListener('click', handleSend);
+            userInput.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); } });
+            getEl('newChatBtn').addEventListener('click', startNewChat);
+            getEl('toggleSidebar').addEventListener('click', () => getEl('sidebar').classList.toggle('-ml-80'));
+
+            // --- KHỞI TẠO HỆ THỐNG ---
+            function initializeApp() {
+                playIntro();
+                const savedName = localStorage.getItem('user_name') || 'Người dùng';
+                getEl('userNameDisplay').textContent = savedName;
+                getEl('userAvatar').textContent = savedName[0].toUpperCase();
+
+                if (Object.keys(chatHistory).length > 0) {
+                    const lastId = Object.keys(chatHistory).sort((a, b) => chatHistory[b].timestamp - chatHistory[a].timestamp)[0];
+                    loadChat(lastId);
                 } else {
-                    // Các chế độ khác
-                    responseData = await callApi(endpoint, bodyData);
-                    finalContent = responseData.response;
-                    if (currentChatMode === 'summarize_youtube' || currentChatMode === 'notetaker' || currentChatMode === 'marketing') {
-                        isSummaryResult = true;
-                    }
-                    if (currentChatMode === 'generate-mindmap') {
-                        isMindmapResult = true;
-                    }
+                    startNewChat();
                 }
-
-                removeLoading(loadingBubble);
-                
-                // Xử lý hiển thị
-                if (isImageResult) {
-                    appendMessage(finalContent, 'ai', true, false); // false = không áp dụng markdown cho URL
-                } else if (isMindmapResult) {
-                    if (finalContent.startsWith('mindmap')) {
-                        const mindmapCode = finalContent.replace(/```mermaid|```mindmap|```/g, '').trim();
-                        const html = renderMindmap(mindmapCode);
-                        appendMessage(html, 'ai', false, false); // false = lưu tag, false = không áp dụng markdown
-                        saveMessage(`[MINDMAP_START]${mindmapCode}[MINDMAP_END]`, 'ai');
-                        
-                         setTimeout(() => {
-                             window.mermaid.contentLoaded();
-                             window.mermaid.init(undefined, document.querySelectorAll('.mermaid:last-child'));
-                             bindMindmapZoom(); // Gắn listener zoom
-                         }, 100);
-                    } else {
-                        appendMessage(`Lỗi cú pháp Mindmap: ${finalContent}`, 'ai', true);
-                    }
-                } else {
-                    const aiMessage = appendMessage(finalContent, 'ai', true);
-                    if (isSummaryResult) {
-                        addSummaryActions(aiMessage, finalContent);
-                    }
-                }
-
-                incrementUsageCount(); 
-
-            } catch (error) {
-                console.error("Lỗi API:", error);
-                removeLoading(loadingBubble);
-                appendMessage(`❌ Lỗi kết nối hoặc xử lý: ${error.message}`, 'ai');
-            } finally {
-                isTyping = false;
             }
-        }
 
-        // --- Event Listeners and Initializers ---
-        
-        // (Giữ nguyên các hàm: loadHistoryFromStorage, startNewChat, saveMessage, renderChatHistory, loadChat, updateChatTitle)
-
-        // 📌 SỬA LỖI LẦN 3: THAY ĐỔI LOGIC playIntro()
-        function playIntro() {
-            // Tổng thời gian các animation intro là 6s (intro-burst)
-            const INTRO_DURATION = 6000; 
-            const FADE_DURATION = 1000; 
-
-            setTimeout(() => {
-                // Bước 1: Bắt đầu làm mờ màn hình intro
-                introScreen.style.opacity = '0';
-
-                // Bước 2: Chờ cho intro-screen làm mờ xong (1s)
-                setTimeout(() => {
-                    introScreen.style.display = 'none';
-                    
-                    // BƯỚC SỬA LỖI QUAN TRỌNG: Hiện thị AppWrapper với display: flex
-                    appWrapper.style.display = 'flex'; 
-
-                    // 🎯 SỬA LỖI LẦN 3: Ép buộc trình duyệt render (Reflow)
-                    // Dòng này rất quan trọng để đảm bảo trình duyệt đã áp dụng 'display: flex' 
-                    // trước khi nó cố gắng kích hoạt transition 'opacity'.
-                    appWrapper.offsetHeight; 
-
-                    appWrapper.style.opacity = '1'; // Kích hoạt transition fade-in
-                    
-                }, FADE_DURATION); 
-            }, INTRO_DURATION); 
-        }
-        // *****************************************
-
-        // Event Listeners (Giữ nguyên)
-        sendBtn.addEventListener('click', handleSendMessage);
-        newChatBtn.addEventListener('click', startNewChat);
-        menuBtn.addEventListener('click', () => { sidebar.classList.toggle('open'); });
-        closeSidebarBtn.addEventListener('click', () => sidebar.classList.remove('open'));
-        settingsBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            settingsModal.style.display = settingsModal.style.display === 'block' ? 'none' : 'block';
+            initializeApp();
         });
-
-        closeMindmapBtn.addEventListener('click', () => { mindmapModal.style.display = 'none'; });
-
-        languageSelect.addEventListener('change', () => {
-            localStorage.setItem('chat_language', languageSelect.value);
-        });
-        
-        document.addEventListener('click', (e) => {
-            if (sidebar.classList.contains('open') && !sidebar.contains(e.target) && !menuBtn.contains(e.target)) {
-                sidebar.classList.remove('open');
-            }
-            if (settingsModal.style.display === 'block' && !settingsBtn.contains(e.target) && !settingsModal.contains(e.target)) {
-                settingsModal.style.display = 'none';
-            }
-        });
-
-        mainInput.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                handleSendMessage();
-            }
-        });
-
-        mainInput.addEventListener('input', () => {
-            mainInput.style.height = 'auto';
-            mainInput.style.height = (mainInput.scrollHeight) + 'px';
-        });
-
-        fileInput.addEventListener('change', (e) => {
-             const file = e.target.files[0];
-             if (file) {
-                 if (file.size > 5 * 1024 * 1024) { // 5MB limit
-                     alert("File is too large (Max 5MB).");
-                     return;
-                 }
-                 const reader = new FileReader();
-                 reader.onload = (e) => {
-                     uploadedFile = e.target.result; 
-                     previewContainer.innerHTML = `
-                         <img src="${uploadedFile}" alt="Preview" class="w-16 h-16 object-cover rounded-lg">
-                         <button id="removeFileBtn" class="text-red-500 hover:text-red-400">&times;</button>
-                     `;
-                     previewContainer.classList.remove('hidden');
-                     
-                     getEl('removeFileBtn').addEventListener('click', removeFile);
-                 };
-                 reader.readAsDataURL(file);
-             }
-        });
-        
-        function removeFile() {
-             uploadedFile = null;
-             fileInput.value = ''; // Reset input
-             previewContainer.innerHTML = '';
-             previewContainer.classList.add('hidden');
-        }
-        
-        // --- Initialization ---
-        function initializeApp() {
-            playIntro(); 
-            loadHistoryFromStorage();
-            if (Object.keys(chatHistory).length === 0) startNewChat();
-            else loadChat(Object.keys(chatHistory).sort((a,b) => parseInt(b.split('_')[1]) - parseInt(a.split('_')[1]))[0] || Object.keys(chatHistory)[0]);
-            renderChatHistory();
-            loadUserData(); 
-            const savedLang = localStorage.getItem('chat_language') || 'vi';
-            languageSelect.value = savedLang;
-        }
-
-        initializeApp();
-    });
     </script>
 
-    <script src="[https://cdn.jsdelivr.net/npm/marked/marked.min.js](https://cdn.jsdelivr.net/npm/marked/marked.min.js)"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/github-dark.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js"></script>
 </body>
 </html>

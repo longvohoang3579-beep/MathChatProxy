@@ -1,7 +1,7 @@
 {
-  "name": "ai-assistant-pro-proxy",
+  "name": "ai-assistant-pro",
   "version": "1.0.0",
-  "description": "AI Assistant Pro Server Proxy",
+  "description": "Hệ thống AI Assistant Pro đầy đủ tính năng",
   "main": "server.js",
   "type": "module",
   "scripts": {
@@ -9,14 +9,12 @@
     "dev": "nodemon server.js"
   },
   "dependencies": {
-    "@langchain/community": "^0.2.0",
-    "body-parser": "^1.20.3",
-    "cors": "^2.8.5",
-    "dotenv": "^16.4.5",
     "express": "^4.19.2",
+    "body-parser": "^1.20.3",
     "node-fetch": "^3.3.2",
-    "youtube-transcript": "^1.1.0",
-    "youtubei.js": "^9.4.0"
+    "dotenv": "^16.4.5",
+    "cors": "^2.8.5",
+    "youtube-transcript": "^1.1.0"
   },
   "engines": {
     "node": ">=18.0.0"
